@@ -1,0 +1,85 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+ xmlns:v="urn:schemas-microsoft-com:vml"
+ xmlns:o="urn:schemas-microsoft-com:office:office">
+<head>
+  <meta http-equiv="Content-Language" content="en-us">
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <title>Untitled 1</title>
+</head>
+<body>
+<h4>New ConfigActions Class<br>
+</h4>
+An action is called on database load/reload/unload operation or config
+object modification.<br>
+<br style="font-style: italic; color: rgb(0, 0, 102);">
+<span style="font-style: italic; color: rgb(0, 0, 102);">As an example
+it is used to implement DAL's Component::disabled() algorithm in a way
+transparent to users (the disabled() algorithm holds static set, that
+needs to be updated in case of database modification).</span><br>
+<br>
+To add an action user has to:
+<ul>
+  <li>implement new class deriving from <span
+ style="font-weight: bold;">ConfigAction</span> class (defined in the
+config/ConfigAction.h for C++ and config/jsrc/config/ConfigAction.java
+for Java)</li>
+  <li>create new action object and register it using Configuration::<span
+ style="font-weight: bold;">add_config_action</span>(ConfigAction * ac)
+method in C++ or config.Configuration.<span style="font-weight: bold;">add_config_action</span>(config.ConfigAction
+obj) in Java<br>
+  </li>
+</ul>
+<h4>Unread All Template Objects (C++)<br>
+</h4>
+Add method Configuration::unread_all_objects() to unread all template
+objects.<br>
+<br style="font-style: italic; color: rgb(0, 0, 102);">
+<span style="font-style: italic; color: rgb(0, 0, 102);">As an example
+it is used when attribute string converter reads many template objects
+(partition, segments, resources, applications, sw repositories) while
+builds conversion map. All such objects have to be unread after
+conversion map has been built, since their attributes may have
+variables also need to be converted.</span><br>
+<br>
+Existing unread_objects() method was replaced by
+_unread_objects(CacheBase*) to be effectively used by the new
+unread_all_objects().<br>
+<h4>Thread Safe (C++)</h4>
+As required by new RunControl accessing DAL objects simultaneously from
+several threads, the config and generated code has been made
+thread-safe.<br>
+<h4>Performance Improvements and API Changes (C++)<br>
+</h4>
+Improve performance of most DAL methods replacing STL set and map by
+GNU hash_set and hash_map.<br>
+<br>
+Above requires changes in code using Configuration <span
+ style="font-weight: bold;">superclasses()</span> and <span
+ style="font-weight: bold;">subclasses()</span> methods:<br>
+<br>
+Old methods:<br>
+<ul>
+  <li>const <span style="font-weight: bold;">std::map</span>&lt;<span
+ style="font-weight: bold;">std::string, std::set&lt;std::string&gt;</span>
+&gt;&amp; superclasses() const throw ()</li>
+  <li>const <span style="font-weight: bold;">std::map</span>&lt;<span
+ style="font-weight: bold;">std::string, std::set&lt;std::string&gt;</span>
+&gt;&amp; subclasses() const </li>
+</ul>
+New methods:<br>
+<ul>
+  <li>const <span style="font-weight: bold;">config::map</span>&lt;<span
+ style="font-weight: bold;">config::set</span>&gt;&amp; superclasses()
+const throw ()</li>
+  <li>const <span style="font-weight: bold;">config::map</span>&lt;<span
+ style="font-weight: bold;">config::set</span>&gt;&amp; subclasses()
+const</li>
+</ul>
+See config/map.h and config/set.h for more information about <span
+ style="font-weight: bold;">config::map</span> and <span
+ style="font-weight: bold;">config::set</span> classes.<br>
+<br>
+Note, new methods return unordered data.<br>
+</body>
+</html>

@@ -1,0 +1,266 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  oks_schema_examples.xml
+  =======================
+  OKS schema + data examples with provenance, for building a fine-tuning
+  dataset.  Every <example> contains verbatim files from public repos
+  (schema-file / data-file elements) or clean excerpts; <caption> gives the
+  operator-level explanation.  Full copies of large files are in ./repos/.
+-->
+<training-examples>
+
+  <!-- ============================================================ -->
+  <example id="1-tutorial-dal">
+    <caption>
+      Minimal 3-class DAL tutorial (DUNE-DAQ/dal): inheritance, enum + integer
+      ranges, default (init) values, is-not-null, and a one-to-many
+      relationship; the matching data file shows real objects.
+      [Sources: https://github.com/DUNE-DAQ/dal - schema/dal/tutorial.schema.xml,
+                scripts/dal_testing.data.xml]
+    </caption>
+
+    <schema-file name="tutorial.schema.xml" src="https://github.com/DUNE-DAQ/dal"><![CDATA[
+<?xml version="1.0" encoding="ASCII"?>
+<!-- oks-schema version 2.2 -->
+<oks-schema>
+<info name="" type="" num-of-items="3" oks-format="schema" oks-version="862f2957270"
+      created-by="jcfree" created-on="mu2edaq13.fnal.gov" creation-time="20230123T223700"
+      last-modified-by="jcfree" last-modified-on="mu2edaq13.fnal.gov" last-modification-time="20230123T223700"/>
+ <class name="Application" description="A software executable" is-abstract="yes">
+  <attribute name="Name" description="Name of the executable, including full path" type="string"
+             init-value="Unknown" is-not-null="yes"/>
+ </class>
+ <class name="ReadoutApplication" description="An executable which reads out subdetectors">
+  <superclass name="Application"/>
+  <attribute name="SubDetector" description="An enum to describe what type of subdetector it can read out"
+             type="enum" range="PMT,WireChamber" init-value="WireChamber"/>
+ </class>
+ <class name="RCApplication" description="An executable which allows users to control datataking">
+  <superclass name="Application"/>
+  <attribute name="Timeout" description="Seconds to wait before giving up on a transition" type="u16"
+             range="1..3600" init-value="20" is-not-null="yes"/>
+  <relationship name="ApplicationsControlled" description="Applications RC is in charge of"
+                class-type="Application" low-cc="one" high-cc="many"/>
+ </class>
+</oks-schema>
+]]></schema-file>
+
+    <data-file name="dal_testing.data.xml" src="https://github.com/DUNE-DAQ/dal"><![CDATA[
+<?xml version="1.0" encoding="ASCII"?>
+<!-- oks-data version 2.2 -->
+<oks-data>
+<include><file path="../share/schema/dal/core.schema.xml"/></include>
+<obj class="Partition" id="ToyPartition">
+  <rel name="OnlineInfrastructure" class="OnlineSegment" id="ToyOnlineSegment"/>
+  <rel name="DefaultHost" class="Computer" id="toyhost.fnal.gov"/>
+  <rel name="Disabled">
+    <ref class="ResourceBase" id="AProblematicResource"/>
+  </rel>
+</obj>
+<obj class="ResourceBase" id="AProblematicResource"/>
+<obj class="RunControlApplication" id="ToyRunControlApplication">
+ <attr name="InterfaceName" type="string" val="rc/commander"/>
+ <attr name="ActionTimeout" type="s32" val="10"/>
+ <attr name="IfExitsUnexpectedly" type="enum" val="Error"/>
+ <attr name="IfFailsToStart" type="enum" val="Error"/>
+ <rel name="Program" class="Binary" id="rc_controller"/>
+ <rel name="ExplicitTag" class="Tag" id="ToyTag"/>
+</obj>
+<obj class="OnlineSegment" id="ToyOnlineSegment">
+ <attr name="T0_ProjectTag" type="string" val="data_test"/>
+ <rel name="IsControlledBy" class="RunControlApplication" id="ToyRunControlApplication"/>
+ <rel name="InitialPartition" class="Partition" id="ToyPartition"/>
+ <rel name="Applications">
+   <ref class="CustomLifetimeApplication" id="SomeApp"/>
+ </rel>
+ <rel name="Segments">
+   <ref class="Segment" id="ToyChildSegment"/>
+ </rel>
+</obj>
+<obj class="Computer" id="toyhost.fnal.gov">
+ <attr name="HW_Tag" type="enum" val="x86_64-centos7"/>
+ <attr name="SW_Tag" type="enum" val="gcc49-opt"/>
+ <attr name="NumberOfCores" type="s16" val="2"/>
+ <attr name="RLogin" type="string" val="ssh"/>
+</obj>
+</oks-data>
+]]></data-file>
+  </example>
+
+  <!-- ============================================================ -->
+  <example id="2-atlas-core-schema">
+    <caption>
+      The ATLAS/TDAQ core schema (real production classes).  The run-level
+      entry point is the Partition: it holds top-level Segments, the online
+      infrastructure, disabled components, tags, parameters and (important)
+      the database attributes DBPath/DBName/DBVersion — DBVersion is the
+      OKS git SHA used for the partition, i.e. the answer to "what
+      configuration was used".  Methods get_config_version()/set_config_version()
+      are the DAL interface for that.  Also shows the C++/Java dual-language
+      method bodies typical of dal-generated code.
+      [Source: https://github.com/DUNE-DAQ/dal - schema/dal/core.schema.xml]
+    </caption>
+
+    <schema-file name="core.schema.xml (excerpt: class Partition)" src="https://github.com/DUNE-DAQ/dal"><![CDATA[
+<class name="Partition" description="The class describes TDAQ configuration including top-level segments, disabled components, various TDAQ base and user specific parameters.">
+  <attribute name="RepositoryRoot" description="Temporary sw installation area having highest priority" type="string"/>
+  <attribute name="IPCRef" description="IPC init reference; default from TDAQ_IPC_INIT_REF env" type="string" init-value="$(TDAQ_IPC_INIT_REF)"/>
+  <attribute name="DBPath" description="Locations of database repositories (OKS_DB_ROOT); default from TDAQ_DB_PATH" type="string" init-value="$(TDAQ_DB_PATH)"/>
+  <attribute name="DBName" description="Name of the OKS data file; default from TDAQ_DB_DATA" type="string" init-value="$(TDAQ_DB_DATA)"/>
+  <attribute name="DBVersion" description="Database version (SHA key) if GIT repository is used; default from TDAQ_DB_VERSION" type="string" init-value="$(TDAQ_DB_VERSION)"/>
+  <attribute name="DBTechnology" description="Config database technology implementation" type="enum" range="rdbconfig,oksconflibs" init-value="rdbconfig"/>
+  <attribute name="RunTypes" type="string" is-multi-value="yes"/>
+  <relationship name="Segments" description="Top-level segments composing given partition. To disable a segment, add it to Disabled instead of removing it." class-type="Segment" low-cc="zero" high-cc="many" is-composite="yes"/>
+  <relationship name="OnlineInfrastructure" description="Defines online infrastructure segment." class-type="OnlineSegment" low-cc="one" high-cc="one" is-composite="no"/>
+  <relationship name="Disabled" description="Lists segments and resources which are temporary disabled." class-type="Component" low-cc="zero" high-cc="many" is-composite="no" ordered="yes"/>
+  <relationship name="DefaultHost" description="Host to run all applications with empty 'RunsOn'." class-type="Computer" low-cc="zero" high-cc="one" is-composite="no"/>
+  <relationship name="DefaultTags" description="Default tags used to select binaries for applications without explicit tag." class-type="Tag" low-cc="zero" high-cc="many" is-composite="no"/>
+  <relationship name="ProcessEnvironment" description="Process environment for any application ran in given partition." class-type="Parameter" low-cc="zero" high-cc="many" is-composite="no"/>
+  <method name="set_config_version" description="Set configuration version, i.e. OKS GIT repository SHA. The partition infrastructure has to be running.">
+    <method-implementation language="c++" prototype="void set_config_version(const std::string&amp; name, bool reload) const"/>
+    <method-implementation language="java" prototype="void set_config_version(final String version, boolean reload) throws config.GenericException, config.SystemException, config.NotFoundException, config.NotValidException"/>
+  </method>
+  <method name="get_config_version" description="Return configuration version used by given partition, i.e. OKS GIT repository SHA. The partition infrastructure has to be running.">
+    <method-implementation language="c++" prototype="std::string get_config_version() const"/>
+    <method-implementation language="java" prototype="String get_config_version() throws config.GenericException, config.SystemException, config.NotFoundException, config.NotValidException"/>
+  </method>
+</class>
+]]></schema-file>
+  </example>
+
+  <!-- ============================================================ -->
+  <example id="3-all-types">
+    <caption>
+      The OKS data type reference (CERN oks repo test): all attribute types
+      (bool..u64, float, double, date, time, string, enum, class), multi-value
+      attributes, hex format, and the compact "data" format (attr val inside
+      tag).  Good grounding for translating attribute names to type-correct
+      query values.
+      [Sources: https://gitlab.cern.ch/atlas-tdaq-software/oks - test/all_types.schema.xml,
+                test/test.data.xml]
+    </caption>
+
+    <schema-file name="all_types.schema.xml (excerpt: class Element)" src="https://gitlab.cern.ch/atlas-tdaq-software/oks/-/raw/master/test/all_types.schema.xml"><![CDATA[
+<oks-schema>
+<class name="Element" description="It is a class to describe a person">
+  <attribute name="Boolean" type="bool"/>
+  <attribute name="IntS8" type="s8"/>
+  <attribute name="IntU8" type="u8"/>
+  <attribute name="IntS16" type="s16"/>
+  <attribute name="IntU16" type="u16"/>
+  <attribute name="IntS32" type="s32"/>
+  <attribute name="IntU32" type="u32"/>
+  <attribute name="IntS64" type="s64"/>
+  <attribute name="Int64" type="u64"/>
+  <attribute name="Float" type="float"/>
+  <attribute name="Double" type="double"/>
+  <attribute name="String" type="string"/>
+  <attribute name="Date" type="date"/>
+  <attribute name="Time" type="time"/>
+  <attribute name="Enum" type="enum" range="one,two,three,four,five" init-value="one"/>
+  <attribute name="Class" type="class" init-value="Container"/>
+  <attribute name="ArrayIntS8" type="s8" is-multi-value="yes"/>
+  <attribute name="ArrayString" type="string" is-multi-value="yes"/>
+  <attribute name="ArrayEnum" type="enum" range="one,two,three,four,five" is-multi-value="yes" init-value="one"/>
+  <attribute name="HexIntU8" type="u8" format="hex"/>
+  <attribute name="HexIntU64" type="u64" format="hex"/>
+</class>
+</oks-schema>
+]]></schema-file>
+
+    <data-file name="test.data.xml (excerpt)" src="https://gitlab.cern.ch/atlas-tdaq-software/oks/-/raw/master/test/test.data.xml"><![CDATA[
+<oks-data>
+<include><file path="all_types.schema.xml"/></include>
+<obj class="Element" id="o1-good">
+ <attr name="Boolean" type="bool" val="1"/>
+ <attr name="IntS8" type="s8" val="-128"/>
+ <attr name="IntU16" type="u16" val="50000"/>
+ <attr name="IntS64" type="s64" val="-10000000000"/>
+ <attr name="Float" type="float" val="3.1415"/>
+ <attr name="Double" type="double" val="2.1928"/>
+ <attr name="String" type="string" val="The quick brown fox jumps over the lazy dog."/>
+ <attr name="Date" type="date" val="20240809"/>
+ <attr name="Time" type="time" val="20240809T150647"/>
+ <attr name="Enum" type="enum" val="one"/>
+ <attr name="Class" type="class" val="Container"/>
+ <attr name="ArrayIntS8" type="s8">
+  <data val="1"/>
+  <data val="-1"/>
+  <data val="127"/>
+ </attr>
+ <attr name="HexIntU8" type="u8" val="0xff"/>
+ <attr name="HexIntU64" type="u64" val="0x123456789abcdef"/>
+</obj>
+<obj class="Container" id="o1-good-container">
+ <attr name="Date" type="date" val="20240829"/>
+ <attr name="Time" type="time" val="20240829T104831"/>
+ <attr name="Enum" type="enum" val="one"/>
+ <attr name="Class" type="class" val="Container"/>
+ <rel name="Root" class="Element" id="o1-good"/>
+ <rel name="Contains">
+  <ref class="Element" id="o1-good"/>
+ </rel>
+</obj>
+</oks-data>
+]]></data-file>
+  </example>
+
+  <!-- ============================================================ -->
+  <example id="4-daq-conf-schema">
+    <caption>
+      Classic DAQ configuration classes (oks_utils tests): software objects,
+      computers, programs, environment variables and the (dynamic) Process
+      class.  Shows the old naming conventions still used in production DBs.
+      [Source: https://gitlab.cern.ch/atlas-tdaq-software/oks_utils - tests/DAQ-Configuration.schema.xml]
+    </caption>
+
+    <schema-file name="DAQ-Configuration.schema.xml (excerpt)" src="https://gitlab.cern.ch/atlas-tdaq-software/oks_utils/-/raw/master/tests/DAQ-Configuration.schema.xml"><![CDATA[
+<oks-schema>
+<class name="Computer" description="Describes an abstract computer.">
+  <attribute name="Name" description="Computer name (e.g. pc-tdaq-onl-01)" type="string" is-not-null="yes"/>
+  <attribute name="OSType" description="Operating system type" type="enum" range="Linux,SunOS,Win32"/>
+  <attribute name="CPUSpeed" description="CPU speed in MHz" type="u16"/>
+</class>
+<class name="Environment" description="The Environment class is used to describe environment variables and their values. These variables are defined and values are assigned before starting the corresponding process.">
+  <attribute name="Name" type="string" is-not-null="yes"/>
+  <attribute name="Value" type="string"/>
+</class>
+<class name="Program" description="This class is used to describe platform dependent part of DAQ software component. It defines default parameters to start a program (command line, environment, priority, etc.).">
+  <attribute name="CommandLine" type="string"/>
+  <attribute name="Priority" type="s32" init-value="0"/>
+</class>
+<class name="Process" description="The Process class is used to describe a dynamic physical part of a software object: logical name of the process, process id, date and time of start, real process priority and privileges.">
+  <attribute name="Id" type="string" is-not-null="yes"/>
+  <attribute name="StartTime" type="time"/>
+  <relationship name="Program" class-type="Program" low-cc="one" high-cc="one"/>
+  <relationship name="RunsOn" class-type="Computer" low-cc="one" high-cc="one"/>
+</class>
+</oks-schema>
+]]></schema-file>
+    <note>Full file (14 KB) in ./repos/DAQ-Configuration.schema.xml.</note>
+  </example>
+
+  <!-- ============================================================ -->
+  <example id="5-oks2coral-archive">
+    <caption>
+      The oks2coral archiving schema: ConfigVersions records which archive
+      (schema/data version) of the OKS database was used for a given run —
+      the offline counterpart of the online "r380689@all_hosts" git tags.
+      [Source: https://gitlab.cern.ch/atlas-tdaq-software/oks2coral - data/oks-archive-info.xml]
+    </caption>
+
+    <schema-file name="oks-archive-info.xml" src="https://gitlab.cern.ch/atlas-tdaq-software/oks2coral/-/raw/master/data/oks-archive-info.xml"><![CDATA[
+<oks-schema>
+ <class name="ConfigVersions" description="The class is used to store archive versions of the OKS database used for given run.">
+  <superclass name="Info"/>
+  <attribute name="Run" type="u32" is-not-null="yes" init-value="0"/>
+  <attribute name="SchemaVersion" type="u32" init-value="0"/>
+  <attribute name="DataVersion" type="u32" init-value="0"/>
+  <attribute name="TotalVersion" type="string"/>
+  <attribute name="Time" type="time" init-value="11-10"/>
+ </class>
+</oks-schema>
+]]></schema-file>
+  </example>
+
+</training-examples>

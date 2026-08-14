@@ -1,0 +1,35 @@
+<html>
+
+<head>
+<meta http-equiv="Content-Language" content="en-us">
+<meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
+<title>New Page 1</title>
+<style>
+<!--
+pre          {  }
+-->
+</style>
+</head>
+
+<body>
+
+<h4>Performance Improvements</h4>
+<p>There is a performance improvement, that can be 
+used by plug-ins (in particular it is used by the rdbconfig implementation). The 
+config library now shares implementation config object for instantiations of all 
+generated DAL parent classes.</p>
+<p>Technically this becomes available due to new <b>
+Configuration::subclasses()</b> method, returning subclasses hierarchy of 
+database classes.</p>
+
+<h5>Example</h5>
+<p>The class <i>C</i> is derived from class <i>B</i>, and the class <i>B</i> is 
+derived from class <i>A</i>. User creates object <i>c</i> of class <i>C</i>, 
+object <i>b</i> of class <i>B</i> and object <i>a</i> of class <i>A</i> using 
+the same database object. All such objects <i>a</i>, <i>b</i> and <i>c</i> share 
+the same config object (that will be read <u>once</u> via network in case of 
+rdbconfig implementation).</p>
+
+</body>
+
+</html>

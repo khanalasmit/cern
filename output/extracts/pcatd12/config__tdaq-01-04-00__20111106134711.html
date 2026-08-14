@@ -1,0 +1,119 @@
+<html>
+
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
+<meta name="GENERATOR" content="Microsoft FrontPage 6.0">
+<meta name="ProgId" content="FrontPage.Editor.Document">
+<title>Statistics on template objects</title>
+</head>
+
+<body>
+<h4>Database Implementation Plug-ins</h4>
+<p>The plug-ins technique makes database applications truly independent from
+available database implementations:</p>
+<ul>
+  <li>there is no anymore implicit link between database application code and
+    implementation's headers and libraries;</li>
+  <li>if new implementation is available, or an existing one is modified, there
+    is no need to re-link or to re-compile user's applications</li>
+</ul>
+<p>The config database implementation (to be used by the application) is defined
+by one and only one parameter, that is <b>TDAQ_DB</b> environment variable. It
+contains name of the implementation and it's initialization parameter separated
+by colon, e.g.:</p>
+<blockquote>
+  <table border="0" cellspacing="0" cellpadding="0">
+    <tr>
+      <td>TDAQ_DB=&quot;<i>oksconfig:daq/partitions/be_test.data.xml</i>&quot;</td>
+      <td>&nbsp;&nbsp;</td>
+      <td><font color="#006600">
+    # use <b>oks</b> and file <b>daq/partitions/be_test.data.xml</b></font></td>
+    </tr>
+    <tr>
+      <td>TDAQ_DB=&quot;<i>rdbconfig:RDB</i>&quot;</td>
+      <td>&nbsp;&nbsp;</td>
+      <td><font color="#006600"> # use <b>rdb</b> and server
+    with name <b>RDB</b></font></td>
+    </tr>
+  </table>
+</blockquote>
+<p>Previous environment variables such as TDAQ_DB_IMPLEMENTATION, TDAQ_DB_DATA,
+TDAQ_DB_NAME are not used by the plug-ins technique.</p>
+<p>The same TDAQ_DB variable format is used for both C++ in Java:</p>
+<ul>
+  <li>in case of C++ the plug-in name is translated into shared library name,
+    that is loaded dynamically and to be found in the LD_LIBRARY_PATH</li>
+  <li>in case of Java the plug-in name is translated into names of Java package
+    and class, that is searched in the CLASSPATH</li>
+</ul>
+<h5>C++ code changes</h5>
+<p>The creation of the configuration object requires to pass one string
+parameter only.</p>
+<p>To get such parameter from environment variable TDAQ_DB leave it empty as
+shown below:</p>
+<blockquote>
+<pre><b>::Configuration</b> db(&quot;&quot;);</pre>
+</blockquote>
+<p>If the parameter can optionally be set via command line or provided by a different
+mean, the code shown below is recommended. Note the way, how error is reported,
+since the user does not know exact parameter used for the configuration object
+construction:</p>
+<blockquote>
+<pre>std::string db_spec;
+if(...) db_spec = ...; <i><font color="#006600">// optionally set parameter, e.g. from command line</font></i>
+<b>::Configuration</b> db(db_spec);
+if(!db.<b>loaded()</b>) {
+  std::cerr &lt;&lt; &quot;<i>ERROR: cannot load database \&quot;</i>&quot; &lt;&lt; db.<b>get_impl_spec()</b> &lt;&lt; '<i>\&quot;</i>' &lt;&lt; std::endl;
+}</pre>
+</blockquote>
+<h5>Java code changes</h5>
+<p>The Java code to build configuration object is very similar to C++. Use
+configuration object constructor with string parameter. If it is empty string,
+then the value of the TDAQ_DB environment variable will be used. An example of
+code is shown below:</p>
+<blockquote>
+<pre>String db_spec;
+if(...) db_spec = ...;
+try {
+  <b>config.Configuration</b> db = new <b>config.Configuration</b>(db_spec);
+}
+catch (<b>config.SystemException</b> ex) {
+  System.err.println( &quot;<i>ERROR: caught \'config.SystemException\':\n</i>&quot; + ex.getMessage());
+}</pre>
+</blockquote>
+<h5>C++ binary linkage</h5>
+<p>Only link your binary with config library, i.e. use -lconfig. Implementation plug-in will be loaded automatically at run-time.
+</p>
+
+<h5>Old Configuration Constructors
+</h5>
+
+<p>The user's code using old approach will be compiled and will work as before.
+It is not necessary to modify it immediately. <b>However this should be done by
+next TDAQ release.</b>
+</p>
+
+<h5>Config dump&nbsp; binary</h5>
+<p>The new binary <b>config_dump</b> can be used to dump contents of any
+database object using new implementation plug-in technology. Examples below show
+how to print out partition objects stored in the oks data file <i>be_test.data.xml</i>
+and defined on the <i>RDB</i> server running in the partition <i>be_test</i>:</p>
+<blockquote>
+  <pre>config_dump -d "oksconfig:daq/partitions/be_test.data.xml" -c Partition
+config_dump -d &quot;rdbconfig:be_test::RDB&quot; -c Partition</pre>
+</blockquote>
+<h4>Java Attribute Converters</h4>
+<p>Java config package supports attribute converters in the way similar to
+existing C++ ones. This allows in particular to substitute variable parameters
+in the strings attributes, that is widely used by the TDAQ configuration
+databases. See dal package release notes for examples.</p>
+
+<h4>Bug Fixes</h4>
+<p>Fix problem with Configuration::cast() method. Now it checks, the target and 
+source objects are physically the same. Before it was possible to cast source 
+object to any target class, if it contained an object with ID of source object.</p>
+<p>&nbsp;</p>
+
+</body>
+
+</html>

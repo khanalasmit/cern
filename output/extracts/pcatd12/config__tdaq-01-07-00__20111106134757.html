@@ -1,0 +1,268 @@
+<html>
+
+<head>
+<meta http-equiv="Content-Language" content="en-us">
+<meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
+<title>API Changes</title>
+</head>
+
+<body>
+
+<p><font color="#660066"><b>Since last public TDAQ release there are important 
+public API changes, which can require modifications of the user's code!</b></font></p>
+<h4>Public API Changes: Migration to ERS</h4>
+<p>The interfaces of configuration packages were implemented long time ago, when 
+used compilers did not supported exceptions. By that reason most of the methods 
+of configuration classes returned <i>boolean</i> status to indicate that a 
+method was successful or had a problem.</p>
+<p>During summer 2006 the DAQ/HLT-I coordination group took a decision the
+<a href="http://atlas-tdaq-monitoring.web.cern.ch/atlas-tdaq-monitoring/ERS/">
+ERS</a> has to be used by all packages of TDAQ release to report problems 
+starting from TDAQ release 01-07-00. Now the status reporting mechanism of 
+methods of config classes has been changed: to report a problem they throw ERS 
+exception and the return type of them is changed to <i>void</i>.</p>
+<p>Each method of config classes and classes of data access libraries generated 
+by genconfig has explicit exception specification. For complete information 
+about particular method see generated Doxygen documentation or appropriate 
+header files. The following config exceptions can be thrown:</p>
+<ul>
+	<li><i>daq::config::Generic</i> is used to report most of the problems (bad 
+	database, wrong parameter, plug-in problems, etc.);</li>
+	<li><i>daq::config::NotFound</i> is thrown when a config object accessed by 
+	ID is not found, or a class accessed by name is not found;</li>
+	<li><i>daq::config::DeletedObject</i> is thrown when accessing template 
+	object that has been deleted (via notification mechanism or by the user's 
+	code modifying database) - exists since previous release.</li>
+</ul>
+<p>All above exceptions have common class <i>daq::config::Exception</i>, which 
+in turn is derived from the <i>ers::Issue</i>. The catch of <i>
+daq::config::Exception</i> is recommending to be used, if exact reason of error 
+is not important for the user's code.</p>
+<p>If the method's exception specification is <i>throw()</i>, then such method 
+does not throw any exception.</p>
+<p>Below there are several examples of changes.</p>
+<h5><u>Example 1. Loading of database</u></h5>
+<p>In the past to check status of the database loading it was necessary to use 
+special method <i>loaded()</i> as shown below: </p>
+<blockquote>
+	<pre>std::string data(&quot;<i>oksconfig:db.data.xml</i>&quot;);
+Configuration db(data);
+<b>if</b>(!db.<b>loaded()</b>) {
+  std::cerr &lt;&lt; &quot;<i>ERROR: cannot load database </i>&quot; &lt;&lt; data &lt;&lt; std::endl;
+  return;
+}
+... <font color="#006600">// <i>code working with database</i></font><font color="#000080">
+</font></pre>
+</blockquote>
+<p>Now the call of the method <i>loaded()</i> is not needed any more. One can 
+catch exception in a common try / catch block as shown below: </p>
+<blockquote>
+	<pre><b>try</b> {
+  Configuration db(&quot;<i>oksconfig:db.data.xml</i>&quot;);
+  ... <font color="#006600">// <i>code working with database</i></font>
+}
+<b>catch</b> (<b>daq::config::Exception</b> &amp; ex) {
+  std::cerr &lt;&lt; &quot;<i>Caught exception </i>&quot; &lt;&lt; ex &lt;&lt; std::endl;
+  return;
+}</pre>
+</blockquote>
+<h5><u>Example 2. Get object by id</u></h5>
+<p>There are two ways to get an object by id: using config layer defined by this 
+package and using generated data access library layer (see genconfig and e.g. 
+dal packages).</p>
+<p>The correct old code to get an object using the config layer was: </p>
+<blockquote>
+	<pre>  <font color="#006600">// <i>return true if object has been printed</i></font>
+bool print_obj(::Configuration&amp; db, const std::string&amp; class_name, const std::string&amp; object_id) {
+  ConfigObject obj;
+    <font color="#006600">// <i>try to get object</i>
+    // <i>in case of an error, the plug-in reports the problem to standard error stream</i></font>
+  <b>if</b>(db.get(class_name, object_id, obj) == false) {
+    std::cerr &lt;&lt; &quot;<i>ERROR: cannot get object </i>&quot; &lt;&lt; object_id &lt;&lt; &quot;<i> of class </i>&quot; &lt;&lt; class_name &lt;&lt; std::endl;
+    return false;
+  }
+  std::cout &lt;&lt; obj;
+  return true;
+} </pre>
+</blockquote>
+<p>Now it has to be replaced by: </p>
+<blockquote>
+	<pre>  <font color="#006600">// <i>return true if object has been printed</i></font>
+bool print_obj(::Configuration&amp; db, const std::string&amp; class_name, const std::string&amp; object_id) throw() {
+  <b>try</b> {
+    ConfigObject obj;
+    db.get(class_name, object_id, obj);
+    std::cout &lt;&lt; obj;
+    return true;
+  }
+  <b>catch</b> (<b>daq::config::NotFound</b>&amp; ex) {
+    std::cerr &lt;&lt; &quot;<i>ERROR: cannot get object </i>&quot; &lt;&lt; object_id &lt;&lt; &quot;<i> of class </i>&quot; &lt;&lt; class_name &lt;&lt; std::endl;
+  }
+  <b>catch</b> (<b>daq::config::Generic</b>&amp; ex) { <font color="#006600">// <i>catch and report plug-in errors</i></font>
+    std::cerr &lt;&lt; &quot;<i>Caught exception </i>&quot; &lt;&lt; ex &lt;&lt; std::endl;
+  }
+  return false;
+}</pre>
+</blockquote>
+<p>In case when generated DAL layer is used to get a template object by ID, the
+<b>daq::config::NotFound</b> exception is not thrown, but it is necessary to 
+catch generic <b>daq::config::Exception</b> as shown below:</p>
+<blockquote>
+	<pre>  <font color="#006600">// <i>return true if object has been printed</i></font>
+bool print_application(::Configuration&amp; db, const std::string&amp; object_id) throw() {
+  <b>try</b> {
+    const daq::core::BaseApplication * a = db.get&lt;daq::core::BaseApplication&gt;(object_id);
+    if(a) { std::cout &lt;&lt; *a &lt;&lt; std::endl; return true; }
+    else  { std::cerr &lt;&lt; &quot;<i>ERROR: there is no application object with id </i>&quot; &lt;&lt; object_id &lt;&lt; std::endl; }
+  }
+  <b>catch</b> (<b>daq::config::Exception</b>&amp; ex) { <font color="#006600">// <i>catch and report plug-in errors, also can use here daq::config::Generic</i></font>
+    std::cerr &lt;&lt; &quot;<i>Caught exception </i>&quot; &lt;&lt; ex &lt;&lt; std::endl;
+  }
+  return false;
+}</pre>
+</blockquote>
+<h5><u>Example 3. Access objects of class by query </u></h5>
+<p>In a similar way to above, the config layer can throw <i>daq:config::NotFound</i> 
+exception, if there is no class with given name, see:</p>
+<blockquote>
+	<pre>const char * class_name = &quot;<i>Segment</i>&quot;;
+<b>try</b> {
+  Configuration db(&quot;<i>rdbconfig:RDB</i>&quot;);
+  std::vector&lt;ConfigObject&gt; objects;
+  db.<b>get</b>(class_name, objects);  <font color="#006600">// <i>get all objects of class &quot;Segment&quot;</i></font>
+  std::cout &lt;&lt; &quot;<i>There are </i>&quot; &lt;&lt; objects.size() &lt;&lt; &quot;<i> objects of </i>&quot; &lt;&lt; class_name &lt;&lt; &quot;<i> class\n</i>&quot;;
+}
+<b>catch</b>(<b>daq::config::NotFound</b>&amp; ex) {
+  std::cerr &lt;&lt; &quot;<i>Wrong database schema, caught </i>&quot; &lt;&lt; ex &lt;&lt; &quot;<i>. Check the right database is used!\n</i>&quot;;
+}
+<b>catch</b>(<b>daq::config::Exception</b>&amp; ex) {
+  std::cerr &lt;&lt; &quot;<i>Caught exception </i>&quot; &lt;&lt; ex &lt;&lt; std::endl;
+}</pre>
+</blockquote>
+<p>For corresponding generated data access library template method <i>get()</i> 
+the <i>daq::config::NotFound</i> exception is not thrown. In case if a database 
+with wrong schema is loaded, the problem is reported by <i>daq::config::Generic</i> 
+exception:</p>
+<blockquote>
+	<pre><b>try</b> {
+  Configuration db(&quot;<i>rdbconfig:RDB</i>&quot;);
+  std::vector&lt;const daq::core::Segment*&gt; objs;
+  db.<b>get</b>(objs);<font color="#006600">  // <i>get all objects of class &quot;Segment&quot;</i></font>
+  std::cout &lt;&lt; &quot;<i>There are </i>&quot; &lt;&lt; objects.size() &lt;&lt; &quot;<i> objects of Segment class\n</i>&quot;;
+}
+<b>catch</b>(<b>daq::config::Exception</b>&amp; ex) {
+  std::cerr &lt;&lt; &quot;<i>Caught exception </i>&quot; &lt;&lt; ex &lt;&lt; std::endl;
+}</pre>
+</blockquote>
+<h5><u>Example 4. Access object's attributes and relationships </u></h5>
+<p>In the past it was necessary to check <i>boolean</i> status of generated DAL 
+set method and <i>get</i>/<i>set</i> status of config layer methods dealing with 
+attributes and relationships. Now all such methods are <i>void</i> and throw 
+generic <i>daq::config::Exception</i> in case of problems, e.g.: </p>
+<blockquote>
+	<pre>::ConfigObject obj = ...;
+std::string name;
+<b>if</b>(obj.<b>get</b>(&quot;Name&quot;, name) == false) { std::cerr &lt;&lt; &quot;<i>ERROR: cannot read Name attribute</i>&quot; &lt;&lt; std::endl; }
+ConfigObject item;
+<b>if</b>(obj.<b>get</b>(&quot;Item&quot;, item) == false) { std::cerr &lt;&lt; &quot;<i>ERROR: cannot read Item relationship</i>&quot; &lt;&lt; std::endl; }
+daq::core::Application * a = ...;
+name = a-&gt;get_Name();
+const daq::core::Item * i = a-&gt;get_Item();
+</pre>
+</blockquote>
+<p>Now such code needs to be changed to the following:</p>
+<blockquote>
+	<pre><b>try</b> {
+  ::ConfigObject obj = ...;
+  std::string name; obj.<b>get</b>(&quot;Name&quot;, name);
+  ConfigObject item; obj.<b>get</b>(&quot;Item&quot;, item);
+  daq::core::Application * a = ...;
+  name = a-&gt;get_Name();
+  const daq::core::Item * i = a-&gt;get_Item();
+}
+<b>catch</b> (daq::config::Exception&amp; ex) {
+  std::cerr &lt;&lt; &quot;Caught exception &quot; &lt;&lt; ex &lt;&lt; std::endl;
+}</pre>
+</blockquote>
+<h4>Modify Update-on-notification</h4>
+<p>When receive a notification, update objects of derived classes stored in the 
+clients configuration cache (this problem has been found in the Run Control). 
+Note, the update of direct and base classes in case of notification was 
+implemented before.</p>
+<p>Below there are several examples explaining different mechanisms of objects 
+updates in client's cache depending on subscription:</p>
+<ol>
+	<li>class <i>B</i> is derived from class <i>A</i>, class <i>C</i> is derived 
+	from class <i>B</i>;</li>
+	<li>there are objects <i>a</i>, <i>b</i>, and <i>c</i> created from 
+	corresponding classes <i>A</i>, <i>B</i> and <i>C</i>;</li>
+	<li>all objects <i>a</i>, <i>b</i> and <i>c</i> are read into client's 
+	configuration cache, i.e.<ul>
+		<li>class <i>A</i> has objects <i>a</i>, <i>b </i>(class <i>B</i> is a 
+		subclass of class <i>A</i>), <i>c </i>(class <i>C</i> is a subclass of 
+		class <i>A</i>);</li>
+		<li>class <i>B</i> has objects <i>b</i>, <i>c </i>(class <i>C</i> is a 
+		subclass of class <i>B</i>);</li>
+		<li>class <i>C</i> has object <i>c</i>;</li>
+	</ul>
+	</li>
+	<li>all objects <i>a</i>, <i>b</i> and <i>c</i> been updated;</li>
+	<li>client subscribes on <u>one</u> notification of all objects of class <i>
+	A</i>, <i>B</i> or <i>C</i> (e.g. subscribe on all changes of objects in 
+	class <i>B</i>).</li>
+</ol>
+<h5>Example of direct classes update (implemented in previous release)</h5>
+<ul>
+	<li>clients subscribes on changes in class <i>A</i>: objects <i>a</i>, <i>b</i>,
+	<i>c</i> modification results their update in the client's cache (i.e. <i>a</i>,
+	<i>b</i>, <i>c</i> objects for class <i>A</i>);</li>
+	<li>clients subscribes on changes in class <i>B</i>: objects <i>b</i>, <i>c</i> 
+	modification results their update in the client's cache (i.e. <i>b</i>, <i>c</i> 
+	objects for class <i>B</i>);</li>
+	<li>clients subscribes on changes in class <i>C</i>: object <i>c</i> 
+	modification results it's update in the client's cache (i.e. <i>c</i> object 
+	for class <i>C</i>).</li>
+</ul>
+<h5>Example of base classes update (implemented in previous release)</h5>
+<ul>
+	<li>clients subscribes on changes in class <i>B</i>: objects <i>b</i>, <i>c</i> 
+	modification results their updates in the client's cache of the base class 
+	(i.e. <i>b</i>, <i>c</i> objects for class <i>A</i>);</li>
+	<li>clients subscribes on changes in class <i>C</i>: object <i>c</i> 
+	modification results it's update in the client's cache (i.e. <i>c</i> object 
+	for class <i>A</i>; <i>c</i> object for class <i>B</i>).</li>
+</ul>
+<h5>Example of derived classes update (new, was missing in previous releases)</h5>
+<ul>
+	<li>clients subscribes on changes in class <i>A</i>: objects <i>b, c</i> 
+	modification results their updates in the client's cache (i.e. <i>b</i>, <i>
+	c</i> objects for class <i>B</i>; <i>c</i> object for class C);</li>
+	<li>clients subscribes on changes in class <i>B</i>: object <i>c</i> 
+	modification results it's update in the client's cache (i.e. <i>c</i> object 
+	for class <i>C</i>).</li>
+</ul>
+<p>Thus, subscription on:</p>
+<ul>
+	<li>class <i>A</i> guaranties correct updates of <i>a</i>, <i>b</i>, <i>c</i> 
+	objects in client's cache (<i>a</i>, <i>b</i>, <i>c</i> in class <i>A</i>;
+	<i>b</i>, <i>c</i> in class <i>B</i>; <i>c</i> in class <i>C</i>);</li>
+	<li>class <i>B</i> guaranties correct updates of <i>b</i>, <i>c</i> objects 
+	in client's cache (<i>b</i>, <i>c</i> in class <i>A</i>; <i>b</i>, <i>c</i> 
+	in class <i>B</i>; <i>c</i> in class <i>C</i>);</li>
+	<li>class <i>C</i> guaranties correct updates of <i>c</i> objects in 
+	client's cache (<i>c</i> in class <i>A</i>; <i>c</i> in class <i>B</i>; <i>c</i> 
+	in class <i>C</i>).</li>
+</ul>
+<h4>Add Configuration unread_objects() Method</h4>
+<p>Add method <i>Configuration::unread_objects()</i> to unread unread objects of 
+template classes in the client's configuration cache. This is required after 
+reading parameters for substitution, since cache contains objects with 
+non-substituted attributes.</p>
+<h4>Changes in the tdaq-01-06-02 Release</h4>
+<p>Also note
+<a href="http://pcatdwww.cern.ch/cmt/releases/download/tdaq-01-06-02/RELEASE_NOTES.html#config">
+config changes</a> in the LST release.</p>
+
+</body>
+
+</html>

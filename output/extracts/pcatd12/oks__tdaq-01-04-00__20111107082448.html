@@ -1,0 +1,42 @@
+d>
+<meta http-equiv="Content-Language" content="en-us">
+<meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
+<meta name="GENERATOR" content="Microsoft FrontPage 6.0">
+<meta name="ProgId" content="FrontPage.Editor.Document">
+<title>New Page 1</title>
+</head>
+
+<body>
+
+<p>There are several changes in the relational OKS backend:</p>
+<ul>
+  <li>use bulk insert for values of oks attributes and relationships</li>
+  <li>replace OksDataInt, OksDataNum, OksDataString and OksDataDate tables by
+    single OksDataVal table with appropriate columns to store integer, number,
+    string and date values</li>
+  <li>environment variable OKS_RAL_ORDER_QUERY_RESULTS can be used as switch
+    on/off &quot;order by&quot; statement of queries reading values of
+    attributes and relationships for performance studies</li>
+  <li>to improve performance do not read description of class methods and their
+    implementations, when get oks data only</li>
+</ul>
+
+<p>Change interpretation of <b>s8</b> and <b>u8</b> oks data types from symbol 
+type to 8 bits integer type:</p>
+<ul>
+	<li>u8 and s8 oks data types are interpreted as integers by any output 
+	method; before printing out non-alphanumeric symbols as char resulted wrong 
+	output</li>
+	<li>oks_data_editor allows to edit u8 and s8 types as octal, decimal and 
+	hexadecimal numbers</li>
+	<li>oks_schema_editor allows to set format for s8 and u8 types</li>
+</ul>
+<p>The OksData stream output operator uses '<i>format</i>' field to prints out 
+s8, u8, s16, u16, s32 and u32 types. It is used by the oks_dump program.</p>
+<p>Fix bug appeared with few window managers, when under certain conditions oks 
+gui applications do not react on mouse button clicks.<br>
+&nbsp;</p>
+
+</body>
+
+</html>

@@ -1,0 +1,57 @@
+<html>
+
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
+<meta name="GENERATOR" content="Microsoft FrontPage 4.0">
+<meta name="ProgId" content="FrontPage.Editor.Document">
+<title>Statistics on template objects</title>
+</head>
+
+<body>
+<h4><a name="config-stats">Statistics on template objects</a></h4>
+<p>The mechanism to get statistics information on generated DAL's objects
+created by user process has been implemented. When the ::Configuration object is
+destroyed, it prints out information about read object's references, full
+objects and numbers of client cache hits. This only works, if the user defines
+environment variable TDAQ_DUMP_CONFIG_PROFILER_INFO.</p>
+<h5>Example</h5>
+<p>Below there is example, which demonstrates how to use and to interpreter the
+profiling:</p>
+<blockquote>
+<pre>bash$ export TDAQ_DUMP_CONFIG_PROFILER_INFO=1
+bash$ dal_dump_apps --oks -d daq/partitions/lxplus_tests.data.xml -p onlsw_test_3x3_lxlpus -a 'lxplus-3x3-33 ctrl
+...
+<font color="#000080">Configuration profiler report:
+number of created template objects: 152
+number of read template objects: 22
+number of cache hits: 160</font></pre>
+</blockquote>
+<p>The <i>number of created template objects</i> shows how many references on
+the database objects were created inside user process. Note, creation of
+references does not mean the database object was read and this is relatively inexpensive
+operation from performance point of view. By default the values of an object's
+attributes and relationships are read, when they are accessed explicitly by
+user's code.</p>
+<p>The <i>number of read template objects </i>indicates how many objects were
+actually read because user's code accessed value of an attribute or a
+relationship. It is desirable to reduce such number as much is possible to gain
+a performance.</p>
+<p>The <i>number of cache hits </i>shows client cache effectiveness. This means
+a requested object has been taken from user's application cache instead of
+database.</p>
+<h4>Database loading</h4>
+<p>Add new environment variable TDAQ_DB_NAME, which has higher priority than
+TDAQ_DB_DATA to define name of the database to be loaded. It is a temporal
+solution to allow multiple RDB servers used inside single partition. If RDB
+implementation is used, <b>it is necessary to define TDAQ_DB_NAME environment
+variable at the partition level and to set it's value to the &quot;RDB&quot;</b>
+since it is required by the TDAQ setup (e.g. see partition <i>be_test</i> from <i>daq/partitions/be_test.data.xml</i>
+as example).</p>
+<p>If parameter of the <i>Configuration::load() </i>method is empty, then it
+uses one of above environment variables to load database. It is requested by the
+Control WG to allow DSA supervisor to re-load a database without knowing it's
+exact name.</p>
+
+</body>
+
+</html>

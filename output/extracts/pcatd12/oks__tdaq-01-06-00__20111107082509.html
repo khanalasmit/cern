@@ -1,0 +1,368 @@
+<html>
+
+<head>
+<meta http-equiv="Content-Language" content="en-us">
+<meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
+<title>New Page 1</title>
+</head>
+
+<body>
+
+<p><span lang="en-gb">There are no any changes in OKS, that require a user to 
+modify or to convert a consistent database file. However the OKS becomes more 
+strict for saving and loading of inconsistent schema and data files (no required 
+includes, dangling object references, wrong or missing attribute and 
+relationship values). A user can be asked to modify data as it is required by 
+schema before it will be possible to save them using OKS tools. The other 
+changes in OKS are connected with extension of features using relational backend 
+(new relational tables and utilities).</span></p>
+<h4><u><span lang="en-gb">OKS library</span></u></h4>
+<h5><span lang="en-gb">Files Consistency</span></h5>
+<ul>
+	<li><span lang="en-gb">to improve diagnostic report included files, where '<i>no files 
+	inclusion path between referenced objects</i>' problem takes place</span></li>
+	<li><span lang="en-gb">allow duplicated objects for archiving purposes (use 
+	OKS_KERNEL_ALLOW_DUPLICATED_OBJECTS variable)</span></li>
+	<li><span lang="en-gb">report object id and attribute name when read data with wrong range</span></li>
+	<li><span lang="en-gb">check inclusion of required schema files before saving</span></li>
+	<li><span lang="en-gb">allow empty objects (i.e. without attribute and relationship values)</span></li>
+</ul>
+<h5><span lang="en-gb">Schema Consistency</span></h5>
+<ul>
+	<li><span lang="en-gb">report warning when attributes and relationships change between 
+	single-value/multi-value in case of redefinition in derived class or there 
+	are such conflicts in super-classes</span></li>
+	<li><span lang="en-gb">change exclusiveness scope of composite relations from object to 
+	relationship<br>
+	e.g. a module can be exclusively inserted to crate and to detector, but it 
+	cannot be inserted to several crates</span></li>
+</ul>
+<h5><span lang="en-gb">XML Parser</span></h5>
+<ul>
+	<li><span lang="en-gb">report correct line number and position for certain types of problems in 
+	oks xml</span></li>
+	<li><span lang="en-gb">fix minor memory leak in OKS xml parser</span></li>
+	<li><span lang="en-gb">fix several bugs with xml comments and end of comment</span></li>
+	<li><span lang="en-gb">skip any attributes defined in the oks-schema or oks-data tag (they can 
+	come from automatic xml generation tools)</span></li>
+	<li><span lang="en-gb">allow xml style-sheets and xmlns tags</span></li>
+	<li><span lang="en-gb">allow different encodings of xml</span></li>
+</ul>
+<h5><span lang="en-gb">Relational Methods using RAL</span></h5>
+<ul>
+	<li><span lang="en-gb">move from POOL RAL to CORAL and follow changes in CORAL API up to latest 
+	used version (CORAL 1.3.0)</span></li>
+	<li><span lang="en-gb">add table to keep used configurations</span></li>
+	<li><span lang="en-gb">normalize schema as it was recommended by CERN Oracle DBA</span></li>
+	<li><span lang="en-gb">store oks date and time as string</span></li>
+	<li><span lang="en-gb">increase length of class name (now it is limited by 64 bytes)</span></li>
+	<li><span lang="en-gb">use xml authentication (see file authentication.xml pointed by the 
+	CORAL_AUTH_PATH variable)</span></li>
+</ul>
+<h5><span lang="en-gb">General Methods</span></h5>
+<ul>
+	<li><span lang="en-gb">add method to get referenced objects</span></li>
+	<li><span lang="en-gb">path query: check goal at non-leave object in the path to allow paths 
+	with optional branches</span></li>
+	<li><span lang="en-gb">fix bug when TDAQ_DB_PATH is not defined</span></li>
+	<li><span lang="en-gb">do not print warning in silent mode (before few ones left by mistake)</span></li>
+</ul>
+<h4><u><span lang="en-gb">General OKS Utilities</span></u></h4>
+<h5><span lang="en-gb">New oks-generate-schema-docs.sh</span></h5>
+<p>The utility generates description of the schema files using xsl conversion of 
+standard oks schema xml files. Such conversion is performed by user's Internet 
+browser on fly. This should work with MS Internet Explorer 6.0, Mozilla 1.7.12 
+and their higher versions.</p>
+<blockquote>
+	<pre><font color="#000066">Usage: oks-generate-schema-docs.sh [--help] [--verbose] [--search-dir in-dir] [--search-pattern schema-file-pattern] --target-dir out-dir
+Arguments/Options:
+  -v | --verbose verbose output
+  -h | --help print this message
+  -d | --search-dir in-dir directory to search schema files; current value = [/afs/cern.ch/atlas/project/tdaq/cmt/nightly/installed/share/data]
+  -p | --search-pattern p pattern for schema file names; current value = [*.xml]
+  -t | --target-dir out-dir directory where to put out files
+  -n | --page-name name provide name for generated index.html file; current value = [TDAQ Release Schema Files]</font></pre>
+</blockquote>
+<p>The example of generated schema description for DAQ/HLT-I nightly release is 
+available on: <font size="2">
+<a href="http://pcatd12.cern.ch/releases/nightly/installed/share/doc/DAQRelease/html/">
+http://pcatd12.cern.ch/releases/nightly/installed/share/doc/DAQRelease/html</a></font></p>
+<p>The utility can be used by users of the DAQ/HLT-I release to generate 
+descriptions of own schema files using --search-dir to point to area with own 
+schema files.</p>
+<h5><span lang="en-gb">New oks-test-duplicated-objects.sh</span></h5>
+<p>The utility tests duplicated objects (i.e. objects with equal class names and 
+IDs) stored in oks data files referenced by the TDAQ_DB_PATH variable.</p>
+<p>The utility has been created to find files, which are <i>bad</i> from 
+archiving point of view. In ideal case it should find no duplications.</p>
+<p>To filter out files which need to be ignored either put file name pattern(s) 
+into <i>-s</i> command line option, or install into in any subdirectory of ${TDAQ_INST_PATH} 
+file(s) with name <i>remove-from-oks-archive.txt</i> containing such patterns 
+(one pattern per line), e.g. run &quot;<font color="#000066">oks-test-duplicated-objects.sh 
+-v -s '.*share/data/ExampleConfiguration.*' '.*share/data/training.*'</font>&quot; to 
+skip all files installed by the <i>ExampleConfiguration</i> and <i>training</i> 
+packages.</p>
+<h5><span lang="en-gb">oks_merge</span></h5>
+<ul>
+	<li><span lang="en-gb">merge data files (use <i>-o</i> option) and schema files (use 
+	<i>-s</i> option)</span></li>
+</ul>
+<h5><span lang="en-gb">oks_diff_data</span></h5>
+<ul>
+	<li><span lang="en-gb">add options to compare objects of one class or single object</span></li>
+</ul>
+<h5><span lang="en-gb">oks_diff_schema</span></h5>
+<ul>
+	<li><span lang="en-gb">allow data files as input (i.e. compare schemes used by data files)</span></li>
+	<li><span lang="en-gb">change values returned by binary to be able to report number of found 
+	differences:</span><table border="0" id="table2" cellspacing="0">
+		<tr>
+			<td align="right"><span lang="en-gb"><font color="#000066">0</font></span></td>
+			<td><font color="#000066">&nbsp;-&nbsp;</font></td>
+			<td><span lang="en-gb"><font color="#000066">there are no 
+			differences between two schema files</font></span></td>
+		</tr>
+		<tr>
+			<td align="right"><span lang="en-gb"><font color="#000066">253 </font></span></td>
+			<td><font color="#000066">&nbsp;-&nbsp;</font></td>
+			<td><span lang="en-gb"><font color="#000066">bad command line</font></span></td>
+		</tr>
+		<tr>
+			<td align="right"><span lang="en-gb"><font color="#000066">254 </font></span></td>
+			<td><font color="#000066">&nbsp;-&nbsp;</font></td>
+			<td><span lang="en-gb"><font color="#000066">cannot load database file(s)</font></span></td>
+		</tr>
+		<tr>
+			<td align="right"><span lang="en-gb"><font color="#000066">255 </font></span></td>
+			<td><font color="#000066">&nbsp;-&nbsp;</font></td>
+			<td><span lang="en-gb"><font color="#000066">loaded file has no any class</font></span></td>
+		</tr>
+		<tr>
+			<td align="right"><span lang="en-gb"><font color="#000066">1..252</font></span></td>
+			<td><font color="#000066">&nbsp;-&nbsp;</font></td>
+			<td><span lang="en-gb"><font color="#000066">number of differences (is limited by the max possible value)</font></span></td>
+		</tr>
+	</table>
+	</li>
+</ul>
+<h5><span lang="en-gb">oks_dump</span></h5>
+<ul>
+	<li><span lang="en-gb">return different status in case of different problems:</span><table border="0" id="table3" cellspacing="0">
+		<tr>
+			<td align="right"><font color="#000066">0</font></td>
+			<td><font color="#000066">&nbsp;-&nbsp;</font></td>
+			<td><span lang="en-gb">
+	<font color="#000066">no problems found</font></span></td>
+		</tr>
+		<tr>
+			<td align="right"><font color="#000066">1</font></td>
+			<td><font color="#000066">&nbsp;-&nbsp;</font></td>
+			<td><span lang="en-gb">
+	<font color="#000066">bad command line parameter</font></span></td>
+		</tr>
+		<tr>
+			<td align="right"><font color="#000066">2</font></td>
+			<td><font color="#000066">&nbsp;-&nbsp;</font></td>
+			<td><span lang="en-gb">
+	<font color="#000066">bad oks file(s)</font></span></td>
+		</tr>
+		<tr>
+			<td align="right"><font color="#000066">3</font></td>
+			<td><font color="#000066">&nbsp;-&nbsp;</font></td>
+			<td><span lang="en-gb">
+	<font color="#000066">bad query passed via -q or -p options</font></span></td>
+		</tr>
+		<tr>
+			<td align="right"><font color="#000066">4</font></td>
+			<td><font color="#000066">&nbsp;-&nbsp;</font></td>
+			<td><span lang="en-gb">
+	<font color="#000066">cannot find class passed via -c option</font></span></td>
+		</tr>
+		<tr>
+			<td align="right"><font color="#000066">5</font></td>
+			<td><font color="#000066">&nbsp;-&nbsp;</font></td>
+			<td><span lang="en-gb">
+	<font color="#000066">loaded objects have dangling references</font></span></td>
+		</tr>
+	</table>
+	</li>
+	<li><span lang="en-gb">new option <i>-i</i> adds possibility to read files to be 
+	printed from input-file instead of command line to help with very long list 
+	of files (that may exceed maximum command line length)</span></li>
+	<li><span lang="en-gb">distinguish lists of schema and data files lists on 
+	user choice:</span>
+	<ul>
+		<li><span lang="en-gb">use option <i>-f</i> to print list of all oks xml files (is used as before)</span></li>
+		<li><span lang="en-gb">use new option <i>-s</i> to print list oks schema files</span></li>
+		<li><span lang="en-gb">use new option <i>-d</i> to print list oks data files</span></li>
+	</ul></li>
+	<li><span lang="en-gb">add option <i>-r</i> to print out list of objects referenced 
+	by found objects (can only be used with query)</span></li>
+</ul>
+<h4><u><span lang="en-gb">Utilities for OKS Archiving</span></u></h4>
+<p>All utilities described below require two parameters:</p>
+<ul>
+	<li>the database connection string</li>
+	<li>the name of the relational database working schema</li>
+</ul>
+<p>The values of above parameters are site specific. For development purposes at 
+CERN they are:</p>
+<blockquote>
+<table border="1" id="table4" bordercolorlight="#C0C0C0" bordercolordark="#000066">
+	<tr>
+		<td>the connection string:</td>
+		<td>oracle://devdb10/tdaq_dev_backup</td>
+	</tr>
+	<tr>
+		<td>the working schema:</td>
+		<td>onlcool</td>
+	</tr>
+</table>
+</blockquote>
+<p>For other sites or different purposes different database servers and/or accounts 
+should be used. To create new database (for new owner or different DB server) 
+use <i>oks/src/rlib/create_db.sql</i> file, e.g. in case of Oracle:</p>
+<blockquote>
+	<pre>bash$ sqlplus ${user}/${password}@${host} @$TDAQ_INST_PATH/../oks/src/rlib/create_db.sql</pre>
+</blockquote>
+<p>where <i>${user}</i>, <i>${password}</i> and <i>${host}</i> have 
+site-specific values.</p>
+<h5><span lang="en-gb">New oks-create-new-base-version.sh</span></h5>
+<p>The utility has to be used to create a new base version in the archive. It is 
+necessary when the there are changes in the configuration schemes or there are 
+significant changes in the configuration data. In particular a request to use 
+this utility can be send by the oks2coral binary.</p>
+<p>By default, the utility checks differences between <i>head</i> schema version 
+from archive and schemes found under TDAQ_DB_PATH. If there are changes, the 
+utility creates new <i>head</i> schema in the archive. Then the utility reads 
+all data files pointed by the TDAQ_DB_PATH variable and stores them into 
+archive. The command line parameters used by the utility are shown below:</p>
+<blockquote>
+	<pre><font color="#000066">Usage: oks-create-new-base-version.sh -c connect_string -w schema_name [--help] [--verbose level] [--skip-files reg-exp*]
+Arguments/Options:
+  -c | --connect-string connect_str    database connection string
+  -w | --working-schema schema_name    name of relational database working schema
+  -v | --verbose level                 switch on verbose output
+  -h | --help                          print this message
+  -s | --skip-files r1 ...             list of regular expressions to ignore files</font></pre>
+</blockquote>
+<h5>New oks_tag_data</h5>
+<p>The utility is created to set a unique string tag on any existing data in OKS 
+archive. A data can be accessed by such human meaningful tag instead of schema 
+and data version numbers.</p>
+<blockquote>
+	<pre><font color="#000066">usage: oks_tag_data -c | --connect-string connect_string
+                    -w | --working-schema schema_name
+                    -t | --tag data_tag
+                    [-e | --head-data-version]
+                    [-s | --schema-version schema_version]
+                    [-n | --data-version data_version]
+                    [-v | --verbose-level verbosity_level]
+                    [-h | --help]
+Options/Arguments:
+  -c connect_string   database connection string
+  -w schema_name      name of working schema
+  -t data_tag         unique tag
+  -e                  tag head data version (for head schema or defined by -s)
+  -s schema_version   use data for given schema version (extra -n or -e is required)
+  -n data_version     use given data version (extra -s is required)
+  -v verbosity_level  set verbose output level (0 - silent, 1 - normal, 2 - extended, 3 - debug, ...)
+  -h                  print this message</font></pre>
+</blockquote>
+<h5>New oks_ls_data</h5>
+<p>The utility is created to print out information about data in OKS archive.</p>
+<blockquote>
+	<pre><font color="#000066">usage: oks_ls_data
+  -c | --connect-string connect_string
+  -w | --working-schema schema_name
+  [-s | --schema-version schema_version]
+  [-b | --base-data-only]
+  [-z | --show-size]
+  [-u | --show-usage]
+  [-v | --verbose-level verbosity_level]
+  [-h | --help]
+
+Options/Arguments:
+  -c connect_string database connection string
+  -w schema_name name of working schema
+  -s schema_version print out data of this particular version (0 = HEAD version)
+  -b print out base data versions only
+  -z print size of version (i.e. number of relational rows to store it)
+  -u show who, when, where and how used given version
+  -v verbosity_level set verbose output level (0 - silent, 1 - normal, 2 - extended, 3 - debug, ...)
+  -h print this message</font></pre>
+</blockquote>
+<p>The version is shown as sv.dv[.bv], where:</p>
+<ul>
+	<li><b>sv</b> - schema version;</li>
+	<li><b>dv</b> - data version;</li>
+	<li><b>bv</b> - base version (optional, only appears for incremental data 
+	versions).</li>
+</ul>
+<blockquote>
+	<p>For example:</p>
+	<ul>
+		<li>1.12 - base version with schema-version = 1 and data-version = 12</li>
+		<li>1.34.12 - incremental version with data-version = 34 built on top of 
+	base version 1.12</li>
+	</ul>
+</blockquote>
+<p>The size is reported when -z option is used explicitly. To get the size it is 
+necessary to execute additional queries and this may take some time for big 
+number of versions. The size of a base version is defined as number of rows in 
+relational tables (<i>OksObject</i>, <i>OksDataVal</i> and <i>OksDataRel</i>) to 
+describe it's data. For an incremental version the size shows numbers of 
+additional rows to show differences from it's base version, i.e. such rows can 
+be used to mark an object as created, removed or updated, and to provide new 
+values for attributes and relationships of objects. The size is presented in 
+form obj-num:attr-num:rel-num, where:</p>
+<ul>
+	<li><b>obj-num</b> - number of objects rows;</li>
+	<li><b>attr-num</b> - number of attribute value rows;</li>
+	<li><b>rel-num</b> - number of relationship rows.</li>
+</ul>
+<blockquote>
+	<p>For example:</p>
+	<ul>
+		<li>951:8271:1498 - the base version contains 951 objects; the objects have 
+	8271 attribute values and 1498 relationships</li>
+		<li>1:1:0 - the incremental version has one object updated comparing with 
+	base version (an attribute of the object was modified)</li>
+	</ul>
+</blockquote>
+<p>The usage of archived versions is reported when -u option is used explicitly. 
+It requires some additional queries and may take some time for big number of 
+versions. The usage of archived data is shown in table below the information 
+about version. The values in <i>Version</i> and <i>Size</i> columns remain 
+empty. The <i>Description</i> column contains information about partition and 
+run number.</p>
+<h5>oks_put_schema,&nbsp; oks_put_data,&nbsp; oks_get_schema and oks_get_data</h5>
+<ul>
+	<li>use xml authentication instead of explicit user name and password passed 
+	via command line</li>
+	<li>try to re-use the same options between binaries</li>
+	<li>to know exact options per binary run it with <i>--help</i> option</li>
+</ul>
+<h4><u>GUI Editors</u></h4>
+<h5>Schema Editor</h5>
+<ul>
+	<li>meaningless &quot;Many&quot; cardinality is not supported for relationships</li>
+	<li>check classes and files consistency during save operation</li>
+</ul>
+<h5>Data Editor</h5>
+<ul>
+	<li>fix bug, when create new object providing ID of already existing object</li>
+	<li>do not exit, if there is an error with file saving (i.e. allow user to 
+	change file name or it's permissions)</li>
+	<li>check objects and files consistency during save operation</li>
+	<li>refresh correctly list of all files when reload a file that changed 
+	includes</li>
+	<li>warn user about bad files during loading them (e.g. with missing 
+	includes); a user should to fix reported problem before any other 
+	modifications!<br>
+&nbsp;</li>
+</ul>
+
+</body>
+
+</html>

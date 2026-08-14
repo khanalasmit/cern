@@ -1,0 +1,399 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+ xmlns:v="urn:schemas-microsoft-com:vml"
+ xmlns:o="urn:schemas-microsoft-com:office:office">
+<head>
+  <meta http-equiv="Content-Language" content="en-us">
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <title>Untitled 1</title>
+</head>
+<body>
+<h4>GUI Changes</h4>
+<h5>OKS Data Editor Force Save</h5>
+The users have possibility to save partly-inconsistent data using
+"Force Save" command. This is required to save partial work avoiding
+it's possible lost because of exterior problems. For more info see
+Savannah request: <a class="moz-txt-link-freetext"
+ href="https://savannah.cern.ch/bugs/index.php?28879">https://savannah.cern.ch/bugs/index.php?28879</a>
+<h5>OKS Editors Recovery Mode</h5>
+The users have possibility to periodically save changes made with OKS
+Schema and Data editors. Such changes automatically go to ${FILE}.saved
+for any unsaved modifications. If user skips changes on exit or an
+editor stops the work unexpectedly, those ".saved" files remain and can
+be used for manual recovery. This option can be switched On/Off using
+an editor Options menu. From the same menu it is possible to set the
+period of such saving varying from 5" up to 1 hour. For more info see
+Savannah request: <a class="moz-txt-link-freetext"
+ href="https://savannah.cern.ch/bugs/index.php?28879">https://savannah.cern.ch/bugs/index.php?28879</a><br>
+<h5>Comments</h5>
+The users have possibility to add comments to files. The comments can
+be
+browsed and edited from File dialog of the OKS Schema and Data editors.
+When file is saved, the editors can to ask user to provide comments, if
+"Ask comment on file save" option is activated in the "Options" menu
+(default option if user never saved GUI options). To add a comment user
+has to provide non-empty text. If no comment should be added on file
+save, press "Cancel" button in the Comment dialog.<br>
+<h4>XML Format Changes</h4>
+The value of the "num-of-items" attribute of the oks schema info record
+is ignored. This was a reason of several wrong schema files after
+modifications made by users with text editors, when they forgot to set
+the correct value of this attribute.<br>
+<h4>API Changes</h4>
+Note: the changes are completely transparent to users of config and DAL
+layers. <span style="color: rgb(102, 0, 0);">Update your code only if
+you are using OKS directly!</span><br>
+<h5>OksObject Class Changes</h5>
+For consistent error reporting and simplification of code the following
+methods have been changed.<br>
+<br>
+<table style="text-align: left; width: 100%;" border="0" cellpadding="2"
+ cellspacing="2">
+  <tbody>
+    <tr>
+      <th
+ style="background-color: rgb(204, 204, 255); text-align: center;">Old Method Spec<br>
+      </th>
+      <th
+ style="background-color: rgb(204, 204, 255); text-align: center;">New Method Spec</th>
+    </tr>
+    <tr>
+      <td style="background-color: rgb(238, 238, 238);"><span
+ style="font-style: italic;">OksReturnStatus</span>
+GetAttributeValue(const std::string&amp;, OksData **) const</td>
+      <td style="background-color: rgb(238, 238, 238);">OksData *
+GetAttributeValue(const std::string&amp;) const <span
+ style="font-style: italic;">throw (oks::exception)</span></td>
+    </tr>
+    <tr>
+      <td><span style="font-style: italic;">void</span>
+GetAttributeValue(const OksDataInfo *, OksData **) const</td>
+      <td>OksData * GetAttributeValue(const OksDataInfo *) const <span
+ style="font-style: italic;">throw ()</span></td>
+    </tr>
+    <tr>
+      <td style="background-color: rgb(238, 238, 238);"><span
+ style="font-style: italic;">OksReturnStatus</span>
+GetRelationshipValue(const std::string&amp;, OksData **) const</td>
+      <td style="background-color: rgb(238, 238, 238);">OksData *
+GetRelationshipValue(const std::string&amp;) const <span
+ style="font-style: italic;">throw (oks::exception)</span></td>
+    </tr>
+    <tr>
+      <td><span style="font-style: italic;">void</span>
+GetRelationshipValue(const OksDataInfo *, OksData **)</td>
+      <td>OksData * GetRelationshipValue(const OksDataInfo *) const <span
+ style="font-style: italic;">throw ()</span></td>
+    </tr>
+    <tr>
+      <td style="background-color: rgb(238, 238, 238);"><span
+ style="font-style: italic;">OksReturnStatus</span>
+SetAttributeValue(const std::string&amp;, OksData *)</td>
+      <td style="background-color: rgb(238, 238, 238);">void
+SetAttributeValue(const std::string&amp;, OksData *) <span
+ style="font-style: italic;">throw (oks::exception)</span></td>
+    </tr>
+    <tr>
+      <td><span style="font-style: italic;">OksReturnStatus</span>
+SetAttributeValue(const OksDataInfo *, OksData *)</td>
+      <td>void SetAttributeValue(const OksDataInfo *, OksData *) <span
+ style="font-style: italic;">throw (oks::exception)</span></td>
+    </tr>
+    <tr>
+      <td style="background-color: rgb(238, 238, 238);"><span
+ style="font-style: italic;">OksReturnStatus</span>
+SetRelationshipValue(const std::string&amp;, OksData *)</td>
+      <td style="background-color: rgb(238, 238, 238);">void
+SetRelationshipValue(const std::string&amp;, OksData *) <span
+ style="font-style: italic;">throw (oks::exception)</span></td>
+    </tr>
+    <tr>
+      <td><span style="font-style: italic;">OksReturnStatus</span>
+SetRelationshipValue(const OksDataInfo *, OksData *)</td>
+      <td>void SetRelationshipValue(const OksDataInfo *, OksData *) <span
+ style="font-style: italic;">throw(oks::exception)</span></td>
+    </tr>
+    <tr>
+      <td style="background-color: rgb(238, 238, 238);"><span
+ style="font-style: italic;">OksReturnStatus</span>
+SetRelationshipValue(const std::string&amp;, OksObject *)</td>
+      <td style="background-color: rgb(238, 238, 238);">void
+SetRelationshipValue(const std::string&amp;, OksObject *) <span
+ style="font-style: italic;">throw (oks::exception)</span></td>
+    </tr>
+    <tr>
+      <td><span style="font-style: italic;">OksReturnStatus</span>
+SetRelationshipValue(const OksDataInfo *, OksObject *)</td>
+      <td>void SetRelationshipValue(const OksDataInfo *, OksObject *) <span
+ style="font-style: italic;">throw (oks::exception)</span></td>
+    </tr>
+    <tr>
+      <td style="background-color: rgb(238, 238, 238);"><span
+ style="font-style: italic;">OksReturnStatus</span>
+SetRelationshipValue(const std::string&amp;, const std::string&amp;,
+const std::string&amp;)</td>
+      <td style="background-color: rgb(238, 238, 238);">void
+SetRelationshipValue(const std::string&amp;, const std::string&amp;,
+const std::string&amp;) <span style="font-style: italic;">throw
+(oks::exception)</span></td>
+    </tr>
+    <tr>
+      <td><span style="font-style: italic;">OksReturnStatus</span>
+AddRelationshipValue(const std::string&amp;, OksObject *)</td>
+      <td>void AddRelationshipValue(const std::string&amp;, OksObject
+*) <span style="font-style: italic;">throw (oks::exception)</span></td>
+    </tr>
+    <tr>
+      <td style="background-color: rgb(238, 238, 238);"><span
+ style="font-style: italic;">OksReturnStatus</span>
+AddRelationshipValue(const OksDataInfo *, OksObject *)</td>
+      <td style="background-color: rgb(238, 238, 238);">void
+AddRelationshipValue(const OksDataInfo *, OksObject *) <span
+ style="font-style: italic;">throw (oks::exception)</span></td>
+    </tr>
+    <tr>
+      <td><span style="font-style: italic;">OksReturnStatus</span>
+AddRelationshipValue(const std::string&amp;, const std::string&amp;,
+const std::string&amp;)</td>
+      <td>void AddRelationshipValue(const std::string&amp;, const
+std::string&amp;, const std::string&amp;) <span
+ style="font-style: italic;">throw (oks::exception)</span></td>
+    </tr>
+    <tr>
+      <td style="background-color: rgb(238, 238, 238);"><span
+ style="font-style: italic;">OksReturnStatus</span>
+RemoveRelationshipValue(const char *, OksObject *)</td>
+      <td style="background-color: rgb(238, 238, 238);">void
+RemoveRelationshipValue(const std::string&amp;, OksObject *) <span
+ style="font-style: italic;">throw (oks::exception)</span></td>
+    </tr>
+    <tr>
+      <td><span style="font-style: italic;">OksReturnStatus</span>
+RemoveRelationshipValue(const OksDataInfo *, OksObject *)</td>
+      <td>void RemoveRelationshipValue(const OksDataInfo *, OksObject
+*) <span style="font-style: italic;">throw (oks::exception)</span></td>
+    </tr>
+    <tr>
+      <td style="background-color: rgb(238, 238, 238);"><span
+ style="font-style: italic;">OksReturnStatus</span>
+RemoveRelationshipValue(const std::string&amp;, const std::string&amp;,
+const std::string&amp;)</td>
+      <td style="background-color: rgb(238, 238, 238);">void
+RemoveRelationshipValue(const std::string&amp;, const std::string&amp;,
+const std::string&amp;) <span style="font-style: italic;">throw
+(oks::exception)</span></td>
+    </tr>
+  </tbody>
+</table>
+<br>
+Also by needs of config Python bindings one new method have been added:
+<pre>std::list&lt;OksObject *&gt; * get_all_rels(const std::string&amp; name = "*") const</pre>
+The method returns list of objects which have a reference on given one.
+If the relationship name is set to "*", then the method takes into
+account&nbsp; all relationships of all objects. The method performs
+full scan of all OKS objects and it is not recommended at large scale
+to build complete graph of relations between all database object; if
+only composite parents are needed, them the reverse_composite_rels()
+method has to be used.<br>
+<br>
+By needs of tidb package there are two new methods to read OksObject
+from and to it put into standard streams:<br>
+<ul>
+  <li>
+    <pre>static OksObject * get(std::istream&amp;, OksKernel *) throw (oks::exception)</pre>
+  </li>
+  <li>
+    <pre>void put(std::ostream&amp;) const throw (oks::exception)</pre>
+  </li>
+</ul>
+<h5>OksClass Class Changes<br>
+</h5>
+By needs of tidb package there are two new methods to read OksClass
+from and to it put into standard streams:<br>
+<ul>
+  <li>
+    <pre>static OksClass * get(std::istream&amp;, OksKernel *) throw (oks::exception)</pre>
+  </li>
+  <li>
+    <pre>void put(std::ostream&amp;) const throw (oks::exception)</pre>
+  </li>
+</ul>
+<h5>OksFile Class Changes</h5>
+To improve error reporting the following methods throw exception
+instead of returning bad error code:<br>
+<br>
+<table style="text-align: left; width: 100%;" border="0" cellpadding="2"
+ cellspacing="2">
+  <tbody>
+    <tr>
+      <th
+ style="background-color: rgb(204, 204, 255); text-align: center;">Old Method Spec</th>
+      <th
+ style="background-color: rgb(204, 204, 255); text-align: center;">New Method Spec</th>
+    </tr>
+    <tr>
+      <td
+ style="vertical-align: top; background-color: rgb(238, 238, 238);">Oks::ReturnStatus
+lock(bool = false)</td>
+      <td
+ style="vertical-align: top; background-color: rgb(238, 238, 238);">void
+lock(bool force = false) throw (oks::exception)</td>
+    </tr>
+    <tr>
+      <td style="vertical-align: top;">Oks::ReturnStatus unlock()</td>
+      <td style="vertical-align: top;">void unlock() throw
+(oks::exception)</td>
+    </tr>
+    <tr>
+      <td
+ style="vertical-align: top; background-color: rgb(238, 238, 238);">Oks::ReturnStatus
+set_logical_name(const std::string &amp;)</td>
+      <td
+ style="vertical-align: top; background-color: rgb(238, 238, 238);">void
+set_logical_name(const std::string&amp; name) throw (oks::exception)</td>
+    </tr>
+    <tr>
+      <td style="vertical-align: top;">Oks::ReturnStatus set_type(const
+std::string &amp;)</td>
+      <td style="vertical-align: top;">void set_type(const
+std::string&amp; type) throw (oks::exception)</td>
+    </tr>
+  </tbody>
+</table>
+<span style="font-weight: bold;"><br>
+</span>
+<h5><span style="font-weight: bold;"></span>OksKernel Class Changes</h5>
+For consistent error reporting and consistent naming convention on
+methods names the following
+methods have been changed.<br>
+<br>
+<table style="text-align: left; width: 100%;" border="0" cellpadding="2"
+ cellspacing="2">
+  <tbody>
+    <tr>
+      <th
+ style="background-color: rgb(204, 204, 255); text-align: center;">Old Method Spec</th>
+      <th
+ style="background-color: rgb(204, 204, 255); text-align: center;">New Method Spec</th>
+    </tr>
+    <tr>
+      <td
+ style="vertical-align: top; background-color: rgb(238, 238, 238);">OksReturnStatus
+set_active_schema(OksFile *)</td>
+      <td
+ style="vertical-align: top; background-color: rgb(238, 238, 238);">void
+set_active_schema(OksFile *) throw (oks::exception)</td>
+    </tr>
+    <tr>
+      <td style="vertical-align: top;">OksReturnStatus
+set_active_data(OksFile *)</td>
+      <td style="vertical-align: top;">void set_active_data(OksFile *)
+throw (oks::exception)</td>
+    </tr>
+    <tr>
+      <td
+ style="vertical-align: top; background-color: rgb(238, 238, 238);">bool
+GetAllowDuplicatedObjectsMode() const</td>
+      <td
+ style="vertical-align: top; background-color: rgb(238, 238, 238);">bool
+get_allow_duplicated_objects_mode() const</td>
+    </tr>
+    <tr>
+      <td style="vertical-align: top;">void
+SetAllowDuplicatedObjectsMode(const bool)</td>
+      <td style="vertical-align: top;">void
+set_allow_duplicated_objects_mode(const bool)</td>
+    </tr>
+    <tr>
+      <td
+ style="vertical-align: top; background-color: rgb(238, 238, 238);">bool
+GetVerboseMode() const</td>
+      <td
+ style="vertical-align: top; background-color: rgb(238, 238, 238);">bool
+get_verbose_mode() const</td>
+    </tr>
+    <tr>
+      <td style="vertical-align: top;">void SetVerboseMode(const bool)</td>
+      <td style="vertical-align: top;">void set_verbose_mode(const bool)</td>
+    </tr>
+    <tr>
+      <td
+ style="vertical-align: top; background-color: rgb(238, 238, 238);">bool
+GetSilenceMode() const</td>
+      <td
+ style="vertical-align: top; background-color: rgb(238, 238, 238);">bool
+get_silence_mode() const</td>
+    </tr>
+    <tr>
+      <td style="vertical-align: top;">void SetSilenceMode(const bool)</td>
+      <td style="vertical-align: top;">void set_silence_mode(const bool)</td>
+    </tr>
+    <tr>
+      <td
+ style="vertical-align: top; background-color: rgb(238, 238, 238);">bool
+GetProfilingMode() const </td>
+      <td
+ style="vertical-align: top; background-color: rgb(238, 238, 238);">bool
+get_profiling_mode() const </td>
+    </tr>
+    <tr>
+      <td style="vertical-align: top;">void SetProfilingMode(const bool)</td>
+      <td style="vertical-align: top;">void set_profiling_mode(const
+bool)</td>
+    </tr>
+  </tbody>
+</table>
+<br>
+The OKS kernel provides new methods to check status and to change
+various kernel modes:<br>
+<ul>
+  <li>the status of mode checking maximum length of string attributes
+of some OKS objects (see also <a
+ href="http://pcatd12.cern.ch/cmt/releases/download/tdaq-01-08-03/RELEASE_NOTES.html#oks">1.8.3
+OKS release notes</a>):<span style="font-family: monospace;"></span></li>
+  <ul>
+    <li>
+      <pre><span style="font-family: monospace;"></span>static bool get_skip_max_length_check_mode()<span
+ style="font-family: monospace;"></span></pre>
+    </li>
+    <li>
+      <pre><span style="font-family: monospace;"></span>static void set_skip_max_length_check_mode(const bool)</pre>
+    </li>
+  </ul>
+</ul>
+<div style="margin-left: 40px;">it can also be set using
+OKS_SKIP_MAX_LENGTH_CHECK environment variable.<br>
+</div>
+<ul>
+  <li>the status of the mode testing inherited duplicated objects:</li>
+  <ul>
+    <li>
+      <pre>bool get_test_duplicated_objects_via_inheritance_mode() const</pre>
+    </li>
+    <li>
+      <pre>void set_test_duplicated_objects_via_inheritance_mode(const bool)</pre>
+    </li>
+  </ul>
+</ul>
+There are new methods to backup schema and data files (the operation is
+silent and ignores any consistency rules):<br>
+<ul>
+  <li>
+    <pre>void backup_data(OksFile * pf, const char * suffix = ".bak") throw (oks::exception)</pre>
+  </li>
+  <li>
+    <pre>void backup_schema(OksFile * pf, const char * suffix = ".bak") throw (oks::exception)</pre>
+  </li>
+</ul>
+There are new methods to create OksClass and OksObject objects from
+standard streams:<br>
+<ul>
+  <li>
+    <pre>OksObject * create_object(std::istream&amp; input) throw (oks::exception)</pre>
+  </li>
+  <li>
+    <pre>OksClass * create_class(std::istream&amp; input) throw (oks::exception)</pre>
+  </li>
+</ul>
+</body>
+</html>

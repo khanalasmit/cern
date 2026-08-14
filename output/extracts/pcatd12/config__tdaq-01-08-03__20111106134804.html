@@ -1,0 +1,27 @@
+<html xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
+
+<head>
+<meta http-equiv="Content-Language" content="en-us">
+<meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
+<title>New Page 1</title>
+</head>
+
+<body>
+
+<ul>
+	<li>Configuration::cast() should not init object; this avoids unexpected 
+	exception, if the object is dangling [oksconfig] </li>
+	<li>ConfigObject: add support for 64-bits integers and OKS class reference 
+	types:<ul>
+		<li>64 bits signed integer type: int64_t</li>
+		<li>64 bits unsigned integer type: uint64_t</li>
+		<li>class reference: std::string</li>
+	</ul>
+	</li>
+	<li>Split existing ERS macros on declaration and implementation parts: this 
+	fixes implementation bugs linking C++ code with Java and Python</li>
+</ul>
+
+</body>
+
+</html>

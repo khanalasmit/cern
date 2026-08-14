@@ -1,0 +1,209 @@
+<html>
+
+<head>
+<meta http-equiv="Content-Language" content="en-us">
+<meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
+<title>New Page 1</title>
+<style>
+<!--
+pre          {  }
+-->
+</style>
+</head>
+
+<body>
+
+<h4>Important Changes: no more obsolete configuration constructors!</h4>
+<p>Obsolete Configuration constructors and helper function are no more 
+supported. See release notes from tdaq-01-04-00 release explaining details of 
+new plug-in based constructors and required changes in user's code:
+<a href="http://lnxatd01.cern.ch/cmt/releases/download/tdaq-01-04-00/RELEASE_NOTES.html#config">
+http://lnxatd01.cern.ch/cmt/releases/download/tdaq-01-04-00/RELEASE_NOTES.html#config</a></p>
+<p>If <b>your code</b> does anything listed below, it <b>has to be modified</b>:</p>
+<ul>
+	<li>is using <i>Configuration(const std::string&amp;, ConfigurationImpl *)</i> 
+	or <i>Configuration(ConfigurationImpl *)</i> constructor</li>
+	<li>includes removed <i>dal/implementation.h</i> header or is using <i>
+	daq::core::create_config_implementation()</i> function</li>
+	<li>includes <i>rdbconfig/RdbConfiguration.h</i> header, which is not 
+	installing anymore (it is only used internally by the rdbconfig plug-in) or 
+	uses <i>RdbConfiguration</i> class</li>
+	<li>includes <i>oksconfig/OksConfiguration.h</i> header, which is not 
+	installing anymore (it is only used internally by the oksconfig plug-in) or 
+	uses <i>OksConfiguration</i> class</li>
+</ul>
+<h4>Caching of config implementation objects</h4>
+<p>Before only template objects&nbsp;were stored in&nbsp;the client's cache and the 
+implementation objects were read from the database each time when <i>
+Configuration::get(..., ConfigObject&amp;)</i> methods were used. If rdbconfig 
+implementation&nbsp;was used, this caused new network operation per call. Now all 
+implementation objects are also stored in the Configuration object's cache.</p>
+<h4>Local cast()</h4>
+<p>Before the <i>Configuration::cast()</i> method asked database implementation, 
+if given object can be casted to an object of target class (i.e. if the target 
+class is one of the database object's super-classes). Now the information about 
+super-classes hierarchy is stored by the Configuration object and any <i>cast()</i> 
+operation is local to client, i.e. no any network operations are required in 
+case of rdbconfig usage.</p>
+<p>Also fix bug when null pointer was passed to the <i>cast()</i> method: now <i>Configuration::cast&lt;T&gt;(0)</i> 
+always returns 0.</p>
+<h4>Read several implementation objects at one call</h4>
+<p>An object may have several references to other objects. In general,&nbsp;our 
+configuration is the directed graph built from interlinked objects, where the 
+partition object is the entry point to navigate to any other object used in the 
+configuration. By the other words any object used in the configuration can be 
+accessed via references starting from the partition object.</p>
+<p>Before each new implementation object was read in a separate call, that 
+required in case of the rdbconfig implementation new network operation. This 
+significantly slowed down performance of database service, when&nbsp;some&nbsp;type of 
+applications&nbsp;tried to scan most of the objects in the database, e.g. to find an 
+object with&nbsp;certain parameters&nbsp;going through hierarchy of all 
+partition/segments/resources&amp;applications objects. Partly this problem was 
+solved using path-queries introduced in summer 2005.</p>
+<p>Now, when an object is read from the database, it is possible to define, if 
+the implementation objects referenced by it are also have to be read and stored 
+in the client's cache by the same call. For the moment it is done via new 
+[optional] parameter called &quot;<i>references-level</i>&quot;, that can be defined for 
+any sort of <i>Configuration::get()</i> methods dealing with <i>ConfigObjects</i> 
+and template objects. This parameter defines how many levels of references 
+between objects we want to follow starting from the object(s) returned by the 
+method, e.g. for <i>ConfigObject</i> API:</p>
+<blockquote dir="ltr" style="margin-right: 0px;">
+	<p><font face="Courier New" size="2">Configuration db;<br>
+	ConfigObject partition;</font><br>
+	<font face="Courier New" size="2">db.get(&quot;Partition&quot;, &quot;be_test&quot;, partition,
+	<strong>0</strong><em> </em>/*<em>rlevel</em>*/);&nbsp; </font>
+	<font color="#006600">// (1) read <strong>ONLY</strong> partition object</font><font color="#008080"><br>
+	</font><font size="2" face="Courier New">db.get(&quot;Partition&quot;, &quot;be_test&quot;, 
+	partition, <strong>1</strong><em> </em>/*<em>rlevel</em>*/);&nbsp; </font>
+	<font color="#006600">// (2) read partition object and all objects directly 
+	referenced by it (i.e. segments of first level)</font><br>
+	<font size="2" face="Courier New">db.get(&quot;Partition&quot;, &quot;be_test&quot;, partition,
+	<strong>2</strong><em> </em>/*<em>rlevel</em>*/);&nbsp; </font>
+	<font color="#006600">// (3) read partition object, all objects </font>
+	<font color="#008080"><span style="color: #006600">referenced </span></font>
+	<font color="#006600">by it and all objects directly referenced by them 
+	(i.e. segments of first level &amp; their applications and segments of second 
+	level)</font><font color="#008080"><br>
+	</font><font face="Courier New" size="2">db.get(&quot;Partition&quot;, &quot;be_test&quot;, 
+	partition,&nbsp;<strong>10</strong><em> </em>/*<em>rlevel</em>*/); </font>
+	<font color="#006600">// (4) very probably read <strong>ALL</strong> objects 
+	used for given configuration</font></p>
+</blockquote>
+<p>In a similar way, this can be used for template objects:</p>
+<blockquote dir="ltr" style="margin-right: 0px;">
+	<p><font face="Courier New" size="2">Configuration db;<br>
+	daq::core::Partition * p;<br>
+	p = db.get&lt;daq::core::Partition&gt;(&quot;be_test&quot;, false, true, <strong>0</strong><em>
+	</em>/*<em>rlevel</em>*/);&nbsp; </font><font color="#006600">// (5) read
+	<strong>ONLY</strong> partition object</font><font color="#008080"><br>
+	</font><font face="Courier New" size="2">p = db.get&lt;daq::core::Partition&gt;(&quot;be_test&quot;, 
+	false, true, <strong>10</strong><em> </em>/*<em>rlevel</em>*/); </font>
+	<font color="#006600">// (6) very probably read <strong>ALL</strong> objects 
+	used for given configuration</font></p>
+</blockquote>
+<p>In addition to above, a user may decide that he needs to read referenced 
+objects belonging to certain classes only. To do this there is one extra 
+optional parameter not shown in above examples, that is called &quot;<i>referenced-classes</i>&quot;. 
+It is a pointer to vector of string defined names of base classes. If it is not 
+0, then only objects of such classes or derived from them will be cached. 
+Example:</p>
+<blockquote>
+	<p><font face="Courier New" size="2">Configuration db;<br>daq::core::Partition * p;<br>
+	std::vector&lt;std::string&gt; rc;<br>
+	rc.push_back(&quot;<i>BaseApplication</i>&quot;);<br>
+	rc.push_back(&quot;<i>Computer</i>&quot;);<br>
+	p = db.get&lt;daq::core::Partition&gt;(&quot;be_test&quot;, false, true, <b>
+	10</b>, &amp;<b>rc</b>);&nbsp; </font><font color="#006600">// (7) read applications 
+	and computers used in partition</font></p>
+</blockquote>
+<p>Also such parameters are available in the&nbsp;algorithm from <a href="#dal">dal</a> package 
+used to get partition object:</p>
+<blockquote dir="ltr" style="margin-right: 0px;">
+	<pre>const daq::core::Partition * daq::core::get_partition(
+  ::Configuration&amp; conf, const std::string&amp; pname, unsigned long <strong>rlevel</strong> = 7, const std::vector<std::string>&lt;std::string&gt; * <b>rclasses</b> = 0);</pre>
+</blockquote>
+<p>It is up to user to decide, if above parameter has to be set to values 
+different from default ones. If the reference level is too small, there is a risk for too many 
+additional network calls in case of rdbconfig implementation. If it is too big, 
+there is a risk the user's application will read too much data, which it does 
+not use (e.g. detector specific config objects, which can be quite big). In any 
+case, avoid a setting of such parameter to big numbers if many <i>Configuration::get()</i> 
+methods are used, since this will increase total amount of the same data read 
+multiple times. Ideally one should to prepare right set of parameters once when 
+top-level configuration object is accessed using <i>get()</i> method and read 
+all other configuration objects via navigation from the top-level object.</p>
+<h4>Profiling config objects access</h4>
+<p>It is possible to get information about effectiveness of database service 
+usage by setting TDAQ_DUMP_CONFIG_PROFILER_INFO variable. For example:</p>
+<blockquote dir="ltr" style="margin-right: 0px;">
+	<pre>export TDAQ_DUMP_CONFIG_PROFILER_INFO=1
+ipc_server &amp;
+rdb_server -d be_test -D daq/partitions/be_test.data.xml &amp;
+dal_dump -d rdbconfig:be_test -c Segment
+<i>... skip several hundreds of lines of segments descriptions</i>
+<u>Configuration profiler report:</u>
+number of created template objects: <b>54</b>
+number of read template objects: <b>13</b>
+number of cache hits: <b>57</b>
+<u>Configuration implementation profiler report:</u>
+number of read objects: <b>49</b>
+number of cache hits: <b>46</b>
+<u>RdbConfiguration profiler report:</u>
+number of xget_object() calls: <b>0</b>
+number of xget_all_objects() calls: <b>1</b>
+number of xget_objects_by_query() calls: <b>0</b>
+number of get_objects_by_path() calls: <b>0</b>
+number of get_object_values() calls: <b>0</b></pre>
+</blockquote>
+<p>From above one can see, that:</p>
+<ul>
+	<li>54 template objects were created and attributes of 13 of them were read 
+	(see <i>Configuration</i> profiler report)</li>
+	<li>49 implementation objects (i.e. instances of <i>ConfigObject</i>) were read (see
+	<i>Configuration</i> implementation 
+	profiler report)</li>
+	<li>all above required 1 (<i>only one!</i>) rdb operation (see <i>xget_all_objects()</i> 
+	statistics from the <i>RdbConfiguration</i> profiler report)</li>
+</ul>
+<div>
+	The same from&nbsp;tdaq-01-04-01 requires several tens of rdb network operations.</div>
+<h4>Access deleted template&nbsp;objects</h4>
+	When a template&nbsp;object is deleted (e.g. via subscription mechanism or by 
+	explicit user call), it is marked as deleted.&nbsp;When user accesses it, the 
+	<i>config::DeletedObject</i> exception is thrown. Note, deletion of an object may 
+	cause several deleted template objects, e.g. via inheritance (deletion an 
+	object results deletion of all template objects built from it)&nbsp;or via 
+	dependent composite references (deletion of parent may cause deletion of 
+	it's dependent children). If user keeps pointers on template objects, which 
+	can be deleted by any of above means, it is necessary to catch the 
+	<i>config::DeletedObject</i> or more general exceptions, from which it is derived. 
+	Below there is example:<blockquote>
+	<pre>Crate * crate = db.create&lt;Crate&gt;(&quot;<i>/tmp/data.xml</i>&quot;, &quot;&quot;); <font color="#008080">   </font><font color="#006600">// create crate</font>
+vector&lt;Module*&gt; modules(1, db.create&lt;Module&gt;(*crate, &quot;&quot;); <font color="#006600">// create array containg one module</font>
+crate-&gt;set_Modules(modules); <font color="#008080">         </font><font color="#006600">  // set modules of crate; the relationship Crate-&gt;Modules is <strong>DEPENDENT</strong></font><font color="#008080">
+</font>std::cout &lt;&lt; &quot;<i>1. The module's name is </i>&quot; &lt;&lt; modules[0].get_Name() &lt;&lt; std::endl; <font color="#ff0000">   // OK, print the module's name</font>
+db.destroy(*crate);<font color="#006600">                     // destroy crate and all it's modules</font>
+try {
+  std::cout &lt;&lt; &quot;<i>2. The module's name is </i>&quot; &lt;&lt; modules[0].get_Name() &lt;&lt; std::endl; <font color="#ff0000"> // ERROR, the module was removed !!!!</font>
+}
+catch ( config::GenericException&amp; e ) {
+  std::cerr &lt;&lt; &quot;<i>Caught config exception: \&quot;</i>&quot; &lt;&lt; e.what() &lt;&lt; '<i>\&quot;</i>' &lt;&lt; std::endl;
+}</pre>
+</blockquote>
+<h4>Other Changes</h4>
+<h5>Add method to get super-class hierarchy</h5>
+<blockquote>
+	<pre>const std::map&lt;std::string, std::set&lt;std::string&gt; &gt;&amp; Configuration::superclasses() const;</pre>
+</blockquote>
+<p>If a class has super-classes, it's name is stored as key that points to names 
+of super-classes via value.</p>
+<h5>Add parameter to check if database exists</h5>
+<p>Set silent mode to true to check if database exists or not:</p>
+<blockquote>
+	<pre>bool Configuration::load(const std::string&amp; db_name, bool silent = false);</pre>
+</blockquote>
+
+</body>
+
+</html>

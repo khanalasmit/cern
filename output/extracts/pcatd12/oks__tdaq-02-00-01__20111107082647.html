@@ -1,0 +1,64 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+ xmlns:v="urn:schemas-microsoft-com:vml"
+ xmlns:o="urn:schemas-microsoft-com:office:office">
+<head>
+  <meta http-equiv="Content-Language" content="en-us">
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <title>Untitled 1</title>
+</head>
+<body>
+<h4>OKS Server</h4>
+<ul>
+  <li>the oks-commit.sh supports directories in addition to files</li>
+  <li>add oks-import.sh utility to simplify import of new directories
+and files<br>
+  </li>
+  <li>the repository locks remain from abnormally terminated oks
+commits can be removed on Point-1 by DAQ experts using
+/oks/admin/unlock-repository.sh script via sudo</li>
+  <li>the "Replace" dialog of OKS Data editor proposes user to
+check-out repository file containing modified objects</li>
+  <li>file-related relative pathnames and absolute pathnames includes
+are not allowed (in
+particular to avoid inclusion of files stored outside current
+repository and to simplify consistency check by oks-commit.sh)<br>
+  </li>
+</ul>
+Read more details on the <a
+ href="https://twiki.cern.ch/twiki/bin/view/Atlas/DaqHltOks#3_OKS_Server">TWiki
+page</a>.<span style="font-weight: bold;"><br>
+</span>
+<h4>OKS Performance Improvements<span style="font-weight: bold;"></span></h4>
+<ul>
+  <li>the OKS library uses pool of threads to load OKS data files, i.e.
+the data files can be read in parallel<br>
+  </li>
+  <li>the number of threads by default is equal to number of the
+computer's CPU cores</li>
+  <ul>
+    <li>it can be modified via OKS_KERNEL_THREADS_POOL_SIZE environment
+variable</li>
+  </ul>
+  <li>the OKS library does not stop reading of files on first error,
+but continues loading of files in parallel threads until their ends or
+errors</li>
+  <ul>
+    <li>thus the final error report may contain several errors coming
+from different files</li>
+    <li>this error report may change between different runs of OKS
+utilities even if the files were not updated</li>
+  </ul>
+  <li>for optimal performance it is recommended:</li>
+  <ol>
+    <li>to reduce number of schema files (at some point after a schema
+file parsing OKS requires single active thread to update the database
+schema)<br>
+    </li>
+    <li>to avoid huge data files (processing of single data file is not
+parallelized since XML files are non indexed)<br>
+    </li>
+  </ol>
+</ul>
+</body>
+</html>

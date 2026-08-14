@@ -1,0 +1,46 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns:o="urn:schemas-microsoft-com:office:office"
+ xmlns:v="urn:schemas-microsoft-com:vml"
+ xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="Content-Language" content="en-us">
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <title>Untitled 1</title>
+</head>
+<body>
+<span style="font-weight: bold;">To simplify future release patching
+procedure the oks package was split on two packages: oks and oks_utils.
+The oks package only contains library. All utilities including editors,
+relational oks and oks server were moved to oks_utils package.</span><br
+ style="font-weight: bold;">
+<br style="font-weight: bold;">
+The changes of OKS library since tdaq-02-00-03 initial build include:<br>
+<ul>
+  <li>use Boost date and time format instead of OWL package classes
+(patched in tdaq-02-00-03)<br>
+  </li>
+  <li>performance improvements of XML files parsing (partly implemented
+as tdaq-02-00-03 patch)<br>
+    <span id="hidsubpartcontentdiscussion"></span></li>
+  <li><span id="hidsubpartcontentdiscussion">substitute round brackets
+variable name by value before error reporting (see </span>tdaq-02-00-03
+
+
+    <span id="hidsubpartcontentdiscussion">patch </span><a
+ href="https://savannah.cern.ch/patch/index.php?3619">https://savannah.cern.ch/patch/index.php?3619</a>)</li>
+  <li>checking <span id="hidsubpartcontentdiscussion">of date and time
+attribute initial values</span> (see tdaq-02-00-03 patch <a
+ href="https://savannah.cern.ch/patch/index.php?3656">https://savannah.cern.ch/patch/index.php?3656</a>)</li>
+  <li>provide a possibility for fast objects destruction required for
+RDB server (see tdaq-02-00-03 patch <a
+ href="https://savannah.cern.ch/patch/?3798">https://savannah.cern.ch/patch/?3798</a><a
+ href="https://savannah.cern.ch/bugs/index.php?62853"></a>)</li>
+  <li>throw exception, if a schema file is modified on data files
+reload (see tdaq-02-00-03 patch <a
+ href="https://savannah.cern.ch/patch/?3798">https://savannah.cern.ch/patch/?3798</a>)</li>
+  <li><span id="hidsubpartcontentdiscussion">add mode, when</span><span
+ class="change"> duplicated classes are not allowed<br>
+    </span></li>
+</ul>
+</body>
+</html>

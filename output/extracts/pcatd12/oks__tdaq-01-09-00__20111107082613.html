@@ -1,0 +1,64 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+ xmlns:v="urn:schemas-microsoft-com:vml"
+ xmlns:o="urn:schemas-microsoft-com:office:office">
+<head>
+  <meta http-equiv="Content-Language" content="en-us">
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <title>Untitled 1</title>
+</head>
+<body>
+<h4>OKS Library</h4>
+<ul>
+  <li>reload any consistent data file (also including changes in the
+included files)</li>
+  <li>speed up OKS XML loading (about 25% faster comparing with release
+1.8.4)<br>
+  </li>
+  <li>when read XML schema file, throw exception if base class is not
+loaded</li>
+  <li>oks query supports regular expressions (add attribute comparator
+'~=')</li>
+</ul>
+<h4>OKS Archiving Library<br>
+</h4>
+<ul>
+  <li>use temporal tables to create "try" incremental data version (to
+reduce unnecessary overhead on Oracle stream replication as requested
+by ATLAS Oracle DBA)</li>
+</ul>
+<h4>OKS GUI Library<br>
+</h4>
+<ul>
+  <li>add support for mouse wheel (can be used in most dialogs of OKS
+schema and data editors)<br>
+  </li>
+</ul>
+<h4>OKS Data Editor</h4>
+<ul>
+  <li>improvements in the Find/Replace dialog:</li>
+  <ul>
+    <li>optionally find by Class and Attribute/Relationship names<br>
+    </li>
+    <li>present result as table</li>
+  </ul>
+  <li>select visible classes by name and objects by
+UID (Savannah request <a href="http://savannah.cern.ch/bugs/?34890">http://savannah.cern.ch/bugs/?34890</a>)<br>
+  </li>
+  <ul>
+    <li>see search panel at bottom of main window and object dialogs</li>
+    <li>the search panel supports simple string search (auto-select
+when modify the selection pattern) and regular expressions (press
+button appearing
+when this option selected to apply regular expression)</li>
+  </ul>
+  <li>improve performance when build class dialog containing big number
+of objects (can be seen in 1.8.4 when number of objects is greater than
+10K)<br>
+  </li>
+</ul>
+<br>
+<a class="moz-txt-link-freetext"
+ href="https://savannah.cern.ch/bugs/index.php?28879"></a>
+</body>
+</html>

@@ -1,0 +1,238 @@
+<html>
+
+<head>
+<meta http-equiv="Content-Language" content="en-us">
+<meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
+<title>New Page 1</title>
+</head>
+
+<body>
+
+<h4><span lang="en-gb">API Changes</span></h4>
+<p><span lang="en-gb">OKS library was starting to use exceptions to report 
+problems. The methods dealing with input / output operations (i.e. <i>load...()</i>,
+<i>save...()</i> and <i>new...()</i> methods of <i>OksKernel</i> and related 
+methods of <i>OksClass</i>, <i>OksObject</i>, <i>OksData</i>, etc.) throw <i>
+oks::exception</i> instead of returning <i>OksStatus</i>. </span></p>
+<p><span lang="en-gb">The old code testing return status:</span></p>
+<blockquote>
+	<pre><span lang="en-gb">OksKernel kernel;
+OksFile * fh1 = kernel.<b>load_file</b>(&quot;<i>test.in.xml</i>&quot;);<font color="#006600">     # <i>(1) can return zero in case of error!</i></font>
+<b>if</b>(fh1 == 0) { std::cerr &lt;&lt; &quot;<i>ERROR: Can not load file \&quot;test.in.xml\&quot;\n</i>&quot;; exit(1); }
+OksFile * fh2 = kernel.<b>new_data</b>(&quot;<i>test.out.xml</i>&quot;);<font color="#006600">     # <i>(2) can return zero in case of error!</i></font>
+<b>if</b>(fh2 == 0) { std::cerr &lt;&lt; &quot;<i>ERROR: Can not create file \&quot;test.out.xml\&quot;\n</i>&quot;; exit(1); }
+... <font color="#006600">                                                 # <i>(3) some code modifying oks data</i></font>
+<b>if</b>(kernel.<b>save_schema</b>(fh2) != <b>OksSuccess</b>) {<font color="#006600">          # <i>(4) need to check OksStatus</i></font>
+  std::cerr &lt;&lt; &quot;<i>ERROR: Can not save file \&quot;test.out.xml\&quot;\n</i>&quot;; exit(1);
+}</span></pre>
+</blockquote>
+<p><span lang="en-gb">has to be replaced with the following one:</span></p>
+<blockquote>
+	<pre><span lang="en-gb">OksKernel kernel;
+<b>try</b> {
+  OksFile * fh1 = kernel.<b>load_file</b>(&quot;<i>test.in.xml</i>&quot;);<font color="#006600">   # <i>(5) always returns non-zero!</i></font>
+  OksFile * fh2 = kernel.<b>new_data</b>(&quot;<i>test.out.xml</i>&quot;);<font color="#006600">   # <i>(6) always returns non-zero!</i></font>
+  ... <font color="#006600">                                               # <i>(7) some code modifying oks data</i></font>
+  kernel.<b>save_schema</b>(fh2);<font color="#006600">                           # <i>(8) is void</i></font>
+}
+<b>catch</b> (<b>oks::exception</b> &amp; ex) { std::cerr &lt;&lt; &quot;Caught OKS exception: &quot; &lt;&lt; ex &lt;&lt; std::endl; exit(1); }</span></pre>
+</blockquote>
+<p><span lang="en-gb">Using exceptions there is no more need to test return 
+values:</span></p>
+<ul>
+	<li><span lang="en-gb">a returned pointer is always non-zero (compare lines 
+	1, 2 with 5, 6)</span></li>
+	<li><span lang="en-gb"><i>save...()</i> methods become <i>void</i> instead 
+	of returning <i>OksStatus</i> (compare line 4 with 8)</span></li>
+</ul>
+<h4><span lang="en-gb">Improved Reporting of XML Problems</span></h4>
+<p><span lang="en-gb">Another advantage of exception usage is consistent error 
+reporting, that is especially important in case of multiple include files. In 
+the past, any error has been reported to the standard error stream in the moment 
+of it's detection and in some cases without enough diagnostics. For example the 
+only possibility to get name of the file where a problem took place was to read
+<font color="#000080">OKS info messages</font>:</span></p>
+<blockquote>
+	<pre><span lang="en-gb">lxplus055:db6$ oks_dump -f /tmp/daq/partitions/be_test.data.xml
+<font color="#000080">Reading data file &quot;/tmp/daq/partitions/be_test.data.xml&quot; in extended format (3331 bytes)...
+* reading data file &quot;/tmp/daq/segments/segments.data.xml&quot; in extended format (10503 bytes)...
+* loading 53 classes from file &quot;/tmp/dal/schema/core.schema.xml&quot;...
+* reading data file &quot;/tmp/DAQRelease/sw/repository.data.xml&quot; in extended format (88245 bytes)...
+* reading data file &quot;/tmp/DAQRelease/sw/external.data.xml&quot; in extended format (15272 bytes)...
+* reading data file &quot;/tmp/DAQRelease/sw/tags.data.xml&quot; in extended format (1928 bytes)...</font>
+ERROR [OksXmlInputStream::read_tag_start()]:
+(line 67, char 1)
+Unexpected end of file
+ERROR [OksXmlInputStream::read_tag_start()]:
+(line 67, char 1)
+Unexpected end of file
+ERROR [OksObject::read_header()]:
+(line 67, char 1)
+Failed read start-of-object 'obj' tag</span></pre>
+</blockquote>
+<p><span lang="en-gb">When above problem took place using oksconfig plug-in, it 
+was not possible to identify the exact place of problem at all (at least without 
+setting <i>OKS_KERNEL_SILENCE</i> to <i>no</i>):</span></p>
+<blockquote>
+	<pre><span lang="en-gb">bash$ config_dump -d oksconfig:daq/partitions/be_test.data.xml -c Partition
+ERROR [OksXmlInputStream::read_tag_start()]:
+(line 67, char 2)
+Unexpected end of file
+ERROR [OksXmlInputStream::read_tag_start()]:
+(line 67, char 2)
+Unexpected end of file</span></pre>
+</blockquote>
+<p><span lang="en-gb">Now the resulted exception always contains exact reason of 
+error and keeps full chain of files inclusion and oks entities dependencies, 
+e.g.:</span></p>
+<blockquote>
+	<pre><span lang="en-gb">bash$ export OKS_KERNEL_SILENCE=yes
+bash$ oks_dump -f /tmpdaq/partitions/be_test.data.xml
+Caught oks exception:
+oks[10] ***: failed to load data file &quot;/tmp/daq/partitions/be_test.data.xml&quot; because:
+oks[9] ***: failed to load include &quot;daq/segments/segments.data.xml&quot; because:
+oks[8] ***: failed to load data file &quot;/tmp/daq/segments/segments.data.xml&quot; because:
+oks[7] ***: failed to load include &quot;DAQRelease/sw/repository.data.xml&quot; because:
+oks[6] ***: failed to load data file &quot;/tmp/DAQRelease/sw/repository.data.xml&quot; because:
+oks[5] ***: failed to load include &quot;DAQRelease/sw/external.data.xml&quot; because:
+oks[4] ***: failed to load data file &quot;/tmp/DAQRelease/sw/external.data.xml&quot; because:
+oks[3] ***: failed to load include &quot;DAQRelease/sw/tags.data.xml&quot; because:
+oks[2] ***: failed to load data file &quot;/tmp/DAQRelease/sw/tags.data.xml&quot; because:
+oks[1] ***: failed to read 'object &quot;i686-slc3-gcc344-dbg@Tag&quot;'
+oks[0] ***: Unexpected end of file while read tag start at (line 66, char 51)</span></pre>
+</blockquote>
+<p><span lang="en-gb">The same exception will be passed to the ERS exception 
+reported by oksconfig plug-in:</span></p>
+<blockquote>
+	<pre>config_dump -d oksconfig:/tmp/daq/partitions/be_test.data.xml -c Partition
+ERROR 2007-Jan-17 11:20:12 [ConfigurationImpl* _oksconfig_creator_(...)
+at oksconfig/src/OksConfiguration.cpp:29] oksconfig initialization error
+        was caused by: ERROR 2007-Jan-17 11:20:12 [virtual void OksConfiguration::open_db(...) at
+        oksconfig/src/OksConfiguration.cpp:57] cannot load file '/tmp/daq/partitions/be_test.data.xml':
+<span lang="en-gb">oks[10] ***: failed to load data file &quot;/tmp/daq/partitions/be_test.data.xml&quot; because:
+...
+oks[2] ***: failed to load data file &quot;/tmp/DAQRelease/sw/tags.data.xml&quot; because:
+oks[1] ***: failed to read 'object &quot;i686-slc3-gcc344-dbg@Tag&quot;'
+oks[0] ***: Unexpected end of file while read tag start at (line 66, char 51)</span></pre>
+</blockquote>
+<h4><span lang="en-gb">OKS Archiving</span></h4>
+<p><span lang="en-gb">Add <i>Release</i> column to <i>OksSchema</i> table to 
+simplify choice of right schema by oks2coral and to allow user easier choice of 
+archived configuration data. There is new OKS Archiving Web GUI, allowing:</span></p>
+<ul>
+	<li><span lang="en-gb">queries on archived configurations by time intervals, 
+	release, user, host and partition patterns;</span></li>
+	<li><span lang="en-gb">sorting result by multiple columns;</span></li>
+	<li><span lang="en-gb">selection which columns to be shown.</span></li>
+</ul>
+<p><span lang="en-gb">The test Web GUI replaced previous one:
+<a href="http://cern.ch/isolov/cgi-bin/oks-archive.pl">
+http://cern.ch/isolov/cgi-bin/oks-archive.pl</a></span></p>
+<p><span lang="en-gb">Provide bootstrap files for different RDBMS:</span></p>
+<ul>
+	<li>create_db.mysql.sql</li>
+	<li>create_db.oracle.sql (renamed old create_db.sql)</li>
+	<li>create_db.sqlite.sql</li>
+</ul>
+<p>Fix several run-time problem for MySQL CORAL plug-in.</p>
+<h5><span lang="en-gb">API changes</span></h5>
+<ul>
+	<li><span lang="en-gb">Add optional <i>release</i> parameter to several 
+	functions. It is used to get HEAD schema and data version per TDAQ release. 
+	By default the release parameter points to current release (i.e. to 
+	&quot;tdaq-01-07-00&quot;).</span></li>
+	<li><span lang="en-gb">Add function <i>get_max_schema_version()</i> to know 
+	maximum schema version number to be used to choose free version number. 
+	Note, the existing method <i>get_head_schema_version()</i> returns head 
+	schema version per release.</span></li>
+	<li><span lang="en-gb">Add function <i>get_time_host_user()</i> to extract 
+	time, host and user values from attribute list. It is used by <i>roks</i> 
+	library and by <i>oks_ls_data</i> utility.</span></li>
+</ul>
+<h5><span lang="en-gb">List Archives Utility</span></h5>
+<p>Add several <font color="#000080">new options</font> to specify archives 
+selection criteria:</p>
+<blockquote>
+	<pre>usage: oks_ls_data
+  -c | --connect-string connect_string
+  -w | --working-schema schema_name
+  <font color="#000080">[-l | --list-releases]</font>
+  [-s | --schema-version schema_version]
+  [-b | --base-data-only]
+  [-z | --show-size]
+  [-u | --show-usage]
+<font color="#000080">  [-d | --show-description]
+  [-t | --sorted-by parameters]
+  [-r | --release release_name]
+  [-e | --user user_name_pattern]
+  [-o | --host hostname_pattern]
+  [-p | --partition partition_name_pattern]
+  [-S | --archived-since timestamp]
+  [-T | --archived-till timestamp]</font>
+  [-v | --verbose-level verbosity_level]
+  [-h | --help] </pre>
+	<pre>Options/Arguments:
+  -c connect_string    database connection string
+  -w schema_name       name of working schema
+  <font color="#000080">-l                   list releases</font>
+  -s schema_version    print out data of this particular version (0 = HEAD version)
+  -b                   print out base data versions only
+  -z                   print size of version (i.e. number of relational rows to store it)
+  -u                   show who, when, where and how used given version
+<font color="#000080">  -d                   show description
+  -t parameters        sort output by several columns; the parameters may contain the following
+                       items (where first symbol is for ascending and second for descending order):
+                         v | V - sort by versions;
+                         t | T - sort by time;
+                         u | U - sort by user names;
+                         h | H - sort by hostnames;
+                         p | P - sort by partition names (i.e. by descriptions);
+  -r release_name      show configuration for given release name
+  -e user_name_pattern show configuration for user names satisfying pattern (see syntax description below)
+  -o hostname_pattern  show configuration for hostnames satisfying pattern (see syntax description below)
+  -p partition_pattern show configuration for partition names satisfying pattern (see syntax description below)
+  -S since_timestamp   show configuration archived since given moment (see timestamp format description below)
+  -T till_timestamp    show configuration archived before given moment (see timestamp format description below)</font>
+  -v verbosity_level   set verbose output level (0 - silent, 1 - normal, 2 - extended, 3 - debug, ...)
+  -h print this message </pre>
+	<pre>Description:
+  The utility prints out details of oks data versions archived in relational database.
+  The Version is shown as sv.dv[.bv], where:
+    * sv = schema version;
+    * dv = data version;
+    * bv = base version (optional, only appears for incremental data versions).
+  The Size (numbers of relational rows) is reported in form x:y:z, where the:
+    * x = number of new[/deleted/updated] objects;
+    * y = number of new[/deleted/updated] attribute values;
+    * z = number of new[/deleted/updated] relationship values.
+<font color="#000080">  The timestamps to be provided in ISO 8601 format: &quot;YYYY-MM-DD HH:MM:SS&quot;.
+  The allowed wildcard characters used to select by user, host and partition names are:
+    % (i.e. percent symbol)    - any string of zero or more characters;
+    _ (i.e. underscore symbol) - any single character.</font></pre>
+</blockquote>
+<h4><span lang="en-gb">Other Implementation Changes and Bug Fixes</span></h4>
+<ul>
+	<li><span lang="en-gb">replace <i>OksAlloc</i> class used for the memory 
+	usage optimisation by the Boost class <i>boost/pool/pool_alloc.hpp</i>; 
+	header file <i>oks/alloc.h</i> has been removed; </span>OKS is always 
+	initialized in multi-thread safe mode;</li>
+	<li>when save a data file, keep the file flags</li>
+	<li>fix run-time bug appeared on 64-bits architecture (wrong calculation of 
+	const string literal size); by chance it worked correctly on 32 bits;</li>
+</ul>
+<h5>OKS Schema Editor</h5>
+<ul>
+	<li>attach <i>Range</i> and <i>Initial Value</i> properties to the right 
+	side of the attribute window to allow see long strings;</li>
+	<li>do not show <i>Non Null Value</i> property for <i>boolean</i> attribute.</li>
+</ul>
+<h5>OKS Data Editor</h5>
+<ul>
+	<li>mark file updated, when swap objects inside relationship value;</li>
+	<li>avoid bug when copy object to existing id;</li>
+	<li>fix bug when load query with attribute comparator.</li>
+</ul>
+
+</body>
+
+</html>

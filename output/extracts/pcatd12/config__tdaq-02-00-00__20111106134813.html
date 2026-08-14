@@ -1,0 +1,92 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+ xmlns:v="urn:schemas-microsoft-com:vml"
+ xmlns:o="urn:schemas-microsoft-com:office:office">
+<head>
+  <meta http-equiv="Content-Language" content="en-us">
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <title>Untitled 1</title>
+</head>
+<body>
+<h4>C++ API Changes</h4>
+To support 64-bits platform the ConfiObject <span
+ style="font-style: italic;">get()</span> and <span
+ style="font-style: italic;">set()</span> methods use typedefs from
+&lt;stdint.h&gt; instead of non-safe built-in C++ types. One has to
+replace any occurrences of explicitly used in such methods signed and
+unsigned char, short and long types as shown in the following table:<br>
+<br>
+<table style="text-align: left;" border="0" cellpadding="2"
+ cellspacing="2">
+  <tbody>
+    <tr>
+      <th style="vertical-align: top; text-align: center; background-color: rgb(204, 204, 255);">OKS Type<br>     </th>
+      <th style="vertical-align: top; text-align: center; background-color: rgb(204, 204, 255);">Old C++ Type<br> </th>
+      <th style="vertical-align: top; text-align: center; background-color: rgb(204, 204, 255);">New C++ Type<br> </th>
+    </tr>
+    <tr>
+      <td style="vertical-align: top; background-color: rgb(204, 204, 204); font-family: Courier New,Courier,monospace; text-align: left;"><span style="font-weight: bold;">&nbsp;s8</span> (8-bits signed integer)<br> </td>
+      <td style="vertical-align: top; text-align: right; background-color: rgb(204, 204, 204); font-family: Courier New,Courier,monospace;">unsigned char<br> </td>
+      <td style="vertical-align: top; text-align: right; background-color: rgb(204, 204, 204); font-family: Courier New,Courier,monospace;"><span style="font-weight: bold;">uint8_t</span><br> </td>
+    </tr>
+    <tr>
+      <td style="vertical-align: top; font-family: Courier New,Courier,monospace; background-color: rgb(238, 238, 238); text-align: left;"><span style="font-weight: bold;">&nbsp;u8</span> (8-bits unsigned integer)<br> </td>
+      <td style="vertical-align: top; text-align: right; font-family: Courier New,Courier,monospace; background-color: rgb(238, 238, 238);">signed char<br> </td>
+      <td style="vertical-align: top; text-align: right; font-family: Courier New,Courier,monospace; background-color: rgb(238, 238, 238);"><span style="font-weight: bold;">int8_t</span><br> </td>
+    </tr>
+    <tr>
+      <td style="vertical-align: top; background-color: rgb(204, 204, 204); font-family: Courier New,Courier,monospace; text-align: left;"><span style="font-weight: bold;">s16</span> (16-bits signed integer)<br> </td>
+      <td style="vertical-align: top; text-align: right; background-color: rgb(204, 204, 204); font-family: Courier New,Courier,monospace;">unsigned short<br> </td>
+      <td style="vertical-align: top; text-align: right; background-color: rgb(204, 204, 204); font-family: Courier New,Courier,monospace;"><span style="font-weight: bold;">uint16_t</span><br> </td>
+    </tr>
+    <tr>
+      <td
+ style="vertical-align: top; font-family: Courier New,Courier,monospace; background-color: rgb(238, 238, 238); text-align: left;"><span
+ style="font-weight: bold;">u16</span> (16-bits unsigned integer)<br>
+      </td>
+      <td
+ style="vertical-align: top; text-align: right; font-family: Courier New,Courier,monospace; background-color: rgb(238, 238, 238);">signed
+short<br>
+      </td>
+      <td
+ style="vertical-align: top; text-align: right; font-family: Courier New,Courier,monospace; background-color: rgb(238, 238, 238);"><span
+ style="font-weight: bold;">int16_t</span><br>
+      </td>
+    </tr>
+    <tr>
+      <td
+ style="vertical-align: top; background-color: rgb(204, 204, 204); font-family: Courier New,Courier,monospace; text-align: left;"><span
+ style="font-weight: bold;">s32</span> (32-bits signed integer)<br>
+      </td>
+      <td
+ style="vertical-align: top; text-align: right; background-color: rgb(204, 204, 204); font-family: Courier New,Courier,monospace;">unsigned
+long<br>
+      </td>
+      <td
+ style="vertical-align: top; text-align: right; background-color: rgb(204, 204, 204); font-family: Courier New,Courier,monospace;"><span
+ style="font-weight: bold;">uint32_t</span><br>
+      </td>
+    </tr>
+    <tr>
+      <td
+ style="vertical-align: top; font-family: Courier New,Courier,monospace; background-color: rgb(238, 238, 238); text-align: left;"><span
+ style="font-weight: bold;">u32</span> (32-bits unsigned integer)<br>
+      </td>
+      <td
+ style="vertical-align: top; text-align: right; font-family: Courier New,Courier,monospace; background-color: rgb(238, 238, 238);">signed
+long<br>
+      </td>
+      <td
+ style="vertical-align: top; text-align: right; font-family: Courier New,Courier,monospace; background-color: rgb(238, 238, 238);"><span
+ style="font-weight: bold;">int32_t</span><br>
+      </td>
+    </tr>
+  </tbody>
+</table>
+<br>
+<h4>Java Changes</h4>
+The methods of <span style="font-style: italic;">config.Configuration</span>
+class are synchronized for multi-thread safety.<br>
+<br>
+</body>
+</html>

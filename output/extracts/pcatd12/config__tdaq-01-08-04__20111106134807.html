@@ -1,0 +1,139 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html xmlns:v="urn:schemas-microsoft-com:vml"
+ xmlns:o="urn:schemas-microsoft-com:office:office">
+<head>
+  <meta http-equiv="Content-Language" content="en-us">
+  <meta http-equiv="Content-Type"
+ content="text/html; charset=windows-1252">
+  <title>New Page 1</title>
+</head>
+<body>
+<h4>C++ and Java Changes</h4>
+<h5>API Changes</h5>
+The <b>referenced_by()</b>
+methods were changed. <span style="color: rgb(102, 0, 0);">The code
+using them need to be modified!</span><br>
+<br>
+Now these methods allow to return objects referencing given object via
+composite (old behavior) and <b>weak </b>(new) relationships.<br>
+Unfortunately there are some changes in API:<br>
+<ul>
+  <li>the <i>class_name</i> argument was removed from config layer,
+since
+it was never used and can be efficiently replaced by config cast, if
+really needed</li>
+  <li>the <i>check_composite_only</i> argument was added to switch
+between
+composite relationships (efficient) and weak ones (use carefully, it is
+non-scalable!)</li>
+</ul>
+The relationship name by default is set to "*" to allow return objects
+referencing given one via any relationship. Set it to any explicit
+name, if necessary. Leave check_composite_only parameter with default
+value to keep old
+behavior.<br>
+<br>
+The exact methods declarations and descriptions of modified parameters
+are:<br>
+<br>
+1. Template method of <span style="font-weight: bold;">Configuration</span>
+class:<br>
+<br>
+<tt><i><font color="#006600"></font></i></tt>
+<div style="margin-left: 40px;"><tt><i><font color="#006600">&nbsp;&nbsp;
+*&nbsp; \param
+obj&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+object</font></i></tt><br>
+<tt><i><font color="#006600">&nbsp;&nbsp; *&nbsp; \param
+objects&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+returned value</font></i></tt><br>
+<tt><i><font color="#006600">&nbsp;&nbsp; *&nbsp; \param
+relationship_name&nbsp;&nbsp;&nbsp;&nbsp; name of the relationship, via
+which the object is referenced</font></i></tt><br>
+<tt><i><font color="#006600">&nbsp;&nbsp; *&nbsp; \param
+check_composite_only&nbsp; only returned composite parent
+objects</font></i></tt><tt></tt><br>
+<tt> </tt><br>
+<tt>&nbsp;template&lt;class T, class V&gt; void referenced_by(</tt><br>
+<tt>&nbsp; const T&amp; obj,</tt><br>
+<tt>&nbsp; std::vector&lt;const V*&gt;&amp; objects,</tt><br>
+<tt>&nbsp; const std::string&amp; relationship_name = "*",</tt><br>
+<tt>&nbsp; bool check_composite_only = true,</tt><br>
+<tt>&nbsp; bool init = false,</tt><br>
+<tt>&nbsp; unsigned long rlevel = 0,</tt><br>
+<tt>&nbsp; const std::vector&lt;std::string&gt; * rclasses = 0) throw
+(daq::config::Generic);<br>
+<br>
+</tt></div>
+2. The method of <span style="font-weight: bold;">ConfigObject</span>
+class:<br>
+<br>
+<tt><i><font color="#006600"></font></i></tt>
+<div style="margin-left: 40px;"><tt><i><font color="#006600">&nbsp;
+*&nbsp; \param
+value&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+returned objects</font></i></tt><br>
+<tt><i><font color="#006600">&nbsp; *&nbsp; \param
+relationship_name&nbsp;&nbsp;&nbsp;&nbsp; name of relationship (if "*",
+then return objects referencing via ANY relationship)</font></i></tt><br>
+<tt><i><font color="#006600">&nbsp; *&nbsp; \param
+check_composite_only&nbsp; only returned composite parent
+objects</font></i></tt><br>
+<tt><i><font color="#006600"></font></i></tt><br>
+<tt>void referenced_by(</tt><br>
+<tt>&nbsp;std::vector&lt;ConfigObject&gt;&amp; value,</tt><br>
+<tt>&nbsp;const std::string&amp; relationship_name = "*",</tt><br>
+<tt>&nbsp;bool check_composite_only = true,</tt><br>
+<tt>&nbsp;unsigned long rlevel = 0,</tt><br>
+<tt>&nbsp;const std::vector&lt;std::string&gt; * rclasses = 0 ) const
+throw
+(daq::config::Generic);</tt><br>
+</div>
+<h5>New C++ API to Get Schema Description</h5>
+The new API to get database schema description is defined by the <a
+ href="http://isscvs.cern.ch/cgi-bin/viewcvs-all.cgi/DAQ/online/config/config/Schema.h?root=atlastdaq&amp;view=markup">config/Schema.h</a>
+file. The complete list of classes defined by the schema can be
+obtained using Configuration::superclasses() method. Once name of class
+is known, it's properties can be queried using new Configuration method:<br>
+<pre>const daq::config::class_t&amp; get_class_info(const std::string&amp; class_name, bool direct_only = false) throw (daq::config::Generic, daq::config::NotFound)</pre>
+The old get_class_info(const std::string&amp; class_name, MetaDataType
+type, bool ...)
+method is supported in 1.8.4 and will be removed in longer term.
+<h5>Bug fixes</h5>
+<ul>
+  <li>Fix wrong C++ code deleting an object pointed by set's iterator
+(may
+be a reason of rare crashes)</li>
+  <li>Fix unload() C++ method bug, if it was called twice (uncleared
+map
+contains destroyed objects, which are destroyed second time; came from
+LArg)</li>
+  <li>Correct C++ DEBUG output in several cases (config template cast,
+search of implementation objects in cache)</li>
+  <li>Proper C++ reload of database in case of objects removing (fix
+setup
+crash)</li>
+</ul>
+<h5>Other Improvements:</h5>
+<ul>
+  <li>The C++ Configuration::superclasses() returns map of all classes
+including those which have no base ones; for the moment this is the
+only way to get list of all classes from config layer and this is
+required for Partition Maker's dynamic Python bindings. See also <span
+ class="moz-txt-link-freetext">Savannah request <a
+ class="moz-txt-link-freetext"
+ href="https://savannah.cern.ch/bugs/?30737">https://savannah.cern.ch/bugs/?30737</a></span>
+  </li>
+  <li>Allow re-create removed C++ DAL objects (basically now user is
+allowed to
+reload database after any modifications [except of changes with include
+files]).</li>
+  <li>Put JNI implementation for Java oksconfig plug-in set methods
+(before it was not possible to use Java config layer with oks plug-in
+to modify database).</li>
+  <li>Add method ConfigObject::contained_in() returning name of file
+the object belongs to.<br>
+  </li>
+</ul>
+</body>
+</html>
