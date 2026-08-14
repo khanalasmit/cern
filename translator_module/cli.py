@@ -34,10 +34,12 @@ def main():
 
     # Initialize the translator
     from agent.translator import OksTranslator
+    # Resolve repo-root data files relative to this file (works on any OS)
+    repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     try:
         translator = OksTranslator(
-            "d:/document/projects/minor/oks_scraped/oks_schema_examples.xml",
-            "d:/document/projects/minor/oks_scraped/gold_pairs.jsonl",
+            os.path.join(repo_root, "oks_scraped", "oks_schema_examples.xml"),
+            os.path.join(repo_root, "oks_scraped", "gold_pairs.jsonl"),
             llm_api_key=llm_api_key,
             llm_base_url=llm_base_url,
             llm_model=llm_model

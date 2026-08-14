@@ -65,7 +65,7 @@ class OksTranslator:
         # Initialize LLM Client
         self.llm_model = llm_model or os.environ.get("LLM_MODEL", "mimo-v2.5-pro")
         api_key = llm_api_key or os.environ.get("LLM_API_KEY", "dummy")
-        base_url = llm_base_url or os.environ.get("LLM_BASE_URL", "https://api.xiaomimimo.com/anthropic")
+        base_url = llm_base_url or os.environ.get("LLM_BASE_URL", "https://api.xiaomimimo.com/v1")
 
         self.client = OpenAI(api_key=api_key, base_url=base_url)
 
@@ -215,10 +215,13 @@ if __name__ == "__main__":
     from dotenv import dotenv_values
     env = dotenv_values(os.path.join(os.path.dirname(__file__), '..', '.env'))
 
+    # Resolve repo-root data files (works on any OS, not just the original D:\ setup)
+    repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
+
     # Simple test run
     translator = OksTranslator(
-        "d:/document/projects/minor/oks_scraped/oks_schema_examples.xml",
-        "d:/document/projects/minor/oks_scraped/gold_pairs.jsonl",
+        os.path.join(repo_root, "oks_scraped", "oks_schema_examples.xml"),
+        os.path.join(repo_root, "oks_scraped", "gold_pairs.jsonl"),
         llm_api_key=env.get("LLM_API_KEY"),
         llm_base_url=env.get("LLM_BASE_URL"),
         llm_model=env.get("LLM_MODEL")
