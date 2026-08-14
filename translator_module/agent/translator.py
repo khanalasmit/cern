@@ -1,6 +1,6 @@
 import json
 import os
-from openai import OpenAI, APIStatusError, APIConnectionError, APITimeoutError
+from openai import OpenAI, APIStatusError, APIConnectionError
 from pydantic import ValidationError
 from rag.ingest import HybridIndexer
 from rag.retrieve import Retriever
@@ -49,8 +49,7 @@ class OksTranslator:
                  gold_pairs_path: str,
                  llm_api_key: str = None,
                  llm_base_url: str = None,
-                 llm_model: str = None,
-                 llm_timeout: int = 60):
+                 llm_model: str = None):
 
         # Initialize RAG
         self.indexer = HybridIndexer()
@@ -67,9 +66,8 @@ class OksTranslator:
         self.llm_model = llm_model or os.environ.get("LLM_MODEL", "mimo-v2.5-pro")
         api_key = llm_api_key or os.environ.get("LLM_API_KEY", "dummy")
         base_url = llm_base_url or os.environ.get("LLM_BASE_URL", "https://api.xiaomimimo.com/anthropic")
-        self.llm_timeout = llm_timeout
 
-        self.client = OpenAI(api_key=api_key, base_url=base_url, timeout=self.llm_timeout)
+        self.client = OpenAI(api_key=api_key, base_url=base_url)
 
     def translate(self, natural_language_query: str, max_retries: int = 1) -> dict:
         """Translates NL to OKS Query String via IR validation with a repair loop."""
@@ -111,8 +109,7 @@ IMPORTANT RULES:
                 response = self.client.chat.completions.create(
                     model=self.llm_model,
                     messages=messages,
-                    temperature=0.0,
-                    timeout=self.llm_timeout
+                    temperature=0.0
                 )
             except APIStatusError as e:
                 status = e.status_code
@@ -152,14 +149,7 @@ IMPORTANT RULES:
                         f"Check your network connection and LLM_BASE_URL in .env."
                     )
                 }
-            except APITimeoutError:
-                return {
-                    "status": "error",
-                    "message": (
-                        f"LLM API request timed out after {self.llm_timeout}s. "
-                        f"Try increasing LLM_TIMEOUT in .env or check the API status."
-                    )
-                }
+
 
             ir_json_str = response.choices[0].message.content
 
@@ -231,8 +221,7 @@ if __name__ == "__main__":
         "d:/document/projects/minor/oks_scraped/gold_pairs.jsonl",
         llm_api_key=env.get("LLM_API_KEY"),
         llm_base_url=env.get("LLM_BASE_URL"),
-        llm_model=env.get("LLM_MODEL"),
-        llm_timeout=int(env.get("LLM_TIMEOUT", "60"))
+        llm_model=env.get("LLM_MODEL")
     )
     print("Executing query...")
     result = translator.translate("Find applications whose Timeout is greater than 50")

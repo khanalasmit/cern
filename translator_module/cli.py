@@ -24,7 +24,6 @@ def main():
     llm_api_key = os.environ.get("LLM_API_KEY")
     llm_base_url = os.environ.get("LLM_BASE_URL")
     llm_model = os.environ.get("LLM_MODEL")
-    llm_timeout = int(os.environ.get("LLM_TIMEOUT", "60"))
 
     if not llm_api_key or llm_api_key == "your_api_key_here":
         print("Warning: It looks like your LLM_API_KEY is not set correctly in the .env file.")
@@ -41,8 +40,7 @@ def main():
             "d:/document/projects/minor/oks_scraped/gold_pairs.jsonl",
             llm_api_key=llm_api_key,
             llm_base_url=llm_base_url,
-            llm_model=llm_model,
-            llm_timeout=llm_timeout
+            llm_model=llm_model
         )
     except Exception as e:
         print(f"Failed to initialize the translator: {e}")
