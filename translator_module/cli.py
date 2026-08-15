@@ -2,6 +2,11 @@ import os
 import sys
 import json
 
+# Ensure the parent directory (repo root) is in sys.path so we can import 'translator_module' as a package
+repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if repo_root not in sys.path:
+    sys.path.insert(0, repo_root)
+
 def main():
     # Load environment variables
     try:
@@ -33,7 +38,7 @@ def main():
     print("Initializing OKS Intelligent Query Agent...")
 
     # Initialize the translator
-    from agent.translator import OksTranslator
+    from translator_module.agent.translator import OksTranslator
     # Resolve repo-root data files relative to this file (works on any OS)
     repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     try:
