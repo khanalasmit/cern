@@ -2,8 +2,8 @@ import json
 import os
 from openai import OpenAI, APIStatusError, APIConnectionError
 from pydantic import ValidationError
-from rag.ingest import HybridIndexer
-from rag.retrieve import Retriever
+from translator_module.rag.ingest import HybridIndexer
+from translator_module.rag.retrieve import Retriever
 from .few_shot import FewShotManager
 from .ir_validator import validate_ir
 from .serializer import serialize_ir_to_oks
