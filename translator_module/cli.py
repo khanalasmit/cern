@@ -2,24 +2,35 @@ import os
 import sys
 import json
 
+# Running ``python cli.py`` makes this directory importable, but not its
+# parent.  Add the repository root so absolute ``translator_module.*``
+# imports used by the agent resolve without requiring a different command.
+MODULE_DIR = os.path.dirname(os.path.abspath(__file__))
+REPO_ROOT = os.path.dirname(MODULE_DIR)
+if REPO_ROOT not in sys.path:
+    sys.path.insert(0, REPO_ROOT)
+
 def main():
     # Load environment variables
     try:
         from dotenv import load_dotenv
-        env_path = os.path.join(os.path.dirname(__file__), '.env')
-        load_dotenv(env_path)
+        for env_path in (os.path.join(MODULE_DIR, '.env'), os.path.join(REPO_ROOT, '.env')):
+            if os.path.isfile(env_path):
+                load_dotenv(env_path, override=True)
+                break
     except ImportError:
         # Fallback: manual .env parsing if python-dotenv is not installed
-        env_path = os.path.join(os.path.dirname(__file__), '.env')
-        try:
-            with open(env_path, 'r') as f:
-                for line in f:
-                    line = line.strip()
-                    if line and not line.startswith('#') and '=' in line:
-                        key, val = line.split('=', 1)
-                        os.environ.setdefault(key.strip(), val.strip())
-        except Exception:
-            pass
+        for env_path in (os.path.join(MODULE_DIR, '.env'), os.path.join(REPO_ROOT, '.env')):
+            try:
+                with open(env_path, 'r') as f:
+                    for line in f:
+                        line = line.strip()
+                        if line and not line.startswith('#') and '=' in line:
+                            key, val = line.split('=', 1)
+                            os.environ[key.strip()] = val.strip()
+                break
+            except FileNotFoundError:
+                continue
 
     llm_api_key = os.environ.get("LLM_API_KEY")
     llm_base_url = os.environ.get("LLM_BASE_URL")
