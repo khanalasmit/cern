@@ -1,25 +1,50 @@
+import json
 import os
 import sys
-import json
+from pathlib import Path
+
+
+MODULE_DIR = Path(__file__).resolve().parent
+REPO_ROOT = MODULE_DIR.parent
+
+
+def _reexec_with_repo_venv() -> None:
+    venv_python = REPO_ROOT / ".venv" / "bin" / "python"
+    if not venv_python.is_file():
+        return
+
+    current_python = Path(sys.executable).resolve()
+    if current_python == venv_python.resolve():
+        return
+
+    os.execv(str(venv_python), [str(venv_python), str(Path(__file__).resolve()), *sys.argv[1:]])
+
+
+_reexec_with_repo_venv()
 
 def main():
     # Load environment variables
     try:
         from dotenv import load_dotenv
-        env_path = os.path.join(os.path.dirname(__file__), '.env')
-        load_dotenv(env_path)
+        for env_path in (MODULE_DIR / ".env", REPO_ROOT / ".env"):
+            if env_path.is_file():
+                # Project configuration must take precedence over any stale
+                # LLM_* variables exported by a previous shell session.
+                load_dotenv(env_path, override=True)
+                break
     except ImportError:
         # Fallback: manual .env parsing if python-dotenv is not installed
-        env_path = os.path.join(os.path.dirname(__file__), '.env')
-        try:
-            with open(env_path, 'r') as f:
-                for line in f:
-                    line = line.strip()
-                    if line and not line.startswith('#') and '=' in line:
-                        key, val = line.split('=', 1)
-                        os.environ.setdefault(key.strip(), val.strip())
-        except Exception:
-            pass
+        for env_path in (MODULE_DIR / ".env", REPO_ROOT / ".env"):
+            try:
+                with open(env_path, 'r') as f:
+                    for line in f:
+                        line = line.strip()
+                        if line and not line.startswith('#') and '=' in line:
+                            key, val = line.split('=', 1)
+                            os.environ[key.strip()] = val.strip()
+                break
+            except Exception:
+                continue
 
     llm_api_key = os.environ.get("LLM_API_KEY")
     llm_base_url = os.environ.get("LLM_BASE_URL")
@@ -35,9 +60,11 @@ def main():
     # Initialize the translator
     from agent.translator import OksTranslator
     try:
+        schema_xml_path = REPO_ROOT / "oks_scraped" / "oks_schema_examples.xml"
+        gold_pairs_path = REPO_ROOT / "oks_scraped" / "gold_pairs.jsonl"
         translator = OksTranslator(
-            "d:/document/projects/minor/oks_scraped/oks_schema_examples.xml",
-            "d:/document/projects/minor/oks_scraped/gold_pairs.jsonl",
+            str(schema_xml_path),
+            str(gold_pairs_path),
             llm_api_key=llm_api_key,
             llm_base_url=llm_base_url,
             llm_model=llm_model

@@ -65,7 +65,9 @@ class OksTranslator:
         # Initialize LLM Client
         self.llm_model = llm_model or os.environ.get("LLM_MODEL", "mimo-v2.5-pro")
         api_key = llm_api_key or os.environ.get("LLM_API_KEY", "dummy")
-        base_url = llm_base_url or os.environ.get("LLM_BASE_URL", "https://api.xiaomimimo.com/anthropic")
+        # This client calls OpenAI Chat Completions, so it must use MiMo's
+        # OpenAI-compatible API base URL (not its Anthropic Messages URL).
+        base_url = llm_base_url or os.environ.get("LLM_BASE_URL", "https://api.xiaomimimo.com/v1")
 
         self.client = OpenAI(api_key=api_key, base_url=base_url)
 
