@@ -1,40 +1,26 @@
-import json
 import os
 import sys
-from pathlib import Path
+import json
 
-
-MODULE_DIR = Path(__file__).resolve().parent
-REPO_ROOT = MODULE_DIR.parent
-
-
-def _reexec_with_repo_venv() -> None:
-    venv_python = REPO_ROOT / ".venv" / "bin" / "python"
-    if not venv_python.is_file():
-        return
-
-    current_python = Path(sys.executable).resolve()
-    if current_python == venv_python.resolve():
-        return
-
-    os.execv(str(venv_python), [str(venv_python), str(Path(__file__).resolve()), *sys.argv[1:]])
-
-
-_reexec_with_repo_venv()
+# Running ``python cli.py`` makes this directory importable, but not its
+# parent.  Add the repository root so absolute ``translator_module.*``
+# imports used by the agent resolve without requiring a different command.
+MODULE_DIR = os.path.dirname(os.path.abspath(__file__))
+REPO_ROOT = os.path.dirname(MODULE_DIR)
+if REPO_ROOT not in sys.path:
+    sys.path.insert(0, REPO_ROOT)
 
 def main():
     # Load environment variables
     try:
         from dotenv import load_dotenv
-        for env_path in (MODULE_DIR / ".env", REPO_ROOT / ".env"):
-            if env_path.is_file():
-                # Project configuration must take precedence over any stale
-                # LLM_* variables exported by a previous shell session.
+        for env_path in (os.path.join(MODULE_DIR, '.env'), os.path.join(REPO_ROOT, '.env')):
+            if os.path.isfile(env_path):
                 load_dotenv(env_path, override=True)
                 break
     except ImportError:
         # Fallback: manual .env parsing if python-dotenv is not installed
-        for env_path in (MODULE_DIR / ".env", REPO_ROOT / ".env"):
+        for env_path in (os.path.join(MODULE_DIR, '.env'), os.path.join(REPO_ROOT, '.env')):
             try:
                 with open(env_path, 'r') as f:
                     for line in f:
@@ -43,7 +29,7 @@ def main():
                             key, val = line.split('=', 1)
                             os.environ[key.strip()] = val.strip()
                 break
-            except Exception:
+            except FileNotFoundError:
                 continue
 
     llm_api_key = os.environ.get("LLM_API_KEY")
@@ -59,12 +45,12 @@ def main():
 
     # Initialize the translator
     from agent.translator import OksTranslator
+    # Resolve repo-root data files relative to this file (works on any OS)
+    repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     try:
-        schema_xml_path = REPO_ROOT / "oks_scraped" / "oks_schema_examples.xml"
-        gold_pairs_path = REPO_ROOT / "oks_scraped" / "gold_pairs.jsonl"
         translator = OksTranslator(
-            str(schema_xml_path),
-            str(gold_pairs_path),
+            os.path.join(repo_root, "oks_scraped", "oks_schema_examples.xml"),
+            os.path.join(repo_root, "oks_scraped", "gold_pairs.jsonl"),
             llm_api_key=llm_api_key,
             llm_base_url=llm_base_url,
             llm_model=llm_model

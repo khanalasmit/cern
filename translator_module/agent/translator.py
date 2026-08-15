@@ -1,22 +1,12 @@
 import json
 import os
-import sys
-from pathlib import Path
-
 from openai import OpenAI, APIStatusError, APIConnectionError
 from pydantic import ValidationError
-
-# Support both normal package imports and direct local execution with
-# ``python translator.py`` from this directory.
-MODULE_ROOT = Path(__file__).resolve().parents[1]
-if str(MODULE_ROOT) not in sys.path:
-    sys.path.insert(0, str(MODULE_ROOT))
-
-from rag.ingest import HybridIndexer
-from rag.retrieve import Retriever
-from agent.few_shot import FewShotManager
-from agent.ir_validator import validate_ir
-from agent.serializer import serialize_ir_to_oks
+from translator_module.rag.ingest import HybridIndexer
+from translator_module.rag.retrieve import Retriever
+from .few_shot import FewShotManager
+from .ir_validator import validate_ir
+from .serializer import serialize_ir_to_oks
 
 # The IR schema description embedded in the system prompt so the LLM knows
 # exactly what JSON structure to produce.
@@ -75,8 +65,6 @@ class OksTranslator:
         # Initialize LLM Client
         self.llm_model = llm_model or os.environ.get("LLM_MODEL", "mimo-v2.5-pro")
         api_key = llm_api_key or os.environ.get("LLM_API_KEY", "dummy")
-        # This client calls OpenAI Chat Completions, so it must use MiMo's
-        # OpenAI-compatible API base URL (not its Anthropic Messages URL).
         base_url = llm_base_url or os.environ.get("LLM_BASE_URL", "https://api.xiaomimimo.com/v1")
 
         self.client = OpenAI(api_key=api_key, base_url=base_url)
@@ -223,8 +211,22 @@ IMPORTANT RULES:
 
 
 if __name__ == "__main__":
-    # Delegate to the maintained CLI so direct execution uses the same
-    # project paths and environment loading as the documented command.
-    from cli import main
+    # Load API key from .env file
+    from dotenv import dotenv_values
+    env = dotenv_values(os.path.join(os.path.dirname(__file__), '..', '.env'))
 
-    main()
+    # Resolve repo-root data files (works on any OS, not just the original D:\ setup)
+    repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
+
+    # Simple test run
+    translator = OksTranslator(
+        os.path.join(repo_root, "oks_scraped", "oks_schema_examples.xml"),
+        os.path.join(repo_root, "oks_scraped", "gold_pairs.jsonl"),
+        llm_api_key=env.get("LLM_API_KEY"),
+        llm_base_url=env.get("LLM_BASE_URL"),
+        llm_model=env.get("LLM_MODEL")
+    )
+    print("Executing query...")
+    result = translator.translate("Find applications whose Timeout is greater than 50")
+    print("\nResult:")
+    print(json.dumps(result, indent=2))
