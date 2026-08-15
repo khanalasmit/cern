@@ -44,7 +44,7 @@ def main():
     print("Initializing OKS Intelligent Query Agent...")
 
     # Initialize the translator
-    from agent.translator import OksTranslator
+    from translator_module.agent.translator import OksTranslator
     # Resolve repo-root data files relative to this file (works on any OS)
     repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     try:
