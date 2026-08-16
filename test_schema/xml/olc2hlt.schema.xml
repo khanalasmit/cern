@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="ASCII"?>
+
+<!-- oks-schema version 2.0 -->
+
+
+<!DOCTYPE oks-schema [
+  <!ELEMENT oks-schema (info, (include)?, (comments)?, (class)+)>
+  <!ELEMENT info EMPTY>
+  <!ATTLIST info
+      name CDATA #REQUIRED
+      type CDATA #REQUIRED
+      num-of-items CDATA #REQUIRED
+      oks-format CDATA #FIXED "schema"
+      oks-version CDATA #REQUIRED
+      created-by CDATA #REQUIRED
+      created-on CDATA #REQUIRED
+      creation-time CDATA #REQUIRED
+      last-modified-by CDATA #REQUIRED
+      last-modified-on CDATA #REQUIRED
+      last-modification-time CDATA #REQUIRED
+  >
+  <!ELEMENT include (file)+>
+  <!ELEMENT file EMPTY>
+  <!ATTLIST file
+      path CDATA #REQUIRED
+  >
+  <!ELEMENT comments (comment)+>
+  <!ELEMENT comment EMPTY>
+  <!ATTLIST comment
+      creation-time CDATA #REQUIRED
+      created-by CDATA #REQUIRED
+      created-on CDATA #REQUIRED
+      author CDATA #REQUIRED
+      text CDATA #REQUIRED
+  >
+  <!ELEMENT class (superclass | attribute | relationship | method)*>
+  <!ATTLIST class
+      name CDATA #REQUIRED
+      description CDATA ""
+      is-abstract (yes|no) "no"
+  >
+  <!ELEMENT superclass EMPTY>
+  <!ATTLIST superclass name CDATA #REQUIRED>
+  <!ELEMENT attribute EMPTY>
+  <!ATTLIST attribute
+      name CDATA #REQUIRED
+      description CDATA ""
+      type (bool|s8|u8|s16|u16|s32|u32|s64|u64|float|double|date|time|string|uid|enum|class) #REQUIRED
+      range CDATA ""
+      format (dec|hex|oct) "dec"
+      is-multi-value (yes|no) "no"
+      multi-value-implementation (list|vector) "list"
+      init-value CDATA ""
+      is-not-null (yes|no) "no"
+  >
+  <!ELEMENT relationship EMPTY>
+  <!ATTLIST relationship
+      name CDATA #REQUIRED
+      description CDATA ""
+      class-type CDATA #REQUIRED
+      low-cc (zero|one) #REQUIRED
+      high-cc (one|many) #REQUIRED
+      is-composite (yes|no) #REQUIRED
+      is-exclusive (yes|no) #REQUIRED
+      is-dependent (yes|no) #REQUIRED
+      multi-value-implementation (list|vector) "list"
+  >
+  <!ELEMENT method (method-implementation*)>
+  <!ATTLIST method
+      name CDATA #REQUIRED
+      description CDATA ""
+  >
+  <!ELEMENT method-implementation EMPTY>
+  <!ATTLIST method-implementation
+      language CDATA #REQUIRED
+      prototype CDATA #REQUIRED
+      body CDATA ""
+  >
+]>
+
+<oks-schema>
+
+<info name="" type="" num-of-items="1" oks-format="schema" oks-version="oks-06-07-02 built &quot;Jul 14 2014&quot;" created-by="salnikov" created-on="atlas-mda-dev.cern.ch" creation-time="20150109T150000" last-modified-by="salnikov" last-modified-on="atlas-mda-dev.cern.ch" last-modification-time="20150109T232123"/>
+
+<include>
+ <file path="daq/schema/core.schema.xml"/>
+</include>
+
+
+ <class name="OLC2HLTApp" description="OLC2HLT application class.">
+  <superclass name="CustomLifetimeApplication"/>
+  <attribute name="SrcPartition" description="Name of a partition which contains IS server with input data, leave empty to use application partition" type="string" init-value="" is-not-null="yes"/>
+  <attribute name="SrcISInfo" description="Name of an IS info object which contains input data. See OLC2COOL.OnlPrefLumi configuration." type="string" is-not-null="yes"/>
+  <attribute name="DstPartition" description="Name of a partition which contains IS server for output data, leave empty to use application partition" type="string" init-value="" is-not-null="yes"/>
+  <attribute name="DstISInfo" description="Name of an IS info object which will contain output data." type="string" is-not-null="yes"/>
+  <attribute name="StableBeamsPartition" description="Partition containing IS server for stable beam flag." type="string" init-value="initial" is-not-null="yes"/>
+  <attribute name="StableBeamsISInfo" description="Name if IS info object for stable beam flag." type="string" init-value="LHC.StableBeamsFlag" is-not-null="yes"/>
+  <attribute name="LumiChangePercent" description="Threshold for relative change in instantaneous luminosity, in percent. Used for stable beams only." type="float" init-value="5." is-not-null="yes"/>
+  <attribute name="LumiChangePercentUnstable" description="Threshold for relative change in instantaneous luminosity, in percent. For non-stable beams periods." type="float" init-value="30." is-not-null="yes"/>
+  <attribute name="UnstableDeadBand" description="Luminosity threshold, values below taht are assumed to be zero during non-stable beams periods." type="float" init-value="0.01" is-not-null="yes"/>
+  <attribute name="MinLBLength" description="Minimum LB length in seconds, shorter LBs are discarded." type="float" init-value="15." is-not-null="yes"/>
+  <attribute name="NoCTPUpdate" description="If true then pass -N option to ctpUpdateCommand" type="bool" init-value="0"/>
+  <attribute name="LogLevel" description="Application logging level, one of INFO, DEBUG, or WARNING" type="enum" range="INFO,DEBUG,WARNING" init-value="INFO"/>
+  <attribute name="Log2ERS" description="If true then enable logging to ERS" type="bool" init-value="0"/>
+ </class>
+
+ <class name="OLC2HLTInvalidateConfig" description="Class for OLC2HLT invalidator configuration.">
+  <attribute name="RunMode" description="If value is SoR then current run number is used for IOV start, if value is EoR then next run number is used for IOV start. Normally this should match start of lifetime of the application." type="enum" range="SoR,EoR" init-value="" is-not-null="yes"/>
+  <attribute name="LBNumber" description="LB number to use as a start of IOV, default is 0." type="u32" init-value="0" is-not-null="yes"/>
+  <attribute name="Mu" description="Value to use for Mu field in the invalidated record." type="float" init-value="0." is-not-null="yes"/>
+  <attribute name="Valid" description="Value to use for Valid field in the invalidated record, default is 2." type="u32" init-value="2" is-not-null="yes"/>
+  <attribute name="ISPartition" description="Partition name for IS server, leave empty to use application partition." type="string" init-value=""/>
+  <attribute name="ISObject" description="Name of the IS object to use for run number." type="string" init-value="RunParams.RunParams"/>
+  <attribute name="MaxRunDiff" description="Maximum allowed difference between last stored run number from COOL and new run number to be stored, use 0 to disable check." type="u32" init-value="100000" is-not-null="yes"/>
+  <attribute name="CoolDb" description="COOL database connection string, leave empty to use default." type="string" init-value=""/>
+  <attribute name="CoolFolder" description="COOL folder name, leave empty to use default." type="string" init-value=""/>
+  <attribute name="CoolTag" description="COOL tag name, leave empty to use default." type="string" init-value=""/>
+  <attribute name="CoolChannel" description="COOL channel number, default is 0." type="u32" init-value="0" is-not-null="yes"/>
+ </class>
+
+ <class name="OLC2HLTInvalidator" description="Class for OLC2HLT invalidator application.">
+  <superclass name="CustomLifetimeApplication"/>
+  <superclass name="OLC2HLTInvalidateConfig"/>
+ </class>
+
+ <class name="OLC2HLTConfig" description="OLC2HLT configuration class.">
+  <attribute name="SrcPartition" description="Name of a partition which contains IS server with input data, leave empty to use application partition" type="string" init-value="" is-not-null="yes"/>
+  <attribute name="SrcISInfo" description="Name of an IS info object which contains input data. See OLC2COOL.OnlPrefLumi configuration." type="string" is-not-null="yes"/>
+  <attribute name="DstPartition" description="Name of a partition which contains IS server for output data, leave empty to use application partition" type="string" init-value="" is-not-null="yes"/>
+  <attribute name="DstISInfo" description="Name of an IS info object which will contain output data." type="string" is-not-null="yes"/>
+  <attribute name="StableBeamsPartition" description="Partition containing IS server for stable beam flag." type="string" init-value="initial" is-not-null="yes"/>
+  <attribute name="StableBeamsISInfo" description="Name if IS info object for stable beam flag." type="string" init-value="LHC.StableBeamsFlag" is-not-null="yes"/>
+  <attribute name="LumiChangePercent" description="Threshold for relative change in instantaneous luminosity, in percent. Used for stable beams only." type="float" init-value="5." is-not-null="yes"/>
+  <attribute name="LumiChangePercentUnstable" description="Threshold for relative change in instantaneous luminosity, in percent. For non-stable beams periods." type="float" init-value="30." is-not-null="yes"/>
+  <attribute name="UnstableDeadBand" description="Luminosity threshold, values below taht are assumed to be zero during non-stable beams periods." type="float" init-value="0.01" is-not-null="yes"/>
+  <attribute name="MinLBLength" description="Minimum LB length in seconds, shorter LBs are discarded." type="float" init-value="15." is-not-null="yes"/>
+  <attribute name="NoCTPUpdate" description="If true then pass -N option to ctpUpdateCommand" type="bool" init-value="0"/>
+  <attribute name="LogLevel" description="Application logging level, one of INFO, DEBUG, or WARNING" type="enum" range="INFO,DEBUG,WARNING" init-value="INFO"/>
+  <attribute name="Log2ERS" description="If true then enable logging to ERS" type="bool" init-value="0"/>
+  <relationship name="SoRInvalidation" description="Configuration for SoR invalidator, if not defined then SoR invalidation is not run." class-type="OLC2HLTInvalidateConfig" low-cc="zero" high-cc="one" is-composite="no" is-exclusive="no" is-dependent="no"/>
+  <relationship name="EoRInvalidation" description="Configuration for EoR invalidator, if not defined then EoR invalidation is not run." class-type="OLC2HLTInvalidateConfig" low-cc="zero" high-cc="one" is-composite="no" is-exclusive="no" is-dependent="no"/>
+ </class>
+
+</oks-schema>

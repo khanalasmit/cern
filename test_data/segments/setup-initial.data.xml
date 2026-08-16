@@ -1,0 +1,507 @@
+<?xml version="1.0" encoding="ASCII"?>
+
+<!-- oks-data version 2.2 -->
+
+
+<!DOCTYPE oks-data [
+  <!ELEMENT oks-data (info, (include)?, (comments)?, (obj)+)>
+  <!ELEMENT info EMPTY>
+  <!ATTLIST info
+      name CDATA #IMPLIED
+      type CDATA #IMPLIED
+      num-of-items CDATA #REQUIRED
+      oks-format CDATA #FIXED "data"
+      oks-version CDATA #REQUIRED
+      created-by CDATA #IMPLIED
+      created-on CDATA #IMPLIED
+      creation-time CDATA #IMPLIED
+      last-modified-by CDATA #IMPLIED
+      last-modified-on CDATA #IMPLIED
+      last-modification-time CDATA #IMPLIED
+  >
+  <!ELEMENT include (file)*>
+  <!ELEMENT file EMPTY>
+  <!ATTLIST file
+      path CDATA #REQUIRED
+  >
+  <!ELEMENT comments (comment)*>
+  <!ELEMENT comment EMPTY>
+  <!ATTLIST comment
+      creation-time CDATA #REQUIRED
+      created-by CDATA #REQUIRED
+      created-on CDATA #REQUIRED
+      author CDATA #REQUIRED
+      text CDATA #REQUIRED
+  >
+  <!ELEMENT obj (attr | rel)*>
+  <!ATTLIST obj
+      class CDATA #REQUIRED
+      id CDATA #REQUIRED
+  >
+  <!ELEMENT attr (data)*>
+  <!ATTLIST attr
+      name CDATA #REQUIRED
+      type (bool|s8|u8|s16|u16|s32|u32|s64|u64|float|double|date|time|string|uid|enum|class|-) "-"
+      val CDATA ""
+  >
+  <!ELEMENT data EMPTY>
+  <!ATTLIST data
+      val CDATA #REQUIRED
+  >
+  <!ELEMENT rel (ref)*>
+  <!ATTLIST rel
+      name CDATA #REQUIRED
+      class CDATA ""
+      id CDATA ""
+  >
+  <!ELEMENT ref EMPTY>
+  <!ATTLIST ref
+      class CDATA #REQUIRED
+      id CDATA #REQUIRED
+  >
+]>
+
+<oks-data>
+
+<info name="" type="" num-of-items="29" oks-format="data" oks-version="572fc09 built &quot;Mar 12 2021&quot;" created-by="akazarov" created-on="lxplus103" creation-time="20030514T123458" last-modified-by="rhauser" last-modified-on="mini" last-modification-time="20210312T123602"/>
+
+<include>
+ <file path="daq/schema/core.schema.xml"/>
+ <file path="daq/schema/pbeast.schema.xml"/>
+ <file path="daq/segments/common-environment.data.xml"/>
+ <file path="daq/sw/repository.data.xml"/>
+ <file path="daq/sw/test-repository.data.xml"/>
+ <file path="daq/sw/external-env.data.xml"/>
+</include>
+
+<comments>
+ <comment creation-time="20131103T172941" created-by="rhauser" created-on="msu-pc7.cern.ch" author="rhauser" text="C++ oksconfig plug-in user: &apos;rhauser&apos;, host: &apos;msu-pc7.cern.ch&apos;, log message: &apos;python plug-in&apos;"/>
+ <comment creation-time="20131103T173009" created-by="rhauser" created-on="msu-pc7.cern.ch" author="rhauser" text="C++ oksconfig plug-in user: &apos;rhauser&apos;, host: &apos;msu-pc7.cern.ch&apos;, log message: &apos;python plug-in&apos;"/>
+ <comment creation-time="20131118T151512" created-by="akazarov" created-on="pc-tbed-pub-12.cern.ch" author="Unknown" text="set Tests Hosts"/>
+ <comment creation-time="20131210T094121" created-by="glehmann" created-on="pc-tbed-pub-01.cern.ch" author="glehmann" text="initial infrastructure tests"/>
+ <comment creation-time="20131210T095436" created-by="glehmann" created-on="pc-tbed-pub-01.cern.ch" author="glehmann" text="added rc/commander interface to DF apps"/>
+ <comment creation-time="20131217T083853" created-by="akazarov" created-on="pc-tbed-pub-12.cern.ch" author="Unknown" text="-dbg tags"/>
+ <comment creation-time="20140613T083406" created-by="glehmann" created-on="pc-tbed-pub-11.cern.ch" author="glehmann" text="C++ oksconfig plug-in user: &apos;glehmann&apos;, host: &apos;pc-tbed-pub-11.cern.ch&apos;, log message: &apos;set special test_is_server for initial&apos;"/>
+ <comment creation-time="20140613T083905" created-by="glehmann" created-on="pc-tbed-pub-11.cern.ch" author="Unknown" text="fixes IS server tests"/>
+ <comment creation-time="20140617T142002" created-by="glehmann" created-on="pc-tbed-pub-03.cern.ch" author="glehmann" text="C++ oksconfig plug-in user: &apos;glehmann&apos;, host: &apos;pc-tbed-pub-03.cern.ch&apos;, log message: &apos;simple example partition&apos;"/>
+ <comment creation-time="20140619T080144" created-by="glehmann" created-on="pc-tbed-pub-11.cern.ch" author="glehmann" text="C++ oksconfig plug-in user: &apos;glehmann&apos;, host: &apos;pc-tbed-pub-11.cern.ch&apos;, log message: &apos;s&apos;"/>
+ <comment creation-time="20140704T074540" created-by="glehmann" created-on="pc-tbed-pub-01.cern.ch" author="glehmann" text="C++ oksconfig plug-in user: &apos;glehmann&apos;, host: &apos;pc-tbed-pub-01.cern.ch&apos;, log message: &apos;9&apos;"/>
+ <comment creation-time="20140919T102539" created-by="glehmann" created-on="pc-tbed-pub-08.cern.ch" author="glehmann" text="C++ oksconfig plug-in user: &apos;glehmann&apos;, host: &apos;pc-tbed-pub-08.cern.ch&apos;, log message: &apos;l&apos;"/>
+ <comment creation-time="20141006T142907" created-by="glehmann" created-on="pc-tbed-pub-10.cern.ch" author="glehmann" text="C++ oksconfig plug-in user: &apos;glehmann&apos;, host: &apos;pc-tbed-pub-10.cern.ch&apos;, log message: &apos;add gcc 48 tags to online segment&apos;"/>
+ <comment creation-time="20141008T092148" created-by="glehmann" created-on="pc-tbed-pub-02.cern.ch" author="glehmann" text="C++ oksconfig plug-in user: &apos;glehmann&apos;, host: &apos;pc-tbed-pub-02.cern.ch&apos;, log message: &apos;g&apos;"/>
+ <comment creation-time="20141024T131500" created-by="glehmann" created-on="pcatd96.cern.ch" author="glehmann" text="C++ oksconfig plug-in user: &apos;glehmann&apos;, host: &apos;pcatd96.cern.ch&apos;, log message: &apos;re-activate backup in rm&apos;"/>
+ <comment creation-time="20141201T172325" created-by="akazarov" created-on="pc-tbed-pub-12.cern.ch" author="Unknown" text="Tags"/>
+ <comment creation-time="20150223T145244" created-by="glehmann" created-on="pc-tbed-pub-02.cern.ch" author="glehmann" text="C++ oksconfig plug-in user: &apos;glehmann&apos;, host: &apos;pc-tbed-pub-02.cern.ch&apos;, log message: &apos;removed pbeast&apos;"/>
+ <comment creation-time="20150223T145757" created-by="glehmann" created-on="pc-tbed-pub-02.cern.ch" author="glehmann" text="C++ oksconfig plug-in user: &apos;glehmann&apos;, host: &apos;pc-tbed-pub-02.cern.ch&apos;, log message: &apos;fdsg&apos;"/>
+ <comment creation-time="20151118T103616" created-by="akazarov" created-on="pc-tbed-pub-12.cern.ch" author="Andrei" text="removed pbeast from initial"/>
+ <comment creation-time="20161109T113243" created-by="akazarov" created-on="pc-tbed-pub-13.cern.ch" author="Andrei" text="new local version"/>
+ <comment creation-time="20161109T114510" created-by="akazarov" created-on="pc-tbed-pub-13.cern.ch" author="Unknown" text="no pbeast"/>
+ <comment creation-time="20161129T095235" created-by="akazarov" created-on="pc-tbed-pub-14.cern.ch" author="Unknown" text="initial partition logs to /tmp"/>
+ <comment creation-time="20180123T142545" created-by="avolio" created-on="pc-tbed-pub-29.cern.ch" author="avolio" text="C++ oksconfig plug-in user: &apos;avolio&apos;, host: &apos;pc-tbed-pub-29.cern.ch&apos;, log message: &apos;RM server configuration&apos;"/>
+ <comment creation-time="20201109T143915" created-by="avolio" created-on="pcatd122n.dyndns.cern.ch" author="avolio" text="Using rdbconfig in initial partition"/>
+ <comment creation-time="20201109T144223" created-by="avolio" created-on="pcatd122n.dyndns.cern.ch" author="avolio" text="RDB_RW_INITIAL added to online segment"/>
+ <comment creation-time="20210210T143100" created-by="akazarov" created-on="pc-tbed-pub-28.cern.ch" author="Andrei" text="correct IPCName for RDB_RW"/>
+</comments>
+
+
+<obj class="Executable" id="test_is_server_initial">
+ <attr name="Parameters" type="string" val=" -p ${TDAQ_PARTITION} -n #this.IPCName"/>
+ <rel name="Executes" class="Binary" id="test_is_server"/>
+</obj>
+
+<obj class="IPCServiceApplication" id="CEP-initial">
+ <attr name="InterfaceName" type="string" val="es/ExpertSystem"/>
+ <attr name="IPCName" type="string" val="CentralES"/>
+ <attr name="Logging" type="bool" val="1"/>
+ <attr name="InitTimeout" type="u32" val="15"/>
+ <attr name="ExitTimeout" type="u32" val="10"/>
+ <attr name="RestartableDuringRun" type="bool" val="1"/>
+ <attr name="IfExitsUnexpectedly" type="enum" val="Error"/>
+ <attr name="IfFailsToStart" type="enum" val="Error"/>
+ <rel name="InitializationDependsFrom">
+  <ref class="IPCServiceApplication" id="RunCtrl_IS"/>
+  <ref class="IPCServiceApplication" id="RDB_INITIAL"/>
+  <ref class="IPCServiceApplication" id="RunParams_IS"/>
+  <ref class="IPCServiceApplication" id="rm-server"/>
+ </rel>
+ <rel name="Program" class="Script" id="ces"/>
+</obj>
+
+<obj class="IPCServiceApplication" id="ISRepository-initial">
+ <attr name="InterfaceName" type="string" val="rdb/cursor"/>
+ <attr name="IPCName" type="string" val="ISRepository"/>
+ <attr name="Logging" type="bool" val="1"/>
+ <attr name="InitTimeout" type="u32" val="30"/>
+ <attr name="ExitTimeout" type="u32" val="5"/>
+ <attr name="RestartableDuringRun" type="bool" val="1"/>
+ <attr name="IfExitsUnexpectedly" type="enum" val="Error"/>
+ <attr name="IfFailsToStart" type="enum" val="Error"/>
+ <rel name="InitializationDependsFrom">
+  <ref class="IPCServiceApplication" id="mts-worker-initial"/>
+  <ref class="IPCServiceApplication" id="RDB_INITIAL"/>
+ </rel>
+ <rel name="Program" class="Script" id="dal_load_is_info_files.sh"/>
+</obj>
+
+<obj class="IPCServiceApplication" id="LHC">
+ <attr name="InterfaceName" type="string" val="is/repository"/>
+ <attr name="IPCName" type="string" val="LHC"/>
+ <attr name="Parameters" type="string" val="-s -n LHC"/>
+ <attr name="RestartParameters" type="string" val="-s -n LHC"/>
+ <attr name="Logging" type="bool" val="1"/>
+ <attr name="InitTimeout" type="u32" val="20"/>
+ <attr name="ExitTimeout" type="u32" val="5"/>
+ <attr name="RestartableDuringRun" type="bool" val="1"/>
+ <attr name="IfExitsUnexpectedly" type="enum" val="Error"/>
+ <attr name="IfFailsToStart" type="enum" val="Error"/>
+ <rel name="InitializationDependsFrom">
+  <ref class="IPCServiceApplication" id="mts-worker-initial"/>
+ </rel>
+ <rel name="Program" class="Binary" id="is_server"/>
+</obj>
+
+<obj class="IPCServiceApplication" id="MTS_IS">
+ <attr name="InterfaceName" type="string" val="is/repository"/>
+ <attr name="IPCName" type="string" val="MTS"/>
+ <attr name="Parameters" type="string" val="-s -n MTS"/>
+ <attr name="RestartParameters" type="string" val="-s -n MTS"/>
+ <attr name="Logging" type="bool" val="1"/>
+ <attr name="InitTimeout" type="u32" val="30"/>
+ <attr name="ExitTimeout" type="u32" val="5"/>
+ <attr name="RestartableDuringRun" type="bool" val="1"/>
+ <attr name="IfExitsUnexpectedly" type="enum" val="Error"/>
+ <attr name="IfFailsToStart" type="enum" val="Error"/>
+ <rel name="Program" class="Binary" id="is_server"/>
+</obj>
+
+<obj class="IPCServiceApplication" id="PMG_IS">
+ <attr name="InterfaceName" type="string" val="is/repository"/>
+ <attr name="IPCName" type="string" val="PMG"/>
+ <attr name="Parameters" type="string" val="-s -n PMG "/>
+ <attr name="RestartParameters" type="string" val="-s -n PMG "/>
+ <attr name="Logging" type="bool" val="1"/>
+ <attr name="InitTimeout" type="u32" val="30"/>
+ <attr name="ExitTimeout" type="u32" val="5"/>
+ <attr name="RestartableDuringRun" type="bool" val="1"/>
+ <attr name="IfExitsUnexpectedly" type="enum" val="Error"/>
+ <attr name="IfFailsToStart" type="enum" val="Error"/>
+ <rel name="InitializationDependsFrom">
+  <ref class="IPCServiceApplication" id="mts-worker-initial"/>
+ </rel>
+ <rel name="Program" class="Binary" id="is_server"/>
+</obj>
+
+<obj class="IPCServiceApplication" id="RDB_INITIAL">
+ <attr name="InterfaceName" type="string" val="rdb/cursor"/>
+ <attr name="Parameters" type="string" val="-D $(TDAQ_DB_DATA) -b ${TDAQ_BACKUP_PATH}/env(TDAQ_APPLICATION_NAME).backup"/>
+ <attr name="RestartParameters" type="string" val="-D $(TDAQ_DB_DATA) -r ${TDAQ_BACKUP_PATH}/env(TDAQ_APPLICATION_NAME).backup -b ${TDAQ_BACKUP_PATH}/env(TDAQ_APPLICATION_NAME).backup"/>
+ <attr name="Logging" type="bool" val="1"/>
+ <attr name="InitTimeout" type="u32" val="30"/>
+ <attr name="ExitTimeout" type="u32" val="5"/>
+ <attr name="RestartableDuringRun" type="bool" val="1"/>
+ <attr name="IfExitsUnexpectedly" type="enum" val="Error"/>
+ <attr name="IfFailsToStart" type="enum" val="Error"/>
+ <attr name="SegmentProcEnvVarName" type="string" val="TDAQ_DB_NAME"/>
+ <rel name="Program" class="Binary" id="rdb_server"/>
+</obj>
+
+<obj class="IPCServiceApplication" id="RDB_RW_INITIAL">
+ <attr name="InterfaceName" type="string" val="rdb/writer"/>
+ <attr name="IPCName" type="string" val="RDB_RW"/>
+ <attr name="Parameters" type="string" val="-d RDB_RW -D $(TDAQ_DB_DATA) -b ${TDAQ_BACKUP_PATH}/env(TDAQ_APPLICATION_NAME).backup"/>
+ <attr name="RestartParameters" type="string" val="-d RDB_RW -D $(TDAQ_DB_DATA) -r ${TDAQ_BACKUP_PATH}/env(TDAQ_APPLICATION_NAME).backup -b ${TDAQ_BACKUP_PATH}/env(TDAQ_APPLICATION_NAME).backup"/>
+ <attr name="Logging" type="bool" val="1"/>
+ <attr name="InitTimeout" type="u32" val="30"/>
+ <attr name="ExitTimeout" type="u32" val="5"/>
+ <attr name="RestartableDuringRun" type="bool" val="1"/>
+ <attr name="IfExitsUnexpectedly" type="enum" val="Error"/>
+ <attr name="IfFailsToStart" type="enum" val="Error"/>
+ <rel name="Program" class="Binary" id="rdb_writer"/>
+ <rel name="ProcessEnvironment">
+  <ref class="Variable" id="OKS_VERBOSE"/>
+  <ref class="Variable" id="GIT_SSH_COMMAND_INITIAL"/>
+  <ref class="Variable" id="OKS_GIT_SSH_PROTOCOL_INITIAL"/>
+ </rel>
+</obj>
+
+<obj class="IPCServiceApplication" id="RunCtrl_IS">
+ <attr name="InterfaceName" type="string" val="is/repository"/>
+ <attr name="IPCName" type="string" val="RunCtrl"/>
+ <attr name="Parameters" type="string" val="-s -n RunCtrl -b ${TDAQ_BACKUP_PATH}/env(TDAQ_APPLICATION_NAME).backup -t 30"/>
+ <attr name="RestartParameters" type="string" val="-s -n RunCtrl -b ${TDAQ_BACKUP_PATH}/env(TDAQ_APPLICATION_NAME).backup -r ${TDAQ_BACKUP_PATH}/env(TDAQ_APPLICATION_NAME).backup -t 30"/>
+ <attr name="Logging" type="bool" val="1"/>
+ <attr name="InitTimeout" type="u32" val="30"/>
+ <attr name="ExitTimeout" type="u32" val="5"/>
+ <attr name="RestartableDuringRun" type="bool" val="1"/>
+ <attr name="IfExitsUnexpectedly" type="enum" val="Error"/>
+ <attr name="IfFailsToStart" type="enum" val="Error"/>
+ <rel name="InitializationDependsFrom">
+  <ref class="IPCServiceApplication" id="rm-server"/>
+ </rel>
+ <rel name="Program" class="Binary" id="is_server"/>
+</obj>
+
+<obj class="IPCServiceApplication" id="RunParams_IS">
+ <attr name="InterfaceName" type="string" val="is/repository"/>
+ <attr name="IPCName" type="string" val="RunParams"/>
+ <attr name="Parameters" type="string" val="-s -n RunParams -b ${TDAQ_BACKUP_PATH}/env(TDAQ_APPLICATION_NAME).backup -t 30"/>
+ <attr name="RestartParameters" type="string" val="-s -n RunParams -b ${TDAQ_BACKUP_PATH}/env(TDAQ_APPLICATION_NAME).backup -r ${TDAQ_BACKUP_PATH}/env(TDAQ_APPLICATION_NAME).backup -t 30"/>
+ <attr name="Logging" type="bool" val="1"/>
+ <attr name="InitTimeout" type="u32" val="30"/>
+ <attr name="ExitTimeout" type="u32" val="5"/>
+ <attr name="RestartableDuringRun" type="bool" val="1"/>
+ <attr name="IfExitsUnexpectedly" type="enum" val="Error"/>
+ <attr name="IfFailsToStart" type="enum" val="Error"/>
+ <rel name="InitializationDependsFrom">
+  <ref class="IPCServiceApplication" id="rm-server"/>
+ </rel>
+ <rel name="Program" class="Binary" id="is_server"/>
+</obj>
+
+<obj class="IPCServiceApplication" id="Setup_IS">
+ <attr name="InterfaceName" type="string" val="is/repository"/>
+ <attr name="IPCName" type="string" val="Setup"/>
+ <attr name="Parameters" type="string" val="-s -n Setup"/>
+ <attr name="RestartParameters" type="string" val="-s -n Setup "/>
+ <attr name="Logging" type="bool" val="1"/>
+ <attr name="InitTimeout" type="u32" val="30"/>
+ <attr name="ExitTimeout" type="u32" val="5"/>
+ <attr name="RestartableDuringRun" type="bool" val="1"/>
+ <attr name="IfExitsUnexpectedly" type="enum" val="Error"/>
+ <attr name="IfFailsToStart" type="enum" val="Error"/>
+ <rel name="Program" class="Binary" id="is_server"/>
+</obj>
+
+<obj class="IPCServiceApplication" id="mts-worker-initial">
+ <attr name="InterfaceName" type="string" val="mts/worker"/>
+ <attr name="Parameters" type="string" val="-s "/>
+ <attr name="RestartParameters" type="string" val="-s"/>
+ <attr name="Logging" type="bool" val="1"/>
+ <attr name="InitTimeout" type="u32" val="10"/>
+ <attr name="ExitTimeout" type="u32" val="5"/>
+ <attr name="RestartableDuringRun" type="bool" val="1"/>
+ <attr name="IfExitsUnexpectedly" type="enum" val="Error"/>
+ <attr name="IfFailsToStart" type="enum" val="Error"/>
+ <rel name="InitializationDependsFrom">
+  <ref class="IPCServiceApplication" id="MTS_IS"/>
+ </rel>
+ <rel name="Program" class="Binary" id="mts_worker"/>
+ <rel name="ProcessEnvironment">
+  <ref class="Variable" id="OKS_DB_ROOT"/>
+  <ref class="Variable" id="ERROR_STREAM_NOMTS"/>
+  <ref class="Variable" id="FATAL_STREAM_NOMTS"/>
+  <ref class="Variable" id="INFO_STREAM_NOMTS"/>
+  <ref class="Variable" id="WARNING_STREAM_NOMTS"/>
+ </rel>
+</obj>
+
+<obj class="IPCServiceApplication" id="rm-server">
+ <attr name="InterfaceName" type="string" val="rmgr/ResMgr"/>
+ <attr name="IPCName" type="string" val="RM_Server"/>
+ <attr name="Parameters" type="string" val="-n RM_Server -r -c oksconfig:daq/sw/rm-config.data.xml -l ${TDAQ_BACKUP_PATH}/env(TDAQ_APPLICATION_NAME).backup"/>
+ <attr name="RestartParameters" type="string" val="-n RM_Server -r -c oksconfig:daq/sw/rm-config.data.xml -l ${TDAQ_BACKUP_PATH}/env(TDAQ_APPLICATION_NAME).backup"/>
+ <attr name="Logging" type="bool" val="1"/>
+ <attr name="ExitTimeout" type="u32" val="5"/>
+ <attr name="RestartableDuringRun" type="bool" val="1"/>
+ <attr name="IfExitsUnexpectedly" type="enum" val="Restart"/>
+ <attr name="IfFailsToStart" type="enum" val="Error"/>
+ <rel name="InitializationDependsFrom">
+  <ref class="IPCServiceApplication" id="RDB_INITIAL"/>
+ </rel>
+ <rel name="Program" class="Binary" id="rmgr_server"/>
+ <rel name="ProcessEnvironment">
+  <ref class="Variable" id="INFO_STREAM_NOMTS"/>
+  <ref class="Variable" id="WARNING_STREAM_NOMTS"/>
+  <ref class="Variable" id="ORBmaxServerThreadPoolSize"/>
+  <ref class="Variable" id="ORBthreadPerConnectionPolicy"/>
+  <ref class="Variable" id="TDAQ_RM_CONFIG"/>
+ </rel>
+</obj>
+
+<obj class="InfrastructureApplication" id="oks2coral-initial">
+ <attr name="Parameters" type="string" val="-c ${OKS2CORAL_CONNECT} -w ${OKS2CORAL_WORKING_SCHEMA} -r ${OKS2CORAL_TMP_DIR}"/>
+ <attr name="RestartParameters" type="string" val="-c ${OKS2CORAL_CONNECT} -w ${OKS2CORAL_WORKING_SCHEMA} -r ${OKS2CORAL_TMP_DIR}"/>
+ <attr name="Logging" type="bool" val="1"/>
+ <attr name="ExitTimeout" type="u32" val="5"/>
+ <attr name="RestartableDuringRun" type="bool" val="1"/>
+ <attr name="IfExitsUnexpectedly" type="enum" val="Error"/>
+ <attr name="IfFailsToStart" type="enum" val="Error"/>
+ <rel name="InitializationDependsFrom">
+  <ref class="IPCServiceApplication" id="mts-worker-initial"/>
+ </rel>
+ <rel name="Program" class="Binary" id="oks2coral"/>
+ <rel name="ProcessEnvironment">
+  <ref class="VariableSet" id="External-environment"/>
+  <ref class="Variable" id="CORAL_AUTH_PATH"/>
+ </rel>
+</obj>
+
+<obj class="OnlineSegment" id="setup-initial">
+ <attr name="T0_ProjectTag" type="string">
+  <data val="data_test"/>
+ </attr>
+ <rel name="Infrastructure">
+  <ref class="IPCServiceApplication" id="rm-server"/>
+  <ref class="IPCServiceApplication" id="MTS_IS"/>
+  <ref class="IPCServiceApplication" id="mts-worker-initial"/>
+  <ref class="IPCServiceApplication" id="ISRepository-initial"/>
+  <ref class="IPCServiceApplication" id="RDB_INITIAL"/>
+  <ref class="IPCServiceApplication" id="PMG_IS"/>
+  <ref class="IPCServiceApplication" id="Setup_IS"/>
+  <ref class="IPCServiceApplication" id="RunParams_IS"/>
+  <ref class="IPCServiceApplication" id="CEP-initial"/>
+  <ref class="IPCServiceApplication" id="LHC"/>
+  <ref class="IPCServiceApplication" id="RunCtrl_IS"/>
+  <ref class="IPCServiceApplication" id="RDB_RW_INITIAL"/>
+ </rel>
+ <rel name="IsControlledBy" class="RunControlApplication" id="DefaultRootController"/>
+ <rel name="DefaultTags">
+  <ref class="Tag" id="x86_64-centos7-gcc11-opt"/>
+  <ref class="Tag" id="x86_64-centos7-gcc11-dbg"/>
+  <ref class="Tag" id="x86_64-el9-gcc13-opt"/>
+  <ref class="Tag" id="x86_64-el9-gcc13-dbg"/>
+  <ref class="Tag" id="aarch64-centos7-gcc11-opt"/>
+  <ref class="Tag" id="aarch64-el9-gcc13-opt"/>
+ </rel>
+ <rel name="Parameters">
+  <ref class="VariableSet" id="SetupSegmentParameters"/>
+  <ref class="VariableSet" id="External-parameters"/>
+ </rel>
+ <rel name="TestRepositories">
+  <ref class="TestSet" id="TDAQ_Tests"/>
+  <ref class="TestSet" id="InitialInfrastructureTests"/>
+ </rel>
+ <rel name="PmgAgent" class="Binary" id="pmgserver"/>
+ <rel name="InitialPartition" class="Partition" id="initial"/>
+</obj>
+
+<obj class="PBeastSubscription" id="all-initial">
+ <attr name="ReadWhenSubscribe" type="bool" val="0"/>
+ <rel name="Types" class="PBeastSubscriptionTypes" id="NoHistograms-initial"/>
+</obj>
+
+<obj class="PBeastSubscriptionTypes" id="NoHistograms-initial">
+ <attr name="Name" type="string" val="Histogram"/>
+ <attr name="IncludeSubTypes" type="bool" val="1"/>
+ <attr name="ExcludeThisType" type="bool" val="1"/>
+ <attr name="CriteriaLogic" type="enum" val="AND"/>
+</obj>
+
+<obj class="Partition" id="initial">
+ <attr name="IPCRef" type="string" val="$(TDAQ_IPC_INIT_REF)"/>
+ <attr name="DBPath" type="string" val="$(TDAQ_DB_PATH)"/>
+ <attr name="DBName" type="string" val="$(TDAQ_DB_DATA)"/>
+ <attr name="DBVersion" type="string" val="$(TDAQ_DB_VERSION)"/>
+ <attr name="DBTechnology" type="enum" val="rdbconfig"/>
+ <attr name="LogRoot" type="string" val="/tmp/${TDAQ_VERSION}"/>
+ <attr name="WorkingDirectory" type="string" val="/tmp/${TDAQ_VERSION}"/>
+ <rel name="OnlineInfrastructure" class="OnlineSegment" id="setup-initial"/>
+ <rel name="ProcessEnvironment">
+  <ref class="VariableSet" id="CommonEnvironment"/>
+ </rel>
+ <rel name="Parameters">
+  <ref class="VariableSet" id="CommonParameters"/>
+  <ref class="Variable" id="TDAQ_VERSION"/>
+ </rel>
+</obj>
+
+<obj class="PlatformCompatibility" id="i686-slc6">
+ <attr name="HW_Tag" type="enum" val="i686-slc6"/>
+</obj>
+
+<obj class="PlatformCompatibility" id="x86_64-slc6">
+ <attr name="HW_Tag" type="enum" val="x86_64-slc6"/>
+ <rel name="CompatibleWith">
+  <ref class="PlatformCompatibility" id="i686-slc6"/>
+ </rel>
+</obj>
+
+<obj class="RunControlApplication" id="DefaultRootController">
+ <attr name="InterfaceName" type="string" val="rc/commander"/>
+ <attr name="ActionTimeout" type="s32" val="50"/>
+ <attr name="ProbeInterval" type="s32" val="20"/>
+ <attr name="FullStatisticsInterval" type="s32" val="60"/>
+ <attr name="IfError" type="enum" val="Ignore"/>
+ <attr name="ControlsTTCPartitions" type="bool" val="0"/>
+ <attr name="Logging" type="bool" val="1"/>
+ <attr name="InitTimeout" type="u32" val="60"/>
+ <attr name="ExitTimeout" type="u32" val="5"/>
+ <attr name="RestartableDuringRun" type="bool" val="1"/>
+ <attr name="IfExitsUnexpectedly" type="enum" val="Error"/>
+ <attr name="IfFailsToStart" type="enum" val="Error"/>
+ <rel name="InitializationDependsFrom">
+  <ref class="IPCServiceApplication" id="rm-server"/>
+  <ref class="IPCServiceApplication" id="RunCtrl_IS"/>
+  <ref class="IPCServiceApplication" id="RunParams_IS"/>
+  <ref class="IPCServiceApplication" id="CEP-initial"/>
+  <ref class="IPCServiceApplication" id="RDB_INITIAL"/>
+  <ref class="IPCServiceApplication" id="RDB_RW_INITIAL"/>
+ </rel>
+ <rel name="Program" class="Binary" id="rc_root_controller"/>
+</obj>
+
+<obj class="Test4Object" id="TestISServer_initial">
+ <attr name="Timeout" type="s32" val="15"/>
+ <attr name="Scope" type="enum">
+  <data val="functional"/>
+ </attr>
+ <attr name="Complexity" type="u8" val="2"/>
+ <attr name="Validity" type="s32" val="0"/>
+ <attr name="RepeatIfUnresolved" type="bool" val="1"/>
+ <attr name="Interactive" type="bool" val="0"/>
+ <attr name="OverrideTest4Class" type="bool" val="0"/>
+ <rel name="Failures">
+  <ref class="TestFailure" id="GenericTestFailure"/>
+ </rel>
+ <rel name="Runs">
+  <ref class="Executable" id="test_is_server_initial"/>
+ </rel>
+ <rel name="Objects">
+  <ref class="IPCServiceTemplateApplication" id="DF_Histogramming"/>
+  <ref class="IPCServiceTemplateApplication" id="DF_IS"/>
+  <ref class="IPCServiceApplication" id="LHC"/>
+  <ref class="IPCServiceApplication" id="MTS_IS"/>
+  <ref class="IPCServiceApplication" id="PMG_IS"/>
+  <ref class="IPCServiceApplication" id="RunCtrl_IS"/>
+  <ref class="IPCServiceApplication" id="RunParams_IS"/>
+  <ref class="IPCServiceApplication" id="Setup_IS"/>
+ </rel>
+</obj>
+
+<obj class="TestSet" id="InitialInfrastructureTests">
+ <rel name="tests">
+  <ref class="Test4Object" id="TestISServer_initial"/>
+ </rel>
+</obj>
+
+<obj class="Variable" id="GIT_SSH_COMMAND_INITIAL">
+ <attr name="Description" type="string" val="ssh config for gitea access on tbed"/>
+ <attr name="Name" type="string" val="GIT_SSH_COMMAND"/>
+ <attr name="Value" type="string" val="ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o SendEnv=OKS_COMMIT_USER -i /data/rdb/gitea -l giteausr"/>
+</obj>
+
+<obj class="Variable" id="OKS_GIT_SSH_PROTOCOL_INITIAL">
+ <attr name="Description" type="string" val="Use for oks repository read-write applications"/>
+ <attr name="Name" type="string" val="OKS_GIT_PROTOCOL"/>
+ <attr name="Value" type="string" val="ssh"/>
+</obj>
+
+<obj class="Variable" id="PBEAST_RECEIVER_IPC_TIMEOUT">
+ <attr name="Description" type="string" val="Timeout for P-BEAST receiver application used for communication with IS servers (subscribe/unsubscribe requests) and IPC.&#xA;It should be kept small, since it delays writing P-BEAST data on shutdown."/>
+ <attr name="Name" type="string" val="TDAQ_IPC_TIMEOUT"/>
+ <attr name="Value" type="string" val="5000"/>
+</obj>
+
+<obj class="Variable" id="PBEAST_SERVER_IPC_TIMEOUT">
+ <attr name="Description" type="string" val="Timeout for P-BEAST server application used for communication with P-BEAST servers and receivers.&#xA;It should be kept big enough (minutes), since the servers can be quite slow for large data sets."/>
+ <attr name="Name" type="string" val="TDAQ_IPC_TIMEOUT"/>
+ <attr name="Value" type="string" val="200000"/>
+</obj>
+
+<obj class="Variable" id="TDAQ_RM_CONFIG">
+ <attr name="Description" type="string" val="Configuration database for the Resource Manager server"/>
+ <attr name="Name" type="string" val="TDAQ_RM_CONFIG"/>
+ <attr name="Value" type="string" val="oksconfig:daq/sw/rm-config.data.xml"/>
+</obj>
+
+</oks-data>

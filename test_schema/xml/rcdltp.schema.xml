@@ -1,0 +1,322 @@
+<?xml version="1.0" encoding="ASCII"?>
+
+<!-- oks-schema version 2.2 -->
+
+
+<!DOCTYPE oks-schema [
+  <!ELEMENT oks-schema (info, (include)?, (comments)?, (class)+)>
+  <!ELEMENT info EMPTY>
+  <!ATTLIST info
+      name CDATA #IMPLIED
+      type CDATA #IMPLIED
+      num-of-items CDATA #REQUIRED
+      oks-format CDATA #FIXED "schema"
+      oks-version CDATA #REQUIRED
+      created-by CDATA #IMPLIED
+      created-on CDATA #IMPLIED
+      creation-time CDATA #IMPLIED
+      last-modified-by CDATA #IMPLIED
+      last-modified-on CDATA #IMPLIED
+      last-modification-time CDATA #IMPLIED
+  >
+  <!ELEMENT include (file)+>
+  <!ELEMENT file EMPTY>
+  <!ATTLIST file
+      path CDATA #REQUIRED
+  >
+  <!ELEMENT comments (comment)+>
+  <!ELEMENT comment EMPTY>
+  <!ATTLIST comment
+      creation-time CDATA #REQUIRED
+      created-by CDATA #REQUIRED
+      created-on CDATA #REQUIRED
+      author CDATA #REQUIRED
+      text CDATA #REQUIRED
+  >
+  <!ELEMENT class (superclass | attribute | relationship | method)*>
+  <!ATTLIST class
+      name CDATA #REQUIRED
+      description CDATA ""
+      is-abstract (yes|no) "no"
+  >
+  <!ELEMENT superclass EMPTY>
+  <!ATTLIST superclass name CDATA #REQUIRED>
+  <!ELEMENT attribute EMPTY>
+  <!ATTLIST attribute
+      name CDATA #REQUIRED
+      description CDATA ""
+      type (bool|s8|u8|s16|u16|s32|u32|s64|u64|float|double|date|time|string|uid|enum|class) #REQUIRED
+      range CDATA ""
+      format (dec|hex|oct) "dec"
+      is-multi-value (yes|no) "no"
+      init-value CDATA ""
+      is-not-null (yes|no) "no"
+      ordered (yes|no) "no"
+  >
+  <!ELEMENT relationship EMPTY>
+  <!ATTLIST relationship
+      name CDATA #REQUIRED
+      description CDATA ""
+      class-type CDATA #REQUIRED
+      low-cc (zero|one) #REQUIRED
+      high-cc (one|many) #REQUIRED
+      is-composite (yes|no) #REQUIRED
+      is-exclusive (yes|no) #REQUIRED
+      is-dependent (yes|no) #REQUIRED
+      ordered (yes|no) "no"
+  >
+  <!ELEMENT method (method-implementation*)>
+  <!ATTLIST method
+      name CDATA #REQUIRED
+      description CDATA ""
+  >
+  <!ELEMENT method-implementation EMPTY>
+  <!ATTLIST method-implementation
+      language CDATA #REQUIRED
+      prototype CDATA #REQUIRED
+      body CDATA ""
+  >
+]>
+
+<oks-schema>
+
+<info name="" type="" num-of-items="16" oks-format="schema" oks-version="55a3bb7 built &quot;Apr 26 2021&quot;" created-by="gruwe" created-on="lxplus051" creation-time="20040326T093404" last-modified-by="rhauser" last-modified-on="mini" last-modification-time="20210426T105427"/>
+
+<include>
+ <file path="daq/schema/df.schema.xml"/>
+ <file path="daq/schema/RODBusy.schema.xml"/>
+</include>
+
+
+ <class name="LTPBypassConfig" description="Configuration class for LTP in bypass mode">
+  <superclass name="LTPConfigBase"/>
+ </class>
+
+ <class name="LTPCTPParasiteConfig">
+  <superclass name="LTPConfigBase"/>
+  <attribute name="BoardReset" description="Reset board at configuration" type="bool" init-value="true"/>
+  <attribute name="Deadtime" description="Simple dead time" type="enum" range="none,4BC,5BC,6BC,7BC,8BC,9BC,10BC,11BC" init-value="none" is-not-null="yes"/>
+  <attribute name="TriggerType" description="trigger type (8-bit) to be sent for each trigger" type="u8" format="hex" init-value="0"/>
+ </class>
+
+ <class name="LTPConfigBase" is-abstract="yes">
+ </class>
+
+ <class name="LTPDeadtimePattern" description="Pre-defined patterns for temporary implementation of extra-long deadtimes for the CTP">
+  <superclass name="LTPPatternBase"/>
+  <attribute name="SimpleDeadtime" description="Simple deadtime in units of BC." type="u16" init-value="0"/>
+ </class>
+
+ <class name="LTPExpertBypassedConfig" description="Configuration class for LTP in expert mode with leaving the LINK-part untouched.">
+  <superclass name="LTPConfigBase"/>
+  <attribute name="L1A_local" description="L1A source" type="enum" range="none,lemo,lemo_via_pfn,patgen,dont_touch" init-value="lemo" is-not-null="yes"/>
+  <attribute name="L1A_lemoout_from" description="Lemo output from Local or Link-In" type="enum" range="local,linkin,dont_touch" init-value="local" is-not-null="yes"/>
+  <attribute name="L1A_gating" description="Gate source: none, busy, inhibit, patgen" type="enum" range="none,busy,inhibit,patgen,dont_touch" init-value="busy" is-not-null="yes"/>
+  <attribute name="L1A_pfn_width" description="Width of pulse from pulse-forming network" type="enum" range="1BC,2BC,dont_touch" init-value="1BC" is-not-null="yes"/>
+  <attribute name="TestTrigger1_local" description="Test Triggers source" type="enum" range="none,lemo,lemo_via_pfn,patgen,dont_touch" init-value="lemo" is-not-null="yes"/>
+  <attribute name="TestTrigger1_lemoout_from" description="Lemo output from Local or Link-In" type="enum" range="local,linkin,dont_touch" init-value="local" is-not-null="yes"/>
+  <attribute name="TestTrigger1_gating" description="gate source: none, busy, inhibit, patgen" type="enum" range="none,busy,inhibit,patgen,dont_touch" init-value="busy" is-not-null="yes"/>
+  <attribute name="TestTrigger1_pfn_width" description="Width of pulse from pulse-forming network " type="enum" range="1BC,2BC,dont_touch" init-value="1BC" is-not-null="yes"/>
+  <attribute name="TestTrigger2_local" description="Test Triggers source" type="enum" range="none,lemo,lemo_via_pfn,patgen,dont_touch" init-value="lemo" is-not-null="yes"/>
+  <attribute name="TestTrigger2_lemoout_from" description="Lemo output from Local or Link-In" type="enum" range="local,linkin,dont_touch" init-value="local" is-not-null="yes"/>
+  <attribute name="TestTrigger2_gating" description="gate source: none, busy, inhibit, patgen" type="enum" range="none,busy,inhibit,patgen,dont_touch" init-value="busy" is-not-null="yes"/>
+  <attribute name="TestTrigger2_pfn_width" description="Width of pulse from pulse-forming network " type="enum" range="1BC,2BC,dont_touch" init-value="1BC" is-not-null="yes"/>
+  <attribute name="TestTrigger3_local" description="Test Triggers source" type="enum" range="none,lemo,lemo_via_pfn,patgen,dont_touch" init-value="lemo" is-not-null="yes"/>
+  <attribute name="TestTrigger3_lemoout_from" description="Lemo output from Local or Link-In" type="enum" range="local,linkin,dont_touch" init-value="local" is-not-null="yes"/>
+  <attribute name="TestTrigger3_gating" description="gate source: none, busy, inhibit, patgen" type="enum" range="none,busy,inhibit,patgen,dont_touch" init-value="busy" is-not-null="yes"/>
+  <attribute name="TestTrigger3_pfn_width" description="Width of pulse from pulse-forming network " type="enum" range="1BC,2BC,dont_touch" init-value="1BC" is-not-null="yes"/>
+  <attribute name="BC_lemoout_from" description="Lemo output from Local or Link-In" type="enum" range="local,linkin,dont_touch" init-value="local" is-not-null="yes"/>
+  <attribute name="BC_local" description="BC source" type="enum" range="local_oscillator,lemo,dont_touch" init-value="local_oscillator" is-not-null="yes"/>
+  <attribute name="Orbit_lemoout_from" description="Lemo output from Local or Link-In" type="enum" range="local,linkin,dont_touch" init-value="local" is-not-null="yes"/>
+  <attribute name="Orbit_local" description="Orbitsource" type="enum" range="none,internal,lemo,patgen,dont_touch" init-value="lemo" is-not-null="yes"/>
+  <attribute name="BGo0_local" description="Test Triggers source" type="enum" range="none,lemo,lemo_via_pfn,patgen,dont_touch" init-value="lemo" is-not-null="yes"/>
+  <attribute name="BGo0_lemoout_from" description="Lemo output from Local or Link-In" type="enum" range="local,linkin,dont_touch" init-value="local" is-not-null="yes"/>
+  <attribute name="BGo0_gating" description="gate source: none, busy, inhibit, patgen" type="enum" range="none,busy,inhibit,patgen,dont_touch" init-value="busy" is-not-null="yes"/>
+  <attribute name="BGo0_pfn_width" description="Width of pulse from pulse-forming network " type="enum" range="1BC,2BC,dont_touch" init-value="1BC" is-not-null="yes"/>
+  <attribute name="BGo1_local" description="Test Triggers source" type="enum" range="none,lemo,lemo_via_pfn,patgen,dont_touch" init-value="lemo" is-not-null="yes"/>
+  <attribute name="BGo1_lemoout_from" description="Lemo output from Local or Link-In" type="enum" range="local,linkin,dont_touch" init-value="local" is-not-null="yes"/>
+  <attribute name="BGo1_gating" description="gate source: none, busy, inhibit, patgen" type="enum" range="none,busy,inhibit,patgen,dont_touch" init-value="busy" is-not-null="yes"/>
+  <attribute name="BGo1_pfn_width" description="Width of pulse from pulse-forming network " type="enum" range="1BC,2BC,dont_touch" init-value="1BC" is-not-null="yes"/>
+  <attribute name="BGo2_local" description="Test Triggers source" type="enum" range="none,lemo,lemo_via_pfn,patgen,dont_touch" init-value="lemo" is-not-null="yes"/>
+  <attribute name="BGo2_lemoout_from" description="Lemo output from Local or Link-In" type="enum" range="local,linkin,dont_touch" init-value="local" is-not-null="yes"/>
+  <attribute name="BGo2_gating" description="gate source: none, busy, inhibit, patgen" type="enum" range="none,busy,inhibit,patgen,dont_touch" init-value="busy" is-not-null="yes"/>
+  <attribute name="BGo2_pfn_width" description="Width of pulse from pulse-forming network " type="enum" range="1BC,2BC,dont_touch" init-value="1BC" is-not-null="yes"/>
+  <attribute name="BGo3_local" description="Test Triggers source" type="enum" range="none,lemo,lemo_via_pfn,patgen,dont_touch" init-value="lemo" is-not-null="yes"/>
+  <attribute name="BGo3_lemoout_from" description="Lemo output from Local or Link-In" type="enum" range="local,linkin,dont_touch" init-value="local" is-not-null="yes"/>
+  <attribute name="BGo3_gating" description="gate source: none, busy, inhibit, patgen" type="enum" range="none,busy,inhibit,patgen,dont_touch" init-value="busy" is-not-null="yes"/>
+  <attribute name="BGo3_pfn_width" description="Width of pulse from pulse-forming network " type="enum" range="1BC,2BC,dont_touch" init-value="1BC" is-not-null="yes"/>
+  <attribute name="Busy_deadtime_source" description="Busy dead time source" type="enum" range="L1A,TestTrigger1,TestTrigger2,TestTrigger3,dont_touch" init-value="L1A" is-not-null="yes"/>
+  <attribute name="Busy_lemoout" description="For local Monitoring" type="enum" range="busy_only,busy_or_deadtime,timer_inhibit,patgen_inhibit,dont_touch" init-value="busy_only" is-not-null="yes"/>
+  <attribute name="Busy_local_with_deadtime" description="true=sum dead time with busy, false=do not" type="bool" init-value="false" is-not-null="yes"/>
+  <attribute name="Busy_from_patgen" description="true=from PatGen, false=ignore" type="bool" init-value="false" is-not-null="yes"/>
+  <attribute name="Busy_deadtime_duration" description="Busy dead time" type="enum" range="4BC,5BC,6BC,7BC,8BC,9BC,10BC,11BC,dont_touch" init-value="4BC" is-not-null="yes"/>
+  <attribute name="PatGen_runmode" description="Pattern Generator running mode \n   Continuous        = Contiuous running \n  Fixed_Value       = Constant levels from Fixed Value Register \n Single_Shot_Orbit = Single Shot mode triggered by selected Orbit source \n  Single_Shot_BGo3  = Single Shot mode triggered by BGo3" type="enum" range="Off,Continuous,Fixed_Value,Single_Shot_Orbit,Single_Shot_BGo3" init-value="Continuous" is-not-null="yes"/>
+  <attribute name="PatGen_filename" description="Data file with patterns (obsolete, please use relationship PatGen_pattern instead). If the relationship &apos;PatGen_pattern&apos; is set, the filename value of this attribute is ignored!!" type="string" init-value="/daqsoft/databases/v3/L1Ltp/patgen/pg.dat" is-not-null="yes"/>
+  <attribute name="PatGen_fixed_value" description="Value in the Pattern Generator Fixed Value Register" type="u32" format="hex" is-not-null="yes"/>
+  <attribute name="TriggerType_fifotrigger" description="TRG source for FIFO writing" type="enum" range="L1A,TestTrigger1,TestTrigger2,TestTrigger3,dont_touch" init-value="L1A" is-not-null="yes"/>
+  <attribute name="TriggerType_fifodelay" description="delay after trigger" type="enum" range="2BC,3BC,4BC,5BC,dont_touch" init-value="2BC" is-not-null="yes"/>
+  <attribute name="TriggerType_regfile_address" description="Trigger type file address" type="enum" range="file0,file1,file2,file3,dont_touch" init-value="file0" is-not-null="yes"/>
+  <attribute name="TriggerType_eclout_enabled" description="true=enabled false=disabled" type="bool" init-value="true" is-not-null="yes"/>
+  <attribute name="TriggerType_local" description="Trigger Type local source from pattern generator or from regfile address (VME)" type="enum" range="patgen,vme,dont_touch" init-value="vme" is-not-null="yes"/>
+  <attribute name="TriggerType_eclout_from" description="Trigger Type ecl output from Local or Link input" type="enum" range="local,linkin,dont_touch" init-value="linkin" is-not-null="yes"/>
+  <attribute name="TriggerType_regfile0_data" description="Trigger Type Register File 0 (8 bits)" type="u8" format="hex" init-value="0x00"/>
+  <attribute name="TriggerType_regfile1_data" description="Trigger Type Register File 1 (8 bits)" type="u8" format="hex" init-value="0x00"/>
+  <attribute name="TriggerType_regfile2_data" description="Trigger Type Register File 2 (8 bits)" type="u8" format="hex" init-value="0x00"/>
+  <attribute name="TriggerType_regfile3_data" description="Trigger Type Register File 3 (8 bits)" type="u8" format="hex" init-value="0x00"/>
+  <attribute name="Inhibit_delay" description="Inhibit timer pulse (4BC wide) delay wrt ORBIT in BC" type="u32" range="0..4095" is-not-null="yes"/>
+  <relationship name="PatGen_pattern" description="Pattern for pattern generator. Note that this relationship overwrites the obsolete attribute PatGen_filename." class-type="LTPPatternBase" low-cc="zero" high-cc="one" is-composite="no" is-exclusive="no" is-dependent="no"/>
+ </class>
+
+ <class name="LTPExpertConfig" description="Configuration object for expert mode">
+  <superclass name="LTPConfigBase"/>
+  <attribute name="BoardReset" description="Reset board at configuration" type="bool" init-value="true"/>
+  <attribute name="L1A_local" description="L1A source" type="enum" range="none,lemo,lemo_via_pfn,patgen,dont_touch" init-value="lemo" is-not-null="yes"/>
+  <attribute name="L1A_lemoout_from" description="Lemo output from Local or Link-In" type="enum" range="local,linkin,dont_touch" init-value="local" is-not-null="yes"/>
+  <attribute name="L1A_linkout_from" description="Link output from Local or Link input" type="enum" range="local,linkin,dont_touch" init-value="local" is-not-null="yes"/>
+  <attribute name="L1A_gating" description="Gate source: none, busy, inhibit, patgen" type="enum" range="none,busy,inhibit,patgen,dont_touch" init-value="busy" is-not-null="yes"/>
+  <attribute name="L1A_pfn_width" description="Width of pulse from pulse-forming network" type="enum" range="1BC,2BC,dont_touch" init-value="1BC" is-not-null="yes"/>
+  <attribute name="TestTrigger1_local" description="Test Triggers source" type="enum" range="none,lemo,lemo_via_pfn,patgen,dont_touch" init-value="lemo" is-not-null="yes"/>
+  <attribute name="TestTrigger1_lemoout_from" description="Lemo output from Local or Link-In" type="enum" range="local,linkin,dont_touch" init-value="local" is-not-null="yes"/>
+  <attribute name="TestTrigger1_linkout_from" description="Link output from Local or Link input" type="enum" range="local,linkin,dont_touch" init-value="local" is-not-null="yes"/>
+  <attribute name="TestTrigger1_gating" description="gate source: none, busy, inhibit, patgen" type="enum" range="none,busy,inhibit,patgen,dont_touch" init-value="busy" is-not-null="yes"/>
+  <attribute name="TestTrigger1_pfn_width" description="Width of pulse from pulse-forming network " type="enum" range="1BC,2BC,dont_touch" init-value="1BC" is-not-null="yes"/>
+  <attribute name="TestTrigger2_local" description="Test Triggers source" type="enum" range="none,lemo,lemo_via_pfn,patgen,dont_touch" init-value="lemo" is-not-null="yes"/>
+  <attribute name="TestTrigger2_lemoout_from" description="Lemo output from Local or Link-In" type="enum" range="local,linkin,dont_touch" init-value="local" is-not-null="yes"/>
+  <attribute name="TestTrigger2_linkout_from" description="Link output from Local or Link input" type="enum" range="local,linkin,dont_touch" init-value="local" is-not-null="yes"/>
+  <attribute name="TestTrigger2_gating" description="gate source: none, busy, inhibit, patgen" type="enum" range="none,busy,inhibit,patgen,dont_touch" init-value="busy" is-not-null="yes"/>
+  <attribute name="TestTrigger2_pfn_width" description="Width of pulse from pulse-forming network " type="enum" range="1BC,2BC,dont_touch" init-value="1BC" is-not-null="yes"/>
+  <attribute name="TestTrigger3_local" description="Test Triggers source" type="enum" range="none,lemo,lemo_via_pfn,patgen,dont_touch" init-value="lemo" is-not-null="yes"/>
+  <attribute name="TestTrigger3_lemoout_from" description="Lemo output from Local or Link-In" type="enum" range="local,linkin,dont_touch" init-value="local" is-not-null="yes"/>
+  <attribute name="TestTrigger3_linkout_from" description="Link output from Local or Link input" type="enum" range="local,linkin,dont_touch" init-value="local" is-not-null="yes"/>
+  <attribute name="TestTrigger3_gating" description="gate source: none, busy, inhibit, patgen" type="enum" range="none,busy,inhibit,patgen,dont_touch" init-value="busy" is-not-null="yes"/>
+  <attribute name="TestTrigger3_pfn_width" description="Width of pulse from pulse-forming network " type="enum" range="1BC,2BC,dont_touch" init-value="1BC" is-not-null="yes"/>
+  <attribute name="BC_local" description="BC source" type="enum" range="local_oscillator,lemo,dont_touch" init-value="local_oscillator" is-not-null="yes"/>
+  <attribute name="BC_lemoout_from" description="Lemo output from Local or Link-In" type="enum" range="local,linkin,dont_touch" init-value="local" is-not-null="yes"/>
+  <attribute name="BC_linkout_from" description="Link output from Local or Link input" type="enum" range="local,linkin,dont_touch" init-value="local" is-not-null="yes"/>
+  <attribute name="Orbit_local" description="Orbitsource" type="enum" range="none,internal,lemo,patgen,dont_touch" init-value="lemo" is-not-null="yes"/>
+  <attribute name="Orbit_lemoout_from" description="Lemo output from Local or Link-In" type="enum" range="local,linkin,dont_touch" init-value="local" is-not-null="yes"/>
+  <attribute name="Orbit_linkout_from" description="Link output from Local or Link input" type="enum" range="local,linkin,dont_touch" init-value="local" is-not-null="yes"/>
+  <attribute name="BGo0_local" description="Test Triggers source" type="enum" range="none,lemo,lemo_via_pfn,patgen,dont_touch" init-value="lemo" is-not-null="yes"/>
+  <attribute name="BGo0_lemoout_from" description="Lemo output from Local or Link-In" type="enum" range="local,linkin,dont_touch" init-value="local" is-not-null="yes"/>
+  <attribute name="BGo0_linkout_from" description="Link output from Local or Link input" type="enum" range="local,linkin,dont_touch" init-value="local" is-not-null="yes"/>
+  <attribute name="BGo0_gating" description="gate source: none, busy, inhibit, patgen" type="enum" range="none,busy,inhibit,patgen,dont_touch" init-value="busy" is-not-null="yes"/>
+  <attribute name="BGo0_pfn_width" description="Width of pulse from pulse-forming network " type="enum" range="1BC,2BC,dont_touch" init-value="1BC" is-not-null="yes"/>
+  <attribute name="BGo1_local" description="Test Triggers source" type="enum" range="none,lemo,lemo_via_pfn,patgen,dont_touch" init-value="lemo" is-not-null="yes"/>
+  <attribute name="BGo1_lemoout_from" description="Lemo output from Local or Link-In" type="enum" range="local,linkin,dont_touch" init-value="local" is-not-null="yes"/>
+  <attribute name="BGo1_linkout_from" description="Link output from Local or Link input" type="enum" range="local,linkin,dont_touch" init-value="local" is-not-null="yes"/>
+  <attribute name="BGo1_gating" description="gate source: none, busy, inhibit, patgen" type="enum" range="none,busy,inhibit,patgen,dont_touch" init-value="busy" is-not-null="yes"/>
+  <attribute name="BGo1_pfn_width" description="Width of pulse from pulse-forming network " type="enum" range="1BC,2BC,dont_touch" init-value="1BC" is-not-null="yes"/>
+  <attribute name="BGo2_local" description="Test Triggers source" type="enum" range="none,lemo,lemo_via_pfn,patgen,dont_touch" init-value="lemo" is-not-null="yes"/>
+  <attribute name="BGo2_lemoout_from" description="Lemo output from Local or Link-In" type="enum" range="local,linkin,dont_touch" init-value="local" is-not-null="yes"/>
+  <attribute name="BGo2_linkout_from" description="Link output from Local or Link input" type="enum" range="local,linkin,dont_touch" init-value="local" is-not-null="yes"/>
+  <attribute name="BGo2_gating" description="gate source: none, busy, inhibit, patgen" type="enum" range="none,busy,inhibit,patgen,dont_touch" init-value="busy" is-not-null="yes"/>
+  <attribute name="BGo2_pfn_width" description="Width of pulse from pulse-forming network " type="enum" range="1BC,2BC,dont_touch" init-value="1BC" is-not-null="yes"/>
+  <attribute name="BGo3_local" description="Test Triggers source" type="enum" range="none,lemo,lemo_via_pfn,patgen,dont_touch" init-value="lemo" is-not-null="yes"/>
+  <attribute name="BGo3_lemoout_from" description="Lemo output from Local or Link-In" type="enum" range="local,linkin,dont_touch" init-value="local" is-not-null="yes"/>
+  <attribute name="BGo3_linkout_from" description="Link output from Local or Link input" type="enum" range="local,linkin,dont_touch" init-value="local" is-not-null="yes"/>
+  <attribute name="BGo3_gating" description="gate source: none, busy, inhibit, patgen" type="enum" range="none,busy,inhibit,patgen,dont_touch" init-value="busy" is-not-null="yes"/>
+  <attribute name="BGo3_pfn_width" description="Width of pulse from pulse-forming network " type="enum" range="1BC,2BC,dont_touch" init-value="1BC" is-not-null="yes"/>
+  <attribute name="Busy_deadtime_source" description="Busy dead time source" type="enum" range="L1A,TestTrigger1,TestTrigger2,TestTrigger3,dont_touch" init-value="L1A" is-not-null="yes"/>
+  <attribute name="Busy_lemoout" description="For local Monitoring" type="enum" range="busy_only,busy_or_deadtime,timer_inhibit,patgen_inhibit,dont_touch" init-value="busy_only" is-not-null="yes"/>
+  <attribute name="Busy_linkout_from" description="Link output from Local or Link input" type="enum" range="local,linkin,dont_touch" init-value="local" is-not-null="yes"/>
+  <attribute name="Busy_local_with_deadtime" description="true=sum dead time with busy, false=do not" type="bool" init-value="false" is-not-null="yes"/>
+  <attribute name="Busy_from_patgen" description="true=from PatGen, false=ignore" type="bool" init-value="false" is-not-null="yes"/>
+  <attribute name="Busy_deadtime_duration" description="Busy dead time" type="enum" range="4BC,5BC,6BC,7BC,8BC,9BC,10BC,11BC,dont_touch" init-value="4BC" is-not-null="yes"/>
+  <attribute name="PatGen_runmode" description="Pattern Generator running mode \n   Continuous        = Contiuous running \n  Fixed_Value       = Constant levels from Fixed Value Register \n Single_Shot_Orbit = Single Shot mode triggered by selected Orbit source \n  Single_Shot_BGo3  = Single Shot mode triggered by BGo3" type="enum" range="Off,Continuous,Fixed_Value,Single_Shot_Orbit,Single_Shot_BGo3" init-value="Continuous" is-not-null="yes"/>
+  <attribute name="PatGen_filename" description="Data file with patterns (obsolete, please use relationship PatGen_pattern instead). If the relationship &apos;PatGen_pattern&apos; is set, the filename value of this attribute is ignored!!" type="string" init-value="/daqsoft/databases/v3/L1Ltp/patgen/pg.dat" is-not-null="yes"/>
+  <attribute name="PatGen_fixed_value" description="Value in the Pattern Generator Fixed Value Register" type="u32" format="hex" is-not-null="yes"/>
+  <attribute name="TriggerType_fifotrigger" description="TRG source for FIFO writing" type="enum" range="L1A,TestTrigger1,TestTrigger2,TestTrigger3,dont_touch" init-value="L1A" is-not-null="yes"/>
+  <attribute name="TriggerType_fifodelay" description="delay after trigger" type="enum" range="2BC,3BC,4BC,5BC,dont_touch" init-value="2BC" is-not-null="yes"/>
+  <attribute name="TriggerType_regfile_address" description="Trigger type file address" type="enum" range="file0,file1,file2,file3,dont_touch" init-value="file0" is-not-null="yes"/>
+  <attribute name="TriggerType_eclout_enabled" description="true=enabled false=disabled" type="bool" init-value="true" is-not-null="yes"/>
+  <attribute name="TriggerType_local" description="Trigger Type local source from pattern generator or from regfile address (VME)" type="enum" range="patgen,vme,dont_touch" init-value="vme" is-not-null="yes"/>
+  <attribute name="TriggerType_eclout_from" description="Trigger Type ecl output from Local or Link input" type="enum" range="local,linkin,dont_touch" init-value="linkin" is-not-null="yes"/>
+  <attribute name="TriggerType_linkout_from" description="Link output from Local or Link input" type="enum" range="local,linkin,dont_touch" init-value="linkin" is-not-null="yes"/>
+  <attribute name="TriggerType_regfile0_data" description="Trigger Type Register File 0 (8 bits)" type="u8" format="hex" init-value="0x00"/>
+  <attribute name="TriggerType_regfile1_data" description="Trigger Type Register File 1 (8 bits)" type="u8" format="hex" init-value="0x00"/>
+  <attribute name="TriggerType_regfile2_data" description="Trigger Type Register File 2 (8 bits)" type="u8" format="hex" init-value="0x00"/>
+  <attribute name="TriggerType_regfile3_data" description="Trigger Type Register File 3 (8 bits)" type="u8" format="hex" init-value="0x00"/>
+  <attribute name="CalReq_source" description="Calibration request source" type="enum" range="Linkin,Preset,FrontPanel,PatGen,dont_touch" init-value="FrontPanel" is-not-null="yes"/>
+  <attribute name="CalReq_enable_testpath" description="true=enable false=disable" type="bool" init-value="false" is-not-null="yes"/>
+  <attribute name="CalReq_preset_value" description="from 0 to 7" type="enum" range="0,1,2,3,4,5,6,7,dont_touch" init-value="1" is-not-null="yes"/>
+  <attribute name="CalReq_turn_orbit_lemoout" description="Orbit front-panel lemo output selection" type="enum" range="selected_orbit_source,turn_selector,dont_touch" init-value="selected_orbit_source" is-not-null="yes"/>
+  <attribute name="CalReq_turn_selector_code" description="Turn selector code (4 bits)" type="u8" format="hex" is-not-null="yes"/>
+  <attribute name="Inhibit_delay" description="Inhibit timer pulse (4BC wide) delay wrt ORBIT in BC" type="u32" range="0..4095" is-not-null="yes"/>
+  <relationship name="PatGen_pattern" description="Pattern for pattern generator. Note that this relationship overwrites the obsolete attribute PatGen_filename." class-type="LTPPatternBase" low-cc="zero" high-cc="one" is-composite="no" is-exclusive="no" is-dependent="no"/>
+ </class>
+
+ <class name="LTPLemoBypassedConfig" description="LTP configuration for master configuration with trigger/bgo signals from front-panel LEMO via pulse-forming network, with the LINK-part untouched.">
+  <superclass name="LTPConfigBase"/>
+  <attribute name="Trigger" type="enum" range="L1A,TestTrigger1,TestTrigger2,TestTrigger3" init-value="L1A" is-not-null="yes"/>
+  <attribute name="TriggerType" description="trigger type (8-bit) to be sent for each trigger" type="u8" format="hex" init-value="0"/>
+ </class>
+
+ <class name="LTPLemoConfig" description="Configuration class to configure the LTP in MasterLemo mode:&#xA;BC and ORBIT internally generated,&#xA;all trigger and BGo signals from LEMO pulse-forming network (1BC),&#xA;trigger type from a register">
+  <superclass name="LTPConfigBase"/>
+  <attribute name="BoardReset" description="Reset board at configuration" type="bool" init-value="true"/>
+  <attribute name="Trigger" type="enum" range="L1A,TestTrigger1,TestTrigger2,TestTrigger3" init-value="L1A" is-not-null="yes"/>
+  <attribute name="TriggerType" description="trigger type (8-bit) to be sent for each trigger" type="u8" format="hex" init-value="0"/>
+  <attribute name="Deadtime" description="Simple dead time" type="enum" range="none,4BC,5BC,6BC,7BC,8BC,9BC,10BC,11BC" init-value="none" is-not-null="yes"/>
+ </class>
+
+ <class name="LTPMasterTriggerSetup">
+  <attribute name="ECR_AtResume" description="Generate ECR at resume()" type="bool"/>
+  <attribute name="ECR_Periodic" description="Generate periodic ECR" type="bool"/>
+  <attribute name="ECR_Period" description="Period of the periodic ECR in seconds" type="u8" range="1..255" init-value="5"/>
+  <attribute name="LBPeriod" description="Period between two lumiblocks in seconds" type="u32" init-value="60"/>
+  <attribute name="LBMinimumDistance" description="Minimum distance between two lumiblocks in seconds" type="u32" init-value="10"/>
+  <attribute name="TTC2LAN_Activate" description="Activate the LTPModule to act as TTC2LAN is it is chosen to be the trigger master in the partition object and no Level-2 is present in the partition" type="bool" init-value="false"/>
+  <attribute name="TTC2LAN_PollFrequency" description="Approximate polling frequency for L1ID polls" type="enum" range="10Hz,100Hz,1kHz" init-value="100Hz"/>
+  <attribute name="TTC2LAN_DEBUG" description="Debug mode, in which the communication with the DFM is established with the follwoing two parameters" type="bool" init-value="false"/>
+  <attribute name="TTC2LAN_DEBUG_Node" description="For Debugging: Name of DFM Node" type="string"/>
+  <attribute name="TTC2LAN_DEBUG_PortNumber" description="For Debugging: Port Number of DFM" type="u32" range="0..99999" init-value="1"/>
+ </class>
+
+ <class name="LTPModule" description="LTP Module Configuration.">
+  <superclass name="ReadoutModule"/>
+  <superclass name="BusyChannel"/>
+  <superclass name="ResourceSet"/>
+  <attribute name="useConfiguration" description="Configure the LTP according to the oks database" type="bool" init-value="true" is-not-null="yes"/>
+  <attribute name="useMonitoring" description="Status (counter and busy) is published to IS. Make sure that Name is set." type="bool" init-value="true" is-not-null="yes"/>
+  <attribute name="Monitoring_ISServerName" description="Name of is server used to monitor" type="string" init-value="Monitoring" is-not-null="yes"/>
+  <attribute name="Counter_selection" description="32 bit counter source" type="enum" range="L1A,TestTrigger1,TestTrigger2,TestTrigger3,L1A_ECR,TestTrigger1_ECR,TestTrigger2_ECR,TestTrigger3_ECR,BGo0,BGo1,BGo2,BGo3,Orbit,Orbit_ECR,none,dont_touch" init-value="L1A" is-not-null="yes"/>
+  <relationship name="Configuration" class-type="LTPConfigBase" low-cc="zero" high-cc="one" is-composite="no" is-exclusive="no" is-dependent="no"/>
+  <relationship name="MasterTriggerSetup" class-type="LTPMasterTriggerSetup" low-cc="zero" high-cc="one" is-composite="no" is-exclusive="no" is-dependent="no"/>
+ </class>
+
+ <class name="LTPPatgenBypassedConfig" description="LTP configuration for master configuration from pattern generator, with the LINK-part untouched.">
+  <superclass name="LTPConfigBase"/>
+  <attribute name="Trigger" type="enum" range="L1A,TestTrigger1,TestTrigger2,TestTrigger3" init-value="L1A" is-not-null="yes"/>
+  <attribute name="PatGen_runmode" description="Pattern Generator running mode \n   Continuous        = Contiuous running \n Single_Shot_Orbit = Single Shot mode triggered by selected Orbit source \n  Single_Shot_BGo3  = Single Shot mode triggered by BGo3" type="enum" range="Continuous,Single_Shot_Orbit,Single_Shot_BGo3" init-value="Continuous" is-not-null="yes"/>
+  <attribute name="PatGen_filename" description="Data file with patterns (obsolete, please use relationship PatGen_pattern instead). If the relationship &apos;PatGen_pattern&apos; is set, the filename value of this attribute is ignored!!" type="string" init-value="/daqsoft/databases/v3/L1Ltp/patgen/pg.dat" is-not-null="yes"/>
+  <relationship name="PatGen_pattern" description="Pattern for pattern generator. Note that this relationship overwrites the obsolete attribute PatGen_filename." class-type="LTPPatternBase" low-cc="zero" high-cc="one" is-composite="no" is-exclusive="no" is-dependent="no"/>
+ </class>
+
+ <class name="LTPPatgenConfig" description="LTP configuration when used as master, with trigger/bgo signals taken from front-panel LEMO input via pulse-forming network ">
+  <superclass name="LTPConfigBase"/>
+  <attribute name="BoardReset" description="Reset board at configuration" type="bool" init-value="true"/>
+  <attribute name="Trigger" type="enum" range="L1A,TestTrigger1,TestTrigger2,TestTrigger3" init-value="L1A" is-not-null="yes"/>
+  <attribute name="PatGen_runmode" description="Pattern Generator running mode \n   Continuous        = Contiuous running \n Single_Shot_Orbit = Single Shot mode triggered by selected Orbit source \n  Single_Shot_BGo3  = Single Shot mode triggered by BGo3" type="enum" range="Continuous,Single_Shot_Orbit,Single_Shot_BGo3" init-value="Continuous" is-not-null="yes"/>
+  <attribute name="PatGen_filename" description="Data file with patterns (obsolete, please use relationship PatGen_pattern instead). If the relationship &apos;PatGen_pattern&apos; is set, the filename value of this attribute is ignored!!" type="string" init-value="/daqsoft/databases/v3/L1Ltp/patgen/pg.dat" is-not-null="yes"/>
+  <relationship name="PatGen_pattern" description="Pattern for pattern generator. Note that this relationship overwrites the obsolete attribute PatGen_filename." class-type="LTPPatternBase" low-cc="zero" high-cc="one" is-composite="no" is-exclusive="no" is-dependent="no"/>
+ </class>
+
+ <class name="LTPPattern">
+  <superclass name="LTPPatternBase"/>
+  <attribute name="Pattern" description="Pattern for LTP pattern generator in standard notation (e.g. 1010 0101 0011 1010 10), max 1M lines, including multiplicity, excluding comments #. Quotation marks need not be used and will be ignored." type="string" is-multi-value="yes" init-value="&quot;# Example data file for LTP pattern generator&quot;, &quot;#&quot;, &quot;#                     M&quot;, &quot;#                     u&quot;, &quot;#                     l&quot;, &quot;#                     t&quot;, &quot;#                     i&quot;, &quot;#                     p&quot;, &quot;#                     l&quot;, &quot;#  ICC C     TT     O i&quot;, &quot;# Bnaa aBBB BTT     r c&quot;, &quot;# uhll lGGG GYYT TTLb i&quot;, &quot;# siRR Rooo oPPT TT1i t&quot;, &quot;# yb21 0321 0103 21At y&quot;, &quot;#&quot;, &quot;#&quot;, &quot;#  0000 0000 0000 0000 1&quot;, &quot;  0000 0000 0000 1110 1&quot;, &quot;  0000 0000 0000 0000 35&quot;, &quot;#&quot;"/>
+ </class>
+
+ <class name="LTPPatternBase" description="Base class for LTP patterns" is-abstract="yes">
+ </class>
+
+ <class name="LTPPatternFile">
+  <superclass name="LTPPatternBase"/>
+  <attribute name="Filename" description="Full path to pattern file" type="string"/>
+ </class>
+
+ <class name="LTPSlaveConfig" description="Configuration to be used when running as slave to the CTP. All signals are taken from the CTP link. If you intend to use calibration requests, then please use LTPExpertConfig">
+  <superclass name="LTPConfigBase"/>
+  <attribute name="BoardReset" description="Reset board at configuration" type="bool" init-value="true"/>
+ </class>
+
+</oks-schema>

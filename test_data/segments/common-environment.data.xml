@@ -1,0 +1,560 @@
+<?xml version="1.0" encoding="ASCII"?>
+
+<!-- oks-data version 2.2 -->
+
+
+<!DOCTYPE oks-data [
+  <!ELEMENT oks-data (info, (include)?, (comments)?, (obj)+)>
+  <!ELEMENT info EMPTY>
+  <!ATTLIST info
+      name CDATA #IMPLIED
+      type CDATA #IMPLIED
+      num-of-items CDATA #REQUIRED
+      oks-format CDATA #FIXED "data"
+      oks-version CDATA #REQUIRED
+      created-by CDATA #IMPLIED
+      created-on CDATA #IMPLIED
+      creation-time CDATA #IMPLIED
+      last-modified-by CDATA #IMPLIED
+      last-modified-on CDATA #IMPLIED
+      last-modification-time CDATA #IMPLIED
+  >
+  <!ELEMENT include (file)*>
+  <!ELEMENT file EMPTY>
+  <!ATTLIST file
+      path CDATA #REQUIRED
+  >
+  <!ELEMENT comments (comment)*>
+  <!ELEMENT comment EMPTY>
+  <!ATTLIST comment
+      creation-time CDATA #REQUIRED
+      created-by CDATA #REQUIRED
+      created-on CDATA #REQUIRED
+      author CDATA #REQUIRED
+      text CDATA #REQUIRED
+  >
+  <!ELEMENT obj (attr | rel)*>
+  <!ATTLIST obj
+      class CDATA #REQUIRED
+      id CDATA #REQUIRED
+  >
+  <!ELEMENT attr (data)*>
+  <!ATTLIST attr
+      name CDATA #REQUIRED
+      type (bool|s8|u8|s16|u16|s32|u32|s64|u64|float|double|date|time|string|uid|enum|class|-) "-"
+      val CDATA ""
+  >
+  <!ELEMENT data EMPTY>
+  <!ATTLIST data
+      val CDATA #REQUIRED
+  >
+  <!ELEMENT rel (ref)*>
+  <!ATTLIST rel
+      name CDATA #REQUIRED
+      class CDATA ""
+      id CDATA ""
+  >
+  <!ELEMENT ref EMPTY>
+  <!ATTLIST ref
+      class CDATA #REQUIRED
+      id CDATA #REQUIRED
+  >
+]>
+
+<oks-data>
+
+<info name="" type="" num-of-items="75" oks-format="data" oks-version="572fc09 built &quot;Mar 12 2021&quot;" created-by="isolov" created-on="lxplus076" creation-time="20030314T111450" last-modified-by="rhauser" last-modified-on="mini" last-modification-time="20210312T123601"/>
+
+<include>
+ <file path="daq/schema/core.schema.xml"/>
+ <file path="daq/sw/external.data.xml"/>
+</include>
+
+<comments>
+ <comment creation-time="20131103T172941" created-by="rhauser" created-on="msu-pc7.cern.ch" author="rhauser" text="C++ oksconfig plug-in user: &apos;rhauser&apos;, host: &apos;msu-pc7.cern.ch&apos;, log message: &apos;python plug-in&apos;"/>
+ <comment creation-time="20131103T173009" created-by="rhauser" created-on="msu-pc7.cern.ch" author="rhauser" text="C++ oksconfig plug-in user: &apos;rhauser&apos;, host: &apos;msu-pc7.cern.ch&apos;, log message: &apos;python plug-in&apos;"/>
+ <comment creation-time="20140123T153722" created-by="avolio" created-on="pcatd122n.cern.ch" author="Avolio" text="Tag mapping for TDAQ_JAVA_HOME"/>
+ <comment creation-time="20141006T144610" created-by="glehmann" created-on="pc-tbed-pub-10.cern.ch" author="glehmann" text="C++ oksconfig plug-in user: &apos;glehmann&apos;, host: &apos;pc-tbed-pub-10.cern.ch&apos;, log message: &apos;v&apos;"/>
+ <comment creation-time="20141008T125007" created-by="glehmann" created-on="pc-tbed-pub-02.cern.ch" author="glehmann" text="C++ oksconfig plug-in user: &apos;glehmann&apos;, host: &apos;pc-tbed-pub-02.cern.ch&apos;, log message: &apos;FATAL mesages shall go to MTS!!!!&apos;"/>
+ <comment creation-time="20151012T130843" created-by="akazarov" created-on="pc-tbed-pub-12.cern.ch" author="akazarov" text="C++ oksconfig plug-in user: &apos;akazarov&apos;, host: &apos;pc-tbed-pub-12.cern.ch&apos;, log message: &apos;jdk 1.8 for nightly&apos;"/>
+ <comment creation-time="20161107T112900" created-by="akazarov" created-on="pc-tbed-pub-12.cern.ch" author="Andrei" text="removed unused i686 mapping"/>
+ <comment creation-time="20161109T084952" created-by="akazarov" created-on="pc-tbed-pub-13.cern.ch" author="akazarov" text="C++ oksconfig plug-in user: &apos;akazarov&apos;, host: &apos;pc-tbed-pub-13.cern.ch&apos;, log message: &apos;removed TDAQ_JAVA_HOME&apos;"/>
+ <comment creation-time="20180123T143305" created-by="avolio" created-on="pc-tbed-pub-29.cern.ch" author="avolio" text="C++ oksconfig plug-in user: &apos;avolio&apos;, host: &apos;pc-tbed-pub-29.cern.ch&apos;, log message: &apos;Fixed typos in ERS stream definition&apos;"/>
+ <comment creation-time="20210303T192920" created-by="rhauser" created-on="acer-s3" author="rhauser" text="python plug-in"/>
+ <comment creation-time="20210303T192950" created-by="rhauser" created-on="acer-s3" author="rhauser" text="python plug-in"/>
+ <comment creation-time="20210303T193328" created-by="rhauser" created-on="acer-s3" author="rhauser" text="python plug-in"/>
+</comments>
+
+
+<obj class="Variable" id="AM_DB_HOST">
+ <attr name="Description" type="string" val="Host where MySQL DB with AM rights is running"/>
+ <attr name="Name" type="string" val="AM_DB_HOST"/>
+ <attr name="Value" type="string" val="pcatd84"/>
+</obj>
+
+<obj class="Variable" id="AtlasSetup">
+ <attr name="Name" type="string" val="AtlasSetup"/>
+ <attr name="Value" type="string" val="/afs/cern.ch/atlas/software/dist/AtlasSetup"/>
+</obj>
+
+<obj class="Variable" id="CORAL_AUTH_PATH">
+ <attr name="Name" type="string" val="CORAL_AUTH_PATH"/>
+ <attr name="Value" type="string" val="/eos/user/a/atdaqeos/adm/db"/>
+</obj>
+
+<obj class="Variable" id="CORAL_MSGFORMAT">
+ <attr name="Description" type="string" val="Selects format for CORAL server log messages"/>
+ <attr name="Name" type="string" val="CORAL_MSGFORMAT"/>
+ <attr name="Value" type="string" val="ATLAS"/>
+</obj>
+
+<obj class="Variable" id="CORAL_MSGLEVEL">
+ <attr name="Description" type="string" val="Defines CORAL server log message level"/>
+ <attr name="Name" type="string" val="CORAL_MSGLEVEL"/>
+ <attr name="Value" type="string" val="info"/>
+</obj>
+
+<obj class="Variable" id="CORAL_ORA_SKIP_TRANS_READONLY">
+ <attr name="Description" type="string" val="Toggles use of transactions in read-only access"/>
+ <attr name="Name" type="string" val="CORAL_ORA_SKIP_TRANS_READONLY"/>
+ <attr name="Value" type="string" val="yes"/>
+</obj>
+
+<obj class="Variable" id="CS_CORAL_AUTH_PATH">
+ <attr name="Description" type="string" val="Accounts / passwords for DBs"/>
+ <attr name="Name" type="string" val="CORAL_AUTH_PATH"/>
+ <attr name="Value" type="string" val="/eos/user/a/atdaqeos/adm/db/.coral/CoralServer"/>
+</obj>
+
+<obj class="Variable" id="CS_CORAL_DBLOOKUP_PATH">
+ <attr name="Description" type="string" val="Aliases for DBs"/>
+ <attr name="Name" type="string" val="CORAL_DBLOOKUP_PATH"/>
+ <attr name="Value" type="string" val="/eos/user/a/atdaqeos/adm/db/.coral/CoralServer"/>
+</obj>
+
+<obj class="Variable" id="DEF_DEBUG_STREAM">
+ <attr name="Description" type="string" val="Destination and filter for DEBUG messages"/>
+ <attr name="Name" type="string" val="TDAQ_ERS_DEBUG"/>
+ <attr name="Value" type="string" val="lstdout"/>
+</obj>
+
+<obj class="Variable" id="DEF_ERROR_STREAM">
+ <attr name="Description" type="string" val="Destination and filter for ERROR messages"/>
+ <attr name="Name" type="string" val="TDAQ_ERS_ERROR"/>
+ <attr name="Value" type="string" val="throttle,lstderr,mts"/>
+</obj>
+
+<obj class="Variable" id="DEF_ERS_DEBUG_LEVEL">
+ <attr name="Description" type="string" val="Debug level above which messages are not filtered in dbg mode"/>
+ <attr name="Name" type="string" val="TDAQ_ERS_DEBUG_LEVEL"/>
+ <attr name="Value" type="string" val="0"/>
+</obj>
+
+<obj class="Variable" id="DEF_ERS_SIGNAL_HANDLERS">
+ <attr name="Description" type="string" val="Install/deinstall ERS signal handlers"/>
+ <attr name="Name" type="string" val="TDAQ_ERS_NO_SIGNAL_HANDLERS"/>
+ <attr name="Value" type="string" val="1"/>
+</obj>
+
+<obj class="Variable" id="DEF_FATAL_STREAM">
+ <attr name="Description" type="string" val="Destination and filter for FATAL messages"/>
+ <attr name="Name" type="string" val="TDAQ_ERS_FATAL"/>
+ <attr name="Value" type="string" val="lstderr,mts"/>
+</obj>
+
+<obj class="Variable" id="DEF_INFO_STREAM">
+ <attr name="Description" type="string" val="Destination and filter for INFO messages"/>
+ <attr name="Name" type="string" val="TDAQ_ERS_INFO"/>
+ <attr name="Value" type="string" val="throttle,lstdout,mts"/>
+</obj>
+
+<obj class="Variable" id="DEF_WARNING_STREAM">
+ <attr name="Description" type="string" val="Destination and filter for WARNING messages"/>
+ <attr name="Name" type="string" val="TDAQ_ERS_WARNING"/>
+ <attr name="Value" type="string" val="throttle,lstderr,mts"/>
+</obj>
+
+<obj class="Variable" id="DF_IS_NAME">
+ <attr name="Name" type="string" val="DF_IS_SERVER_NAME"/>
+ <attr name="Value" type="string" val="DF"/>
+</obj>
+
+<obj class="Variable" id="DQM_IS_NAME">
+ <attr name="Name" type="string" val="DQM_IS_SERVER_NAME"/>
+ <attr name="Value" type="string" val="DQM"/>
+</obj>
+
+<obj class="Variable" id="ERROR_STREAM_NOMTS">
+ <attr name="Description" type="string" val="Destination and filter for ERROR messages"/>
+ <attr name="Name" type="string" val="TDAQ_ERS_ERROR"/>
+ <attr name="Value" type="string" val="lstderr"/>
+</obj>
+
+<obj class="Variable" id="FATAL_STREAM_NOMTS">
+ <attr name="Description" type="string" val="Destination and filter for FATAL messages"/>
+ <attr name="Name" type="string" val="TDAQ_ERS_FATAL"/>
+ <attr name="Value" type="string" val="lstderr"/>
+</obj>
+
+<obj class="Variable" id="HIST_IS_NAME">
+ <attr name="Name" type="string" val="HISTO_IS_SERVER_NAME"/>
+ <attr name="Value" type="string" val="Histogramming"/>
+</obj>
+
+<obj class="Variable" id="INFO_STREAM_NOMTS">
+ <attr name="Description" type="string" val="Destination and filter for INFO messages"/>
+ <attr name="Name" type="string" val="TDAQ_ERS_INFO"/>
+ <attr name="Value" type="string" val="lstdout"/>
+</obj>
+
+<obj class="Variable" id="INSTRUMENT">
+ <attr name="Name" type="string" val="INSTRUMENT"/>
+</obj>
+
+<obj class="Variable" id="LOGGER_CONNECT">
+ <attr name="Description" type="string" val="DB connect string for logger app"/>
+ <attr name="Name" type="string" val="LOGGER_CONNECT"/>
+ <attr name="Value" type="string" val="oracle://int8r/atlas_log_messg"/>
+</obj>
+
+<obj class="Variable" id="MON_IS_NAME">
+ <attr name="Name" type="string" val="MON_IS_SERVER_NAME"/>
+ <attr name="Value" type="string" val="Monitoring"/>
+</obj>
+
+<obj class="Variable" id="MRS_AUDIO_PLAYER">
+ <attr name="Description" type="string" val="Binary used to play .au audio files."/>
+ <attr name="Name" type="string" val="TDAQ_MRS_AUDIO_PLAYER"/>
+ <attr name="Value" type="string" val="/usr/bin/play"/>
+</obj>
+
+<obj class="Variable" id="MTS_ERS_STREAM">
+ <attr name="Description" type="string" val="makes ERS to load MTS stream"/>
+ <attr name="Name" type="string" val="TDAQ_ERS_STREAM_LIBS"/>
+ <attr name="Value" type="string" val="mtsStreams"/>
+</obj>
+
+<obj class="Variable" id="OKS2CORAL_CONNECT">
+ <attr name="Description" type="string" val="Site specific database connection string"/>
+ <attr name="Name" type="string" val="OKS2CORAL_CONNECT"/>
+ <attr name="Value" type="string" val="oracle://int8r/tdaq_dev_backup_w ${OKS2CORAL_PARAMS}"/>
+</obj>
+
+<obj class="Variable" id="OKS2CORAL_PARAMS">
+ <attr name="Description" type="string" val="Extra oks2coral parameters to define schema version and max numbers of inserted rows"/>
+ <attr name="Name" type="string" val="OKS2CORAL_PARAMS"/>
+ <attr name="Value" type="string" val="-x 512 -X 1024"/>
+</obj>
+
+<obj class="Variable" id="OKS2CORAL_TMP_DIR">
+ <attr name="Description" type="string" val="Where oks2coral saves temporary files for archiving. It mush be either a directory in a common file system, or oks2coral binary and oks2coral_mk_tmp_file script shall be run on the same host. Never set this value to /tmp!"/>
+ <attr name="Name" type="string" val="OKS2CORAL_TMP_DIR"/>
+ <attr name="Value" type="string" val="/eos/user/a/atdaqeos/adm/db/v19/daq/.oks2coral_cache"/>
+</obj>
+
+<obj class="Variable" id="OKS2CORAL_WORKING_SCHEMA">
+ <attr name="Description" type="string" val="Site specific database working schema (i.e. user that is owner of relational database tables)"/>
+ <attr name="Name" type="string" val="OKS2CORAL_WORKING_SCHEMA"/>
+ <attr name="Value" type="string" val="atlas_oks_archive"/>
+</obj>
+
+<obj class="Variable" id="OKS_DB_ROOT">
+ <attr name="Description" type="string" val="Path to get oks files which are not part of standard DB area."/>
+ <attr name="Name" type="string" val="OKS_DB_ROOT"/>
+ <attr name="Value" type="string" val="${TDAQ_INST_PATH}/share/data"/>
+</obj>
+
+<obj class="Variable" id="OKS_VERBOSE">
+ <attr name="Description" type="string" val="Controls verbosity of OKS kernel. &quot;no&quot; means no verbosity, any other value means verbose output."/>
+ <attr name="Name" type="string" val="OKS_KERNEL_VERBOSE"/>
+ <attr name="Value" type="string" val="1"/>
+</obj>
+
+<obj class="Variable" id="ORBmaxServerThreadPoolSize">
+ <attr name="Name" type="string" val="ORBmaxServerThreadPoolSize"/>
+ <attr name="Value" type="string" val="10"/>
+</obj>
+
+<obj class="Variable" id="ORBscanGranularity">
+ <attr name="Name" type="string" val="ORBscanGranularity"/>
+ <attr name="Value" type="string" val="0"/>
+</obj>
+
+<obj class="Variable" id="ORBthreadPerConnectionPolicy">
+ <attr name="Name" type="string" val="ORBthreadPerConnectionPolicy"/>
+ <attr name="Value" type="string" val="0"/>
+</obj>
+
+<obj class="Variable" id="PBEAST_MERGED_REPOSITORY">
+ <attr name="Description" type="string" val="The P-BEAST repository for merger files (shared by merger and server applications)"/>
+ <attr name="Name" type="string" val="PBEAST_MERGED_REPOSITORY"/>
+ <attr name="Value" type="string" val="/data/pbeast-merged"/>
+</obj>
+
+<obj class="Variable" id="PBEAST_REPOSITORY">
+ <attr name="Description" type="string" val="The P-BEAST repository is shared by P-BEAST recevers and merger applications"/>
+ <attr name="Name" type="string" val="PBEAST_REPOSITORY"/>
+ <attr name="Value" type="string" val="/data/pbeast"/>
+</obj>
+
+<obj class="Variable" id="PMG_IS_NAME">
+ <attr name="Name" type="string" val="PMG_IS_SERVER_NAME"/>
+ <attr name="Value" type="string" val="PMG"/>
+</obj>
+
+<obj class="Variable" id="RC_IS_NAME">
+ <attr name="Name" type="string" val="RC_IS_SERVER_NAME"/>
+ <attr name="Value" type="string" val="RunCtrl"/>
+</obj>
+
+<obj class="Variable" id="RP_IS_NAME">
+ <attr name="Name" type="string" val="RUN_PARAMS_IS_SERVER_NAME"/>
+ <attr name="Value" type="string" val="RunParams"/>
+</obj>
+
+<obj class="Variable" id="SETUP_IS_SERVER_NAME">
+ <attr name="Name" type="string" val="SETUP_IS_SERVER_NAME"/>
+ <attr name="Value" type="string" val="Setup"/>
+</obj>
+
+<obj class="Variable" id="TBED_CORAL_SERVER_HOST">
+ <attr name="Description" type="string" val="Name of the host where CoralServer runs"/>
+ <attr name="Name" type="string" val="TBED_CORAL_SERVER_HOST"/>
+ <attr name="Value" type="string" val="vm-tbed-onl-01.cern.ch"/>
+</obj>
+
+<obj class="Variable" id="TDAQDB4Expert">
+ <attr name="Description" type="string" val="TDAQ_DB variable for expert system."/>
+ <attr name="Name" type="string" val="TDAQ_DB"/>
+ <attr name="Value" type="string" val="rdbconfig:RDB_RW"/>
+</obj>
+
+<obj class="Variable" id="TDAQ_AM_AUTHORIZATION">
+ <attr name="Description" type="string" val="Controls behavior of the AM service. Allowed values &quot;on/off&quot;. "/>
+ <attr name="Name" type="string" val="TDAQ_AM_AUTHORIZATION"/>
+ <attr name="Value" type="string" val="on"/>
+</obj>
+
+<obj class="Variable" id="TDAQ_AM_SERVER_HOST">
+ <attr name="Description" type="string" val="Defines the host on which the AM server is running."/>
+ <attr name="Name" type="string" val="TDAQ_AM_SERVER_HOST"/>
+ <attr name="Value" type="string" val="lnxatd80.cern.ch"/>
+</obj>
+
+<obj class="Variable" id="TDAQ_AM_SERVER_PORT">
+ <attr name="Description" type="string" val="Defines the port on which the AM server is listening."/>
+ <attr name="Name" type="string" val="TDAQ_AM_SERVER_PORT"/>
+ <attr name="Value" type="string" val="20000"/>
+</obj>
+
+<obj class="Variable" id="TDAQ_BACKUP_PATH">
+ <attr name="Description" type="string" val="Path where server backup files are kept"/>
+ <attr name="Name" type="string" val="TDAQ_BACKUP_PATH"/>
+ <attr name="Value" type="string" val="${TDAQ_LOGS_PATH}"/>
+</obj>
+
+<obj class="Variable" id="TDAQ_CES_CACHE_DIR">
+ <attr name="Description" type="string" val="Defines the directory used by CES to save compiled EPL modules"/>
+ <attr name="Name" type="string" val="TDAQ_CES_CACHE_DIR"/>
+ <attr name="Value" type="string" val="${TDAQ_LOGS_PATH}"/>
+</obj>
+
+<obj class="Variable" id="TDAQ_CES_DIR">
+ <attr name="Description" type="string" val="Defines the directory used by CES to look for configuration files"/>
+ <attr name="Name" type="string" val="TDAQ_CES_DIR"/>
+ <attr name="Value" type="string" val="${TDAQ_INST_PATH}/share/data/CES"/>
+</obj>
+
+<obj class="Variable" id="TDAQ_DQM_ALGO_INST_PATH">
+ <attr name="Description" type="string" val="Installation path for the AttlasTrigger project of the Oflline release"/>
+ <attr name="Name" type="string" val="ATLAS_TRIGGER_INST_PATH"/>
+ <attr name="Value" type="string" val="/afs/cern.ch/atlas/software/builds/nightlies/dev/AtlasTrigger"/>
+</obj>
+
+<obj class="Variable" id="TDAQ_DQM_ALGO_PATCH_INST_PATH">
+ <attr name="Description" type="string" val="Installation path for the patched version of the Offline release"/>
+ <attr name="Name" type="string" val="OFFLINE_PATCH_INST_PATH"/>
+ <attr name="Value" type="string" val="/afs/cern.ch/atlas/software/builds/AtlasTier0"/>
+</obj>
+
+<obj class="Variable" id="TDAQ_DQM_ALGO_PATCH_VERSION">
+ <attr name="Description" type="string" val="Patched Offline release version"/>
+ <attr name="Name" type="string" val="OFFLINE_PATCH_VERSION"/>
+ <attr name="Value" type="string" val="15.0.0.3"/>
+</obj>
+
+<obj class="Variable" id="TDAQ_DQM_ALGO_VERSION">
+ <attr name="Description" type="string" val="Offline release version to get DQM algorithms"/>
+ <attr name="Name" type="string" val="OFFLINE_VERSION"/>
+ <attr name="Value" type="string" val="latest_copied_release"/>
+</obj>
+
+<obj class="Variable" id="TDAQ_ERS_TIMESTAMP_PRECISION">
+ <attr name="Name" type="string" val="TDAQ_ERS_TIMESTAMP_PRECISION"/>
+ <attr name="Value" type="string" val="MICRO"/>
+</obj>
+
+<obj class="Variable" id="TDAQ_ERS_VERBOSITY">
+ <attr name="Value" type="string" val="3"/>
+</obj>
+
+<obj class="Variable" id="TDAQ_ERS_VERBOSITY_LEVEL">
+ <attr name="Name" type="string" val="TDAQ_ERS_VERBOSITY_LEVEL"/>
+ <attr name="Value" type="string" val="3"/>
+</obj>
+
+<obj class="Variable" id="TDAQ_LOGS_ARCHIVE_PATH">
+ <attr name="Description" type="string" val="Path where the archives of the logs are kept"/>
+ <attr name="Name" type="string" val="TDAQ_LOGS_ARCHIVE_PATH"/>
+ <attr name="Value" type="string" val="${TDAQ_LOGS_ROOT}/archive"/>
+</obj>
+
+<obj class="Variable" id="TDAQ_OPMON_OPTIONS">
+ <attr name="Description" type="string" val="Options to be passed to command line of the opmon application."/>
+ <attr name="Name" type="string" val="TDAQ_OPMON_OPTIONS"/>
+ <attr name="Value" type="string" val="-w -u 1 -i 5000"/>
+</obj>
+
+<obj class="Variable" id="TDAQ_PMG_MANIFEST_DIR">
+ <attr name="Description" type="string" val="Where PMG server creates manifest files and fifos. Ideally should be unique per user, release and IPC domain."/>
+ <attr name="Name" type="string" val="TDAQ_PMG_MANIFEST_AND_FIFOS_DIR"/>
+ <attr name="Value" type="string" val="/tmp/ProcessManager/nightly"/>
+</obj>
+
+<obj class="Variable" id="TDAQ_RDB_THREADING">
+ <attr name="Description" type="string" val="sets the number of CORBA threads for incoming requests for the server"/>
+ <attr name="Name" type="string" val="TDAQ_RDB_THREADING"/>
+ <attr name="Value" type="string" val="-ORBmaxServerThreadPoolSize 16"/>
+</obj>
+
+<obj class="Variable" id="TDAQ_RESULTS_FILE_NAME">
+ <attr name="Description" type="string" val="File name of the partition independent timing test results file name"/>
+ <attr name="Name" type="string" val="TDAQ_RESULTS_FILE_NAME"/>
+ <attr name="Value" type="string" val="timing_test_result_list.out"/>
+</obj>
+
+<obj class="Variable" id="TDAQ_RESULTS_LOGS_PATH">
+ <attr name="Description" type="string" val="Path where the partition independent timing test results log file is stored"/>
+ <attr name="Name" type="string" val="TDAQ_RESULTS_LOGS_PATH"/>
+ <attr name="Value" type="string" val="${TDAQ_LOGS_ROOT}/results"/>
+</obj>
+
+<obj class="Variable" id="TDAQ_RLOGIN_OPTS">
+ <attr name="Description" type="string" val="Options passed to remote login command (e.g. ssh), used in starting of PMG agents and in test_computer. May be installation-specific."/>
+ <attr name="Name" type="string" val="TDAQ_RLOGIN_OPTS"/>
+ <attr name="Value" type="string" val="-nfx"/>
+</obj>
+
+<obj class="Variable" id="TDAQ_ROOT_CTRL_EXT">
+ <attr name="Description" type="string" val="sets extra clips extensions for Root Controller (e.g. run number service)"/>
+ <attr name="Name" type="string" val="TDAQ_CLIPSSERVER_EXTENSIONS"/>
+ <attr name="Value" type="string" val="RN"/>
+</obj>
+
+<obj class="Variable" id="TDAQ_RUNNUMBER_SRV">
+ <attr name="Description" type="string" val="Sets connection path to run number DB"/>
+ <attr name="Name" type="string" val="TDAQ_RUN_NUMBER_CONNECT"/>
+ <attr name="Value" type="string" val="nightly_check:atlas_oks_archive:oracle://int8r/tdaq_dev_backup_w"/>
+</obj>
+
+<obj class="Variable" id="TDAQ_TOKEN_ACQUIRE">
+ <attr name="Name" type="string" val="TDAQ_TOKEN_ACQUIRE"/>
+ <attr name="Value" type="string" val="local"/>
+</obj>
+
+<obj class="Variable" id="TDAQ_TOKEN_CHECK">
+ <attr name="Name" type="string" val="TDAQ_TOKEN_CHECK"/>
+ <attr name="Value" type="string" val="0"/>
+</obj>
+
+<obj class="Variable" id="TDAQ_TOKEN_PATH">
+ <attr name="Name" type="string" val="TDAQ_TOKEN_PATH"/>
+ <attr name="Value" type="string" val="/run/tdaq_token"/>
+</obj>
+
+<obj class="Variable" id="TDAQ_TOKEN_PUBLIC_KEY_URL">
+ <attr name="Name" type="string" val="TDAQ_TOKEN_PUBLIC_KEY_URL"/>
+ <attr name="Value" type="string" val="https://atlas-tdaq-sw.web.cern.ch/atlas-tdaq-sw/auth/public.key|https://auth.cern.ch/auth/realms/cern/protocol/openid-connect/certs"/>
+</obj>
+
+<obj class="Variable" id="TNS_ADMIN">
+ <attr name="Description" type="string" val="Needed to access oracle database from COOL/CORAL plugins. Should be set according to the local Oracle installation."/>
+ <attr name="Name" type="string" val="TNS_ADMIN"/>
+ <attr name="Value" type="string" val="/eos/project/o/oracle/public/admin"/>
+</obj>
+
+<obj class="Variable" id="WARNING_STREAM_NOMTS">
+ <attr name="Description" type="string" val="Destination and filter for WARNING messages"/>
+ <attr name="Name" type="string" val="TDAQ_ERS_WARNING"/>
+ <attr name="Value" type="string" val="lstderr"/>
+</obj>
+
+<obj class="VariableSet" id="AM_Environment">
+ <attr name="Description" type="string" val="Set of environment variables to configure the use of the AM."/>
+ <rel name="Contains">
+  <ref class="Variable" id="TDAQ_AM_AUTHORIZATION"/>
+  <ref class="Variable" id="TDAQ_AM_SERVER_HOST"/>
+  <ref class="Variable" id="TDAQ_AM_SERVER_PORT"/>
+ </rel>
+</obj>
+
+<obj class="VariableSet" id="CommonEnvironment">
+ <attr name="Description" type="string" val="Environment that to be passed to all applications in a partition. It can be alternated by a user for concrete partition."/>
+ <rel name="Contains">
+  <ref class="Variable" id="DEF_ERS_DEBUG_LEVEL"/>
+  <ref class="Variable" id="DEF_DEBUG_STREAM"/>
+  <ref class="Variable" id="DEF_INFO_STREAM"/>
+  <ref class="Variable" id="DEF_WARNING_STREAM"/>
+  <ref class="Variable" id="DEF_ERROR_STREAM"/>
+  <ref class="Variable" id="DEF_FATAL_STREAM"/>
+  <ref class="Variable" id="DEF_ERS_SIGNAL_HANDLERS"/>
+  <ref class="Variable" id="TNS_ADMIN"/>
+  <ref class="Variable" id="MTS_ERS_STREAM"/>
+  <ref class="Variable" id="TDAQ_TOKEN_CHECK"/>
+  <ref class="Variable" id="TDAQ_TOKEN_PATH"/>
+  <ref class="Variable" id="TDAQ_TOKEN_PUBLIC_KEY_URL"/>
+  <ref class="Variable" id="TDAQ_TOKEN_ACQUIRE"/>
+ </rel>
+</obj>
+
+<obj class="VariableSet" id="CommonParameters">
+ <attr name="Description" type="string" val="Parameters which shall be defined for any partition. It can be copied and alternated by a user for concrete partition."/>
+ <rel name="Contains">
+  <ref class="Variable" id="TDAQ_LOGS_ARCHIVE_PATH"/>
+  <ref class="Variable" id="TDAQ_RESULTS_FILE_NAME"/>
+  <ref class="Variable" id="TDAQ_RESULTS_LOGS_PATH"/>
+  <ref class="Variable" id="TDAQ_BACKUP_PATH"/>
+  <ref class="Variable" id="TDAQ_DQM_ALGO_INST_PATH"/>
+  <ref class="Variable" id="TDAQ_DQM_ALGO_PATCH_INST_PATH"/>
+  <ref class="Variable" id="TDAQ_DQM_ALGO_VERSION"/>
+  <ref class="Variable" id="TDAQ_DQM_ALGO_PATCH_VERSION"/>
+  <ref class="Variable" id="TBED_CORAL_SERVER_HOST"/>
+  <ref class="Variable" id="TDAQ_RDB_THREADING"/>
+  <ref class="Variable" id="TDAQ_VERSION"/>
+ </rel>
+</obj>
+
+<obj class="VariableSet" id="SetupSegmentParameters">
+ <attr name="Description" type="string" val="Variables used to parametrize Applicaitons in Setup segment"/>
+ <rel name="Contains">
+  <ref class="Variable" id="RP_IS_NAME"/>
+  <ref class="Variable" id="RC_IS_NAME"/>
+  <ref class="Variable" id="PMG_IS_NAME"/>
+  <ref class="Variable" id="MON_IS_NAME"/>
+  <ref class="Variable" id="DF_IS_NAME"/>
+  <ref class="Variable" id="AM_DB_HOST"/>
+  <ref class="Variable" id="OKS2CORAL_CONNECT"/>
+  <ref class="Variable" id="OKS2CORAL_WORKING_SCHEMA"/>
+  <ref class="Variable" id="OKS2CORAL_PARAMS"/>
+  <ref class="Variable" id="TDAQ_OPMON_OPTIONS"/>
+  <ref class="Variable" id="HIST_IS_NAME"/>
+  <ref class="Variable" id="DQM_IS_NAME"/>
+  <ref class="Variable" id="OKS2CORAL_TMP_DIR"/>
+  <ref class="Variable" id="LOGGER_CONNECT"/>
+  <ref class="Variable" id="SETUP_IS_SERVER_NAME"/>
+  <ref class="Variable" id="PBEAST_REPOSITORY"/>
+  <ref class="Variable" id="PBEAST_MERGED_REPOSITORY"/>
+ </rel>
+</obj>
+
+</oks-data>

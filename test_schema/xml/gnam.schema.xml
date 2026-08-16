@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="ASCII"?>
+
+<!-- oks-schema version 2.2 -->
+
+
+<!DOCTYPE oks-schema [
+  <!ELEMENT oks-schema (info, (include)?, (comments)?, (class)+)>
+  <!ELEMENT info EMPTY>
+  <!ATTLIST info
+      name CDATA #IMPLIED
+      type CDATA #IMPLIED
+      num-of-items CDATA #REQUIRED
+      oks-format CDATA #FIXED "schema"
+      oks-version CDATA #REQUIRED
+      created-by CDATA #IMPLIED
+      created-on CDATA #IMPLIED
+      creation-time CDATA #IMPLIED
+      last-modified-by CDATA #IMPLIED
+      last-modified-on CDATA #IMPLIED
+      last-modification-time CDATA #IMPLIED
+  >
+  <!ELEMENT include (file)+>
+  <!ELEMENT file EMPTY>
+  <!ATTLIST file
+      path CDATA #REQUIRED
+  >
+  <!ELEMENT comments (comment)+>
+  <!ELEMENT comment EMPTY>
+  <!ATTLIST comment
+      creation-time CDATA #REQUIRED
+      created-by CDATA #REQUIRED
+      created-on CDATA #REQUIRED
+      author CDATA #REQUIRED
+      text CDATA #REQUIRED
+  >
+  <!ELEMENT class (superclass | attribute | relationship | method)*>
+  <!ATTLIST class
+      name CDATA #REQUIRED
+      description CDATA ""
+      is-abstract (yes|no) "no"
+  >
+  <!ELEMENT superclass EMPTY>
+  <!ATTLIST superclass name CDATA #REQUIRED>
+  <!ELEMENT attribute EMPTY>
+  <!ATTLIST attribute
+      name CDATA #REQUIRED
+      description CDATA ""
+      type (bool|s8|u8|s16|u16|s32|u32|s64|u64|float|double|date|time|string|uid|enum|class) #REQUIRED
+      range CDATA ""
+      format (dec|hex|oct) "dec"
+      is-multi-value (yes|no) "no"
+      init-value CDATA ""
+      is-not-null (yes|no) "no"
+      ordered (yes|no) "no"
+  >
+  <!ELEMENT relationship EMPTY>
+  <!ATTLIST relationship
+      name CDATA #REQUIRED
+      description CDATA ""
+      class-type CDATA #REQUIRED
+      low-cc (zero|one) #REQUIRED
+      high-cc (one|many) #REQUIRED
+      is-composite (yes|no) #REQUIRED
+      is-exclusive (yes|no) #REQUIRED
+      is-dependent (yes|no) #REQUIRED
+      ordered (yes|no) "no"
+  >
+  <!ELEMENT method (method-implementation*)>
+  <!ATTLIST method
+      name CDATA #REQUIRED
+      description CDATA ""
+  >
+  <!ELEMENT method-implementation EMPTY>
+  <!ATTLIST method-implementation
+      language CDATA #REQUIRED
+      prototype CDATA #REQUIRED
+      body CDATA ""
+  >
+]>
+
+<oks-schema>
+
+<info name="" type="" num-of-items="3" oks-format="schema" oks-version="55a3bb7 built &quot;Apr 26 2021&quot;" created-by="vandelli" created-on="lxplus007.cern.ch" creation-time="20050606T114308" last-modified-by="rhauser" last-modified-on="mini" last-modification-time="20210426T105001"/>
+
+<include>
+ <file path="daq/schema/core.schema.xml"/>
+ <file path="daq/schema/emon.schema.xml"/>
+</include>
+
+
+ <class name="GnamApplication" description="This class is used for Gnam monitoring applications.">
+  <superclass name="MonitoringApplication"/>
+  <superclass name="RunControlApplicationBase"/>
+  <superclass name="Resource"/>
+  <attribute name="OHServerName" description="OH server name" type="string" init-value="Histogramming" is-not-null="yes"/>
+  <attribute name="RootOutputFile" description="Root output file prefix and path (ie /tmp/gnam-out))" type="string" init-value="/tmp/gnam-out" is-not-null="yes"/>
+  <attribute name="UpdateFreqEvt" description="Gnam will publish histograms on the OH every UpdateFreqEvt events" type="u32" init-value="1000"/>
+  <attribute name="UpdateFreqSec" description="Gnam will publish histograms on the OH server every UpdateFreqSec seconds" type="u32" init-value="10" is-not-null="yes"/>
+  <attribute name="DumpEnabled" description="Enable and disable the histogram dumping on the root file" type="bool" init-value="true"/>
+  <attribute name="DumpFreqEvt" description="Gnam will dump the histogram on the output file every DumpFreqEvt events. If set to 0, histograms will be dumped only at the EOR" type="u32" init-value="50000" is-not-null="yes"/>
+  <attribute name="ChannelsToPublish" description="Gnam will publish on the OH up to ChannelsToPublish channels (bins) at each publication step" type="u32" init-value="20000" is-not-null="yes"/>
+  <attribute name="SamplerContactTimeout" description="Timeout (seconds) when contacting the sampler." type="u32" init-value="5" is-not-null="yes"/>
+  <attribute name="EventThreadExitTimeout" description="Timeout (seconds) for event thread to exit at EOR." type="u32" init-value="60" is-not-null="yes"/>
+  <relationship name="Libraries" description="Libraries to be load by Gnam" class-type="GnamLibrary" low-cc="zero" high-cc="many" is-composite="no" is-exclusive="no" is-dependent="no"/>
+  <relationship name="SamplerSpecification" description="Sampling address and selection criteria for the EMON service." class-type="SamplingParameters" low-cc="one" high-cc="one" is-composite="no" is-exclusive="no" is-dependent="no"/>
+ </class>
+
+ <class name="GnamBaseLibrary" description="Simplest implementation of the GnamLibrary class. If your library &#xA;does not need any specific parameter,&#xA; you should use this class.">
+  <superclass name="GnamLibrary"/>
+  <attribute name="OldConfigurationArray" description="Variable to hold text configuration parameters for the old-configuration-style libraries " type="string" is-multi-value="yes"/>
+ </class>
+
+ <class name="GnamLibrary" description="This class defines the minimal information needed by gnam to load a library. " is-abstract="yes">
+  <attribute name="PathToFile" description="Library file. The path can be absolute or relative to LD_LIBRARY_PATH" type="string" is-not-null="yes"/>
+  <attribute name="ThirdPartyLibraries" description="Third-party libraries that are loaded once and never unloaded." type="string" is-multi-value="yes"/>
+ </class>
+
+</oks-schema>

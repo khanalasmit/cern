@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="ASCII"?>
+
+<!-- oks-schema version 2.2 -->
+
+
+<!DOCTYPE oks-schema [
+  <!ELEMENT oks-schema (info, (include)?, (comments)?, (class)+)>
+  <!ELEMENT info EMPTY>
+  <!ATTLIST info
+      name CDATA #IMPLIED
+      type CDATA #IMPLIED
+      num-of-items CDATA #REQUIRED
+      oks-format CDATA #FIXED "schema"
+      oks-version CDATA #REQUIRED
+      created-by CDATA #IMPLIED
+      created-on CDATA #IMPLIED
+      creation-time CDATA #IMPLIED
+      last-modified-by CDATA #IMPLIED
+      last-modified-on CDATA #IMPLIED
+      last-modification-time CDATA #IMPLIED
+  >
+  <!ELEMENT include (file)+>
+  <!ELEMENT file EMPTY>
+  <!ATTLIST file
+      path CDATA #REQUIRED
+  >
+  <!ELEMENT comments (comment)+>
+  <!ELEMENT comment EMPTY>
+  <!ATTLIST comment
+      creation-time CDATA #REQUIRED
+      created-by CDATA #REQUIRED
+      created-on CDATA #REQUIRED
+      author CDATA #REQUIRED
+      text CDATA #REQUIRED
+  >
+  <!ELEMENT class (superclass | attribute | relationship | method)*>
+  <!ATTLIST class
+      name CDATA #REQUIRED
+      description CDATA ""
+      is-abstract (yes|no) "no"
+  >
+  <!ELEMENT superclass EMPTY>
+  <!ATTLIST superclass name CDATA #REQUIRED>
+  <!ELEMENT attribute EMPTY>
+  <!ATTLIST attribute
+      name CDATA #REQUIRED
+      description CDATA ""
+      type (bool|s8|u8|s16|u16|s32|u32|s64|u64|float|double|date|time|string|uid|enum|class) #REQUIRED
+      range CDATA ""
+      format (dec|hex|oct) "dec"
+      is-multi-value (yes|no) "no"
+      init-value CDATA ""
+      is-not-null (yes|no) "no"
+      ordered (yes|no) "no"
+  >
+  <!ELEMENT relationship EMPTY>
+  <!ATTLIST relationship
+      name CDATA #REQUIRED
+      description CDATA ""
+      class-type CDATA #REQUIRED
+      low-cc (zero|one) #REQUIRED
+      high-cc (one|many) #REQUIRED
+      is-composite (yes|no) #REQUIRED
+      is-exclusive (yes|no) #REQUIRED
+      is-dependent (yes|no) #REQUIRED
+      ordered (yes|no) "no"
+  >
+  <!ELEMENT method (method-implementation*)>
+  <!ATTLIST method
+      name CDATA #REQUIRED
+      description CDATA ""
+  >
+  <!ELEMENT method-implementation EMPTY>
+  <!ATTLIST method-implementation
+      language CDATA #REQUIRED
+      prototype CDATA #REQUIRED
+      body CDATA ""
+  >
+]>
+
+<oks-schema>
+
+<info name="" type="" num-of-items="3" oks-format="schema" oks-version="oks-08-03-02-14-g572fc09 built &quot;Mar 11 2021&quot;" created-by="vandelli" created-on="lxplus007.cern.ch" creation-time="20050606T114308" last-modified-by="isolov" last-modified-on="pcatd79.cern.ch" last-modification-time="20210312T111813"/>
+
+ <class name="SamplingAddress" description="Defines sampling address for event monitoring" is-abstract="yes">
+  <attribute name="SamplerType" type="string" is-not-null="yes"/>
+  <attribute name="SamplerNames" description="Monitoring task will be connected to all samplers &#xA;of the SamplerType type whose names are given in this list." type="string" is-multi-value="yes"/>
+  <attribute name="NumberOfSamplers" description="Alternative to providing a list of SamplerNames. &#xA;If SamplerNames list is empty then the monitoring task will be connected to the given number&#xA;of arbitrary chosen samplers of the SamplerType type." type="u16" init-value="1"/>
+ </class>
+
+ <class name="SamplingParameters" description="Defines all necessary parameters for event monitoring">
+  <superclass name="SamplingAddress"/>
+  <superclass name="SelectionCriteria"/>
+  <attribute name="BufferSize" description="Size of the buffer to store events locally. It should be small (&lt;10) if full&#xA;event are sampled. In case of sampling from ROD or ROS it should be made &#xA;bigger (e.g. 1000) to have the best sampling performance." type="u32" init-value="100" is-not-null="yes"/>
+  <attribute name="GroupName" description="Name of the monitoring group. Monitors with the same group name and&#xA;selection criteria will never receive same events. This attribute replaces functionality of DispersalDistribution: &#xA;if GroupName is non-empty, dispersion is set to true" type="string"/>
+ </class>
+
+ <class name="SelectionCriteria" description="Defines selection criteria for event monitoring" is-abstract="yes">
+  <attribute name="L1TriggerType" description="LVL1 trigger type" type="u8" format="hex" init-value="0"/>
+  <attribute name="L1TriggerType_Ignore" description="If the value is non zero then L1TriggerType &#xA;value will not be used for event selection." type="bool" init-value="1"/>
+  <attribute name="L1Bits" description="List of positions of non-zero bits in the L1 information. Interpretation&#xA;of these bits depends on the value of the L1BitPattern_Logic parameter." type="u16" is-multi-value="yes"/>
+  <attribute name="L1Bits_Logic" description="If the value is IGNORE then L1Bits value will not be used for event selection.&#xA;Value AND means that all bits given by L1Bits have to be present in event header, &#xA;OR requires at least one of them to be set in event header to get this event selected." type="enum" range="IGNORE,AND,OR" init-value="IGNORE" is-not-null="yes"/>
+  <attribute name="L1Bits_Origin" description="Defines which of the three L1 bit sets existed in an event header have to be matched." type="enum" range="BEFORE_PRESCALE,AFTER_PRESCALE,AFTER_VETO" init-value="AFTER_VETO" is-not-null="yes"/>
+  <attribute name="StatusWord" description="Event header status word. Selection will succeed if at least &#xA;one status word in event header is the same as this one." type="u32" format="hex" init-value="0"/>
+  <attribute name="StatusWord_Ignore" description="If the value is non zero then StatusWord&#xA;will not be used for event selection." type="bool" init-value="1"/>
+  <attribute name="StreamType" description="Event stream type name." type="string"/>
+  <attribute name="StreamNames" description="List of event streams names. List can be empty in which case&#xA;all events of the given StreamType will be selected." type="string" is-multi-value="yes"/>
+  <attribute name="Stream_Logic" description="Value IGNORE excludes StreamType and StreamNames from being used for selection.&#xA;AND implies that selected events must belong to all given StreamNames, &#xA;OR requires that event must belong at least to one given stream to be selected." type="enum" range="IGNORE,AND,OR"/>
+ </class>
+
+</oks-schema>

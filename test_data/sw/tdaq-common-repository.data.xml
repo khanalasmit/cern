@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="ASCII"?>
+
+<!-- oks-data version 2.2 -->
+
+
+<!DOCTYPE oks-data [
+  <!ELEMENT oks-data (info, (include)?, (comments)?, (obj)+)>
+  <!ELEMENT info EMPTY>
+  <!ATTLIST info
+      name CDATA #IMPLIED
+      type CDATA #IMPLIED
+      num-of-items CDATA #REQUIRED
+      oks-format CDATA #FIXED "data"
+      oks-version CDATA #REQUIRED
+      created-by CDATA #IMPLIED
+      created-on CDATA #IMPLIED
+      creation-time CDATA #IMPLIED
+      last-modified-by CDATA #IMPLIED
+      last-modified-on CDATA #IMPLIED
+      last-modification-time CDATA #IMPLIED
+  >
+  <!ELEMENT include (file)*>
+  <!ELEMENT file EMPTY>
+  <!ATTLIST file
+      path CDATA #REQUIRED
+  >
+  <!ELEMENT comments (comment)*>
+  <!ELEMENT comment EMPTY>
+  <!ATTLIST comment
+      creation-time CDATA #REQUIRED
+      created-by CDATA #REQUIRED
+      created-on CDATA #REQUIRED
+      author CDATA #REQUIRED
+      text CDATA #REQUIRED
+  >
+  <!ELEMENT obj (attr | rel)*>
+  <!ATTLIST obj
+      class CDATA #REQUIRED
+      id CDATA #REQUIRED
+  >
+  <!ELEMENT attr (data)*>
+  <!ATTLIST attr
+      name CDATA #REQUIRED
+      type (bool|s8|u8|s16|u16|s32|u32|s64|u64|float|double|date|time|string|uid|enum|class|-) "-"
+      val CDATA ""
+  >
+  <!ELEMENT data EMPTY>
+  <!ATTLIST data
+      val CDATA #REQUIRED
+  >
+  <!ELEMENT rel (ref)*>
+  <!ATTLIST rel
+      name CDATA #REQUIRED
+      class CDATA ""
+      id CDATA ""
+  >
+  <!ELEMENT ref EMPTY>
+  <!ATTLIST ref
+      class CDATA #REQUIRED
+      id CDATA #REQUIRED
+  >
+]>
+
+<oks-data>
+
+<info name="" type="" num-of-items="1" oks-format="data" oks-version="138ccef built &quot;Dec  1 2023&quot;" created-by="root" created-on="pcatdbuild06.cern.ch" creation-time="20231201T162808" last-modified-by="root" last-modified-on="pcatdbuild06.cern.ch" last-modification-time="20231201T162808"/>
+
+<include>
+ <file path="daq/schema/core.schema.xml"/>
+ <file path="daq/sw/tags.data.xml"/>
+ <file path="daq/sw/tdaq-common-external-repository.data.xml"/>
+</include>
+
+<comments>
+ <comment creation-time="20231201T162808" created-by="root" created-on="pcatdbuild06.cern.ch" author="root" text="python plug-in"/>
+</comments>
+
+
+<obj class="SW_Repository" id="TDAQ Common">
+ <attr name="Name" type="string" val="TDAQ Common"/>
+ <attr name="InstallationPath" type="string" val="/sw/atlas/tdaq-common/tdaq-common-11-02-00/installed"/>
+ <attr name="PythonPaths" type="string">
+  <data val="share/lib/python"/>
+  <data val="external/${TAG}/lib/python"/>
+  <data val="${TAG}/lib"/>
+  <data val="external/${TAG}/lib"/>
+ </attr>
+ <attr name="InstallationPathVariableName" type="string" val="TDAQC_INST_PATH"/>
+ <rel name="Uses">
+  <ref class="SW_Repository" id="TDAQCExternal"/>
+  <ref class="SW_Repository" id="ROOT"/>
+  <ref class="SW_Repository" id="VDT"/>
+  <ref class="SW_Repository" id="BOOST"/>
+  <ref class="SW_Repository" id="PYTHON"/>
+  <ref class="SW_Repository" id="ZLIB"/>
+  <ref class="SW_ExternalPackage" id="GCC"/>
+ </rel>
+ <rel name="Tags">
+  <ref class="Tag" id="x86_64-el9-gcc13-opt"/>
+  <ref class="Tag" id="x86_64-el9-gcc13-dbg"/>
+  <ref class="Tag" id="x86_64-centos7-gcc11-opt"/>
+  <ref class="Tag" id="x86_64-centos7-gcc11-dbg"/>
+  <ref class="Tag" id="aarch64-el9-gcc13-opt"/>
+  <ref class="Tag" id="aarch64-centos7-gcc11-opt"/>
+ </rel>
+</obj>
+
+</oks-data>

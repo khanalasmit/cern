@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="ASCII"?>
+
+<!-- oks-schema version 2.0 -->
+
+
+<!DOCTYPE oks-schema [
+  <!ELEMENT oks-schema (info, (include)?, (comments)?, (class)+)>
+  <!ELEMENT info EMPTY>
+  <!ATTLIST info
+      name CDATA #REQUIRED
+      type CDATA #REQUIRED
+      num-of-items CDATA #REQUIRED
+      oks-format CDATA #FIXED "schema"
+      oks-version CDATA #REQUIRED
+      created-by CDATA #REQUIRED
+      created-on CDATA #REQUIRED
+      creation-time CDATA #REQUIRED
+      last-modified-by CDATA #REQUIRED
+      last-modified-on CDATA #REQUIRED
+      last-modification-time CDATA #REQUIRED
+  >
+  <!ELEMENT include (file)+>
+  <!ELEMENT file EMPTY>
+  <!ATTLIST file
+      path CDATA #REQUIRED
+  >
+  <!ELEMENT comments (comment)+>
+  <!ELEMENT comment EMPTY>
+  <!ATTLIST comment
+      creation-time CDATA #REQUIRED
+      created-by CDATA #REQUIRED
+      created-on CDATA #REQUIRED
+      author CDATA #REQUIRED
+      text CDATA #REQUIRED
+  >
+  <!ELEMENT class (superclass | attribute | relationship | method)*>
+  <!ATTLIST class
+      name CDATA #REQUIRED
+      description CDATA ""
+      is-abstract (yes|no) "no"
+  >
+  <!ELEMENT superclass EMPTY>
+  <!ATTLIST superclass name CDATA #REQUIRED>
+  <!ELEMENT attribute EMPTY>
+  <!ATTLIST attribute
+      name CDATA #REQUIRED
+      description CDATA ""
+      type (bool|s8|u8|s16|u16|s32|u32|s64|u64|float|double|date|time|string|uid|enum|class) #REQUIRED
+      range CDATA ""
+      format (dec|hex|oct) "dec"
+      is-multi-value (yes|no) "no"
+      multi-value-implementation (list|vector) "list"
+      init-value CDATA ""
+      is-not-null (yes|no) "no"
+  >
+  <!ELEMENT relationship EMPTY>
+  <!ATTLIST relationship
+      name CDATA #REQUIRED
+      description CDATA ""
+      class-type CDATA #REQUIRED
+      low-cc (zero|one) #REQUIRED
+      high-cc (one|many) #REQUIRED
+      is-composite (yes|no) #REQUIRED
+      is-exclusive (yes|no) #REQUIRED
+      is-dependent (yes|no) #REQUIRED
+      multi-value-implementation (list|vector) "list"
+  >
+  <!ELEMENT method (method-implementation*)>
+  <!ATTLIST method
+      name CDATA #REQUIRED
+      description CDATA ""
+  >
+  <!ELEMENT method-implementation EMPTY>
+  <!ATTLIST method-implementation
+      language CDATA #REQUIRED
+      prototype CDATA #REQUIRED
+      body CDATA ""
+  >
+]>
+
+<oks-schema>
+
+<info name="" type="" num-of-items="5" oks-format="schema" oks-version="oks-06-07-02 built &quot;Jul 14 2014&quot;" created-by="kama" created-on="pcsmu1.cern.ch" creation-time="20110707T121728" last-modified-by="kama" last-modified-on="pcatr25a.cern.ch" last-modification-time="20141107T210800"/>
+
+<include>
+ <file path="daq/schema/df.schema.xml"/>
+</include>
+
+ <class name="MIGApplication" description="Describes the MonInfoGatherer application.">
+  <superclass name="Resource"/>
+  <superclass name="RunControlApplicationBase"/>
+  <superclass name="TemplateApplication"/>
+  <attribute name="LibraryPaths" description="full path to library that contain algorithms" type="string" is-multi-value="yes" init-value="libMIGContainers.so" is-not-null="yes"/>
+  <relationship name="Configurations" description="Relation to the MonInfoGatherer configuration." class-type="MIGConfiguration" low-cc="one" high-cc="many" is-composite="no" is-exclusive="no" is-dependent="no"/>
+ </class>
+
+ <class name="MIGConfiguration" description="Configuration to describe regular expressions, input and output servers and handler and algorithm to use">
+  <attribute name="ProviderRegExp" description="Regular expression for matching providers" type="string" init-value=".+" is-not-null="yes"/>
+  <attribute name="ObjectRegExp" description="Regular expression used to subscribe for IS server updates" type="string" init-value=".+" is-not-null="yes"/>
+  <relationship name="SourceServers" description="If template application use SegmentProcEnvVarName evironment" class-type="InfrastructureBase" low-cc="one" high-cc="many" is-composite="no" is-exclusive="no" is-dependent="no"/>
+  <relationship name="DestinationServers" description="If TemplateApplication use SegmentProcEvnParentName value as envrionment variable to read the destination server." class-type="InfrastructureBase" low-cc="zero" high-cc="many" is-composite="no" is-exclusive="no" is-dependent="no"/>
+  <relationship name="MatchHandlers" description="First handler in this list which matches object name will be called to process object data. Typically last handler in the list should be made a catch-all handler with regular expression matching all object names." class-type="MIGMatchHandler" low-cc="zero" high-cc="many" is-composite="no" is-exclusive="no" is-dependent="no"/>
+ </class>
+
+ <class name="MIGMatchHandler">
+  <attribute name="ObjectRegExp" description="Regular expression to match IS object name. With multiple MIGMatchHandler definitions only first matching MIGMatchHandler is called for a matching object name." type="string" init-value=".+" is-not-null="yes"/>
+  <attribute name="Name" description="Name of the handler/container to be queried from HandlerManager" type="string" init-value="Default" is-not-null="yes"/>
+  <attribute name="Parameters" description="List of extra parameters to pass to the handler/container/algorithm" type="string" is-multi-value="yes"/>
+ </class>
+
+</oks-schema>

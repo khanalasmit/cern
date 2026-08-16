@@ -1,0 +1,1877 @@
+<?xml version="1.0" encoding="ASCII"?>
+
+<!-- oks-data version 2.2 -->
+
+
+<!DOCTYPE oks-data [
+  <!ELEMENT oks-data (info, (include)?, (comments)?, (obj)+)>
+  <!ELEMENT info EMPTY>
+  <!ATTLIST info
+      name CDATA #IMPLIED
+      type CDATA #IMPLIED
+      num-of-items CDATA #REQUIRED
+      oks-format CDATA #FIXED "data"
+      oks-version CDATA #REQUIRED
+      created-by CDATA #IMPLIED
+      created-on CDATA #IMPLIED
+      creation-time CDATA #IMPLIED
+      last-modified-by CDATA #IMPLIED
+      last-modified-on CDATA #IMPLIED
+      last-modification-time CDATA #IMPLIED
+  >
+  <!ELEMENT include (file)*>
+  <!ELEMENT file EMPTY>
+  <!ATTLIST file
+      path CDATA #REQUIRED
+  >
+  <!ELEMENT comments (comment)*>
+  <!ELEMENT comment EMPTY>
+  <!ATTLIST comment
+      creation-time CDATA #REQUIRED
+      created-by CDATA #REQUIRED
+      created-on CDATA #REQUIRED
+      author CDATA #REQUIRED
+      text CDATA #REQUIRED
+  >
+  <!ELEMENT obj (attr | rel)*>
+  <!ATTLIST obj
+      class CDATA #REQUIRED
+      id CDATA #REQUIRED
+  >
+  <!ELEMENT attr (data)*>
+  <!ATTLIST attr
+      name CDATA #REQUIRED
+      type (bool|s8|u8|s16|u16|s32|u32|s64|u64|float|double|date|time|string|uid|enum|class|-) "-"
+      val CDATA ""
+  >
+  <!ELEMENT data EMPTY>
+  <!ATTLIST data
+      val CDATA #REQUIRED
+  >
+  <!ELEMENT rel (ref)*>
+  <!ATTLIST rel
+      name CDATA #REQUIRED
+      class CDATA ""
+      id CDATA ""
+  >
+  <!ELEMENT ref EMPTY>
+  <!ATTLIST ref
+      class CDATA #REQUIRED
+      id CDATA #REQUIRED
+  >
+]>
+
+<oks-data>
+
+<info name="" type="" num-of-items="209" oks-format="data" oks-version="138ccef built &quot;Dec  1 2023&quot;" created-by="root" created-on="pcatdbuild06.cern.ch" creation-time="20231201T162814" last-modified-by="root" last-modified-on="pcatdbuild06.cern.ch" last-modification-time="20231201T162814"/>
+
+<include>
+ <file path="daq/schema/core.schema.xml"/>
+ <file path="daq/sw/tdaq-common-repository.data.xml"/>
+ <file path="daq/segments/common-environment.data.xml"/>
+ <file path="daq/sw/external.data.xml"/>
+ <file path="daq/sw/common-resources.data.xml"/>
+ <file path="daq/sw/dqm-algo-repository.data.xml"/>
+</include>
+
+<comments>
+ <comment creation-time="20231201T162814" created-by="root" created-on="pcatdbuild06.cern.ch" author="root" text="python plug-in"/>
+</comments>
+
+
+<obj class="Binary" id="HLTMPPU_main">
+ <attr name="BinaryName" type="string" val="HLTMPPU_main"/>
+ <attr name="Description" type="string" val="multi-processing HLTPU Processing Task based on ATHENA"/>
+ <attr name="HelpURL" type="string" val=""/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+ <rel name="ProcessEnvironment">
+  <ref class="Variable" id="ORBscanGranularity"/>
+ </rel>
+</obj>
+
+<obj class="Binary" id="HLTRC_main">
+ <attr name="BinaryName" type="string" val="HLTRC_main"/>
+ <attr name="Description" type="string" val="HLT RC helper for HLTMPPU"/>
+ <attr name="HelpURL" type="string" val=""/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="Binary" id="MonInfoGatherer">
+ <attr name="BinaryName" type="string" val="MonInfoGatherer"/>
+ <attr name="Description" type="string" val="Histogram summing application. Receives histograms from individual nodes and combines them."/>
+ <attr name="HelpURL" type="string" val=""/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="Binary" id="ROSTester">
+ <attr name="BinaryName" type="string" val="ROSTester"/>
+ <attr name="Description" type="string" val="test Application that sends requests and clears to the ROS,.emulating DCM and hltsv"/>
+ <attr name="HelpURL" type="string" val=""/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="Binary" id="ROx">
+ <attr name="BinaryName" type="string" val="ROx"/>
+ <attr name="Description" type="string" val="Software ROD"/>
+ <attr name="HelpURL" type="string" val=""/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="Binary" id="ReadoutApplication">
+ <attr name="BinaryName" type="string" val="ReadoutApplication"/>
+ <attr name="Description" type="string" val="Application that instantiates IOManager for ROS/RCD."/>
+ <attr name="HelpURL" type="string" val=""/>
+ <rel name="Needs">
+  <ref class="RM_HW_Resource" id="ROS"/>
+ </rel>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="Binary" id="RobinTestSuite">
+ <attr name="BinaryName" type="string" val="RobinTestSuite"/>
+ <attr name="Description" type="string" val="Test Suite package for testing Robin cards. For experts only"/>
+ <attr name="HelpURL" type="string" val=""/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="Binary" id="SFOng_main">
+ <attr name="BinaryName" type="string" val="SFOng_main"/>
+ <attr name="Description" type="string" val="Sub Farm Output: the next generation"/>
+ <attr name="HelpURL" type="string" val=""/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="Binary" id="circ_generator">
+ <attr name="BinaryName" type="string" val="circ_generator"/>
+ <attr name="Description" type="string" val="Event generator to fill a circular buffer"/>
+ <attr name="HelpURL" type="string" val=""/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="Binary" id="coca_server">
+ <attr name="BinaryName" type="string" val="coca_server"/>
+ <attr name="HelpURL" type="string" val=""/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="Binary" id="config_dump">
+ <attr name="BinaryName" type="string" val="config_dump"/>
+ <attr name="HelpURL" type="string" val=""/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="Binary" id="coralServer">
+ <attr name="BinaryName" type="string" val="coralServer"/>
+ <attr name="HelpURL" type="string" val=""/>
+ <rel name="BelongsTo" class="SW_Repository" id="TDAQCExternal"/>
+ <rel name="Uses">
+  <ref class="SW_Repository" id="BOOST"/>
+  <ref class="SW_Repository" id="MYSQL"/>
+  <ref class="SW_Repository" id="ORACLE"/>
+  <ref class="SW_Repository" id="SQLITE"/>
+  <ref class="SW_Repository" id="XERCESC"/>
+  <ref class="SW_ExternalPackage" id="GCC"/>
+ </rel>
+ <rel name="ProcessEnvironment">
+  <ref class="Variable" id="CS_CORAL_AUTH_PATH"/>
+  <ref class="Variable" id="CS_CORAL_DBLOOKUP_PATH"/>
+ </rel>
+</obj>
+
+<obj class="Binary" id="coralServerProxy">
+ <attr name="BinaryName" type="string" val="coralServerProxy"/>
+ <attr name="HelpURL" type="string" val=""/>
+ <rel name="BelongsTo" class="SW_Repository" id="TDAQCExternal"/>
+ <rel name="Uses">
+  <ref class="SW_Repository" id="BOOST"/>
+  <ref class="SW_Repository" id="MYSQL"/>
+  <ref class="SW_Repository" id="ORACLE"/>
+  <ref class="SW_Repository" id="SQLITE"/>
+  <ref class="SW_Repository" id="XERCESC"/>
+  <ref class="SW_ExternalPackage" id="GCC"/>
+ </rel>
+</obj>
+
+<obj class="Binary" id="dal_create_db_connection_files">
+ <attr name="BinaryName" type="string" val="dal_create_db_connection_files"/>
+ <attr name="Description" type="string" val="create dblookup and authentication xml files out of information in OKS."/>
+ <attr name="HelpURL" type="string" val=""/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="Binary" id="dcm_main">
+ <attr name="BinaryName" type="string" val="dcm_main"/>
+ <attr name="Description" type="string" val="Data Collection Manager"/>
+ <attr name="HelpURL" type="string" val=""/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="Binary" id="ddc_ct_dim">
+ <attr name="BinaryName" type="string" val="ddc_ct_dim"/>
+ <attr name="Description" type="string" val="Application transferring DAQ commands to DCS via DIM PVSS manager"/>
+ <attr name="HelpURL" type="string" val="http://atlasinfo.cern.ch/ATLAS/GROUPS/DAQTRIG/DCS/DDC/ddc.html"/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="Binary" id="ddc_dt_dim">
+ <attr name="BinaryName" type="string" val="ddc_dt_dim"/>
+ <attr name="Description" type="string" val="Application transferiing data DAQ &lt;=&gt; DCS via DIM PVSS manager"/>
+ <attr name="HelpURL" type="string" val="http://atlasinfo.cern.ch/ATLAS/GROUPS/DAQTRIG/DCS/DDC/ddc.html"/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="Binary" id="ddc_dt_dim_init">
+ <attr name="BinaryName" type="string" val="ddc_dt_dim_init"/>
+ <attr name="Description" type="string" val="Application transferiing data DAQ &lt;=&gt; DCS via DIM PVSS manager, handling DAQ data in IS servers of initial partition"/>
+ <attr name="HelpURL" type="string" val="http://atlasinfo.cern.ch/ATLAS/GROUPS/DAQTRIG/DCS/DDC/ddc.html"/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="Binary" id="ddc_mt_dim">
+ <attr name="BinaryName" type="string" val="ddc_mt_dim"/>
+ <attr name="Description" type="string" val="Application transferiing DCS=&gt;DAQ messages via DIM PVSS manager"/>
+ <attr name="HelpURL" type="string" val="http://atlasinfo.cern.ch/ATLAS/GROUPS/DAQTRIG/DCS/DDC/ddc.html"/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="Binary" id="dolar_slink_src">
+ <attr name="BinaryName" type="string" val="dolar_slink_src"/>
+ <attr name="Description" type="string" val="Generates SLINK fragments using a Dolar"/>
+ <attr name="HelpURL" type="string" val=""/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="Binary" id="dolarscope">
+ <attr name="BinaryName" type="string" val="dolarscope"/>
+ <attr name="Description" type="string" val="Binary for dolarscope"/>
+ <attr name="HelpURL" type="string" val=""/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="Binary" id="dozolar_fmctest">
+ <attr name="BinaryName" type="string" val="dozolar_fmctest"/>
+ <attr name="Description" type="string" val="Tests FMC connectivity on a Dozolar"/>
+ <attr name="HelpURL" type="string" val=""/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="Binary" id="dozolar_setup">
+ <attr name="BinaryName" type="string" val="dozolar_setup"/>
+ <attr name="Description" type="string" val="Initializes a Dozolar"/>
+ <attr name="HelpURL" type="string" val=""/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="Binary" id="dqm_archiver">
+ <attr name="BinaryName" type="string" val="dqm_archiver"/>
+ <attr name="Description" type="string" val="DQM results archiving application"/>
+ <attr name="HelpURL" type="string" val=""/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="Binary" id="dqmf_agent">
+ <attr name="BinaryName" type="string" val="dqmf_agent"/>
+ <attr name="Description" type="string" val="Monitoring application that runs pre configured DQ assessment"/>
+ <attr name="HelpURL" type="string" val=""/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+ <rel name="Uses">
+  <ref class="SW_ExternalPackage" id="DQM_ALGO_PATCH"/>
+ </rel>
+</obj>
+
+<obj class="Binary" id="dqmf_rm">
+ <attr name="BinaryName" type="string" val="dqmf_rm"/>
+ <attr name="HelpURL" type="string" val=""/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="Binary" id="eff_csv_splunk">
+ <attr name="BinaryName" type="string" val="eff_csv_splunk"/>
+ <attr name="Description" type="string" val="Application to evaluate lumi block efficiency"/>
+ <attr name="HelpURL" type="string" val="https://twiki.cern.ch/twiki/bin/view/Atlas/DaqHltControlAndConfiguration"/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+ <rel name="ProcessEnvironment">
+  <ref class="Variable" id="CORAL_AUTH_PATH"/>
+ </rel>
+</obj>
+
+<obj class="Binary" id="eff_daq_efficiency">
+ <attr name="BinaryName" type="string" val="eff_daq_efficiency"/>
+ <attr name="Description" type="string" val="Application to evaluate lumi block efficiency"/>
+ <attr name="HelpURL" type="string" val="https://twiki.cern.ch/twiki/bin/view/Atlas/DaqHltControlAndConfiguration"/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+ <rel name="ProcessEnvironment">
+  <ref class="Variable" id="CORAL_AUTH_PATH"/>
+ </rel>
+</obj>
+
+<obj class="Binary" id="eff_daq_splunk">
+ <attr name="BinaryName" type="string" val="eff_daq_splunk"/>
+ <attr name="Description" type="string" val="Application to evaluate lumi block efficiency"/>
+ <attr name="HelpURL" type="string" val="https://twiki.cern.ch/twiki/bin/view/Atlas/DaqHltControlAndConfiguration"/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+ <rel name="ProcessEnvironment">
+  <ref class="Variable" id="CORAL_AUTH_PATH"/>
+ </rel>
+</obj>
+
+<obj class="Binary" id="eff_make_combined_graphs">
+ <attr name="BinaryName" type="string" val="eff_make_combined_graphs"/>
+ <attr name="Description" type="string" val="Application to produce a root file from efficiency data files"/>
+ <attr name="HelpURL" type="string" val="https://twiki.cern.ch/twiki/bin/view/Atlas/DaqHltControlAndConfiguration"/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="Binary" id="eff_make_csv_file">
+ <attr name="BinaryName" type="string" val="eff_make_csv_file"/>
+ <attr name="Description" type="string" val="Application to produce a csv file with run efficiency data"/>
+ <attr name="HelpURL" type="string" val="https://twiki.cern.ch/twiki/bin/view/Atlas/DaqHltControlAndConfiguration"/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+ <rel name="ProcessEnvironment">
+  <ref class="Variable" id="CORAL_AUTH_PATH"/>
+ </rel>
+</obj>
+
+<obj class="Binary" id="eff_run_efficiency">
+ <attr name="BinaryName" type="string" val="eff_run_efficiency"/>
+ <attr name="Description" type="string" val="Application to evaluate run efficency"/>
+ <attr name="HelpURL" type="string" val="https://twiki.cern.ch/twiki/bin/view/Atlas/DaqHltControlAndConfiguration"/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+ <rel name="ProcessEnvironment">
+  <ref class="Variable" id="CORAL_AUTH_PATH"/>
+ </rel>
+</obj>
+
+<obj class="Binary" id="emon_conductor">
+ <attr name="BinaryName" type="string" val="emon_conductor"/>
+ <attr name="HelpURL" type="string" val=""/>
+ <attr name="DefaultParameters" type="string" val="-s -p env(TDAQ_PARTITION)"/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="Binary" id="emon_pull_sampler">
+ <attr name="BinaryName" type="string" val="emon_pull_sampler"/>
+ <attr name="HelpURL" type="string" val=""/>
+ <attr name="DefaultParameters" type="string" val="-p env(TDAQ_PARTITION)"/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="Binary" id="emon_push_sampler">
+ <attr name="BinaryName" type="string" val="emon_push_sampler"/>
+ <attr name="HelpURL" type="string" val=""/>
+ <attr name="DefaultParameters" type="string" val="-p env(TDAQ_PARTITION)"/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="Binary" id="emon_task">
+ <attr name="BinaryName" type="string" val="emon_task"/>
+ <attr name="HelpURL" type="string" val=""/>
+ <attr name="DefaultParameters" type="string" val="-p env(TDAQ_PARTITION)"/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="Binary" id="eth_dst">
+ <attr name="BinaryName" type="string" val="eth_dst"/>
+ <attr name="Description" type="string" val="Test for an eth connection, destination side"/>
+ <attr name="HelpURL" type="string" val=""/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="Binary" id="eth_src">
+ <attr name="BinaryName" type="string" val="eth_src"/>
+ <attr name="Description" type="string" val="Test for an eth connection, source side"/>
+ <attr name="HelpURL" type="string" val=""/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="Binary" id="gnam">
+ <attr name="BinaryName" type="string" val="gnam"/>
+ <attr name="Description" type="string" val="A Monitoring Application that is configurable through user dynamic libraries"/>
+ <attr name="HelpURL" type="string" val=""/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="Binary" id="hltpuEmu">
+ <attr name="BinaryName" type="string" val="hltpuEmu"/>
+ <attr name="Description" type="string" val="It uses the dfinterface_dcm and emulates the hltpu behaviour"/>
+ <attr name="HelpURL" type="string" val=""/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="Binary" id="hltsv_main">
+ <attr name="BinaryName" type="string" val="hltsv_main"/>
+ <attr name="Description" type="string" val="HLT Supervisor Application"/>
+ <attr name="HelpURL" type="string" val=""/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="Binary" id="ipc_proxy">
+ <attr name="BinaryName" type="string" val="ipc_proxy"/>
+ <attr name="HelpURL" type="string" val=""/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="Binary" id="ipc_server">
+ <attr name="BinaryName" type="string" val="ipc_server"/>
+ <attr name="HelpURL" type="string" val=""/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="Binary" id="is_ls">
+ <attr name="BinaryName" type="string" val="is_ls"/>
+ <attr name="HelpURL" type="string" val=""/>
+ <attr name="DefaultParameters" type="string" val="-p env(TDAQ_PARTITION)"/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="Binary" id="is_rm">
+ <attr name="BinaryName" type="string" val="is_rm"/>
+ <attr name="HelpURL" type="string" val=""/>
+ <attr name="DefaultParameters" type="string" val="-p env(TDAQ_PARTITION)"/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="Binary" id="is_server">
+ <attr name="BinaryName" type="string" val="is_server"/>
+ <attr name="HelpURL" type="string" val=""/>
+ <attr name="DefaultParameters" type="string" val="-s -p env(TDAQ_PARTITION) -n env(TDAQ_APPLICATION_NAME)"/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="Binary" id="littlejohn">
+ <attr name="BinaryName" type="string" val="littlejohn"/>
+ <attr name="Description" type="string" val="A program for users to display the state of a Robin"/>
+ <attr name="HelpURL" type="string" val=""/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="Binary" id="logTest">
+ <attr name="BinaryName" type="string" val="logTest"/>
+ <attr name="Description" type="string" val="Log Service test. Level 1: test access to the database is correct. Level 2: tests the Log Service infrastructure is ok."/>
+ <attr name="HelpURL" type="string" val=""/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+ <rel name="ProcessEnvironment">
+  <ref class="Variable" id="CORAL_AUTH_PATH"/>
+ </rel>
+</obj>
+
+<obj class="Binary" id="lsReceiver">
+ <attr name="BinaryName" type="string" val="lsReceiver"/>
+ <attr name="Description" type="string" val="MRS client to collect log messages and store them on the Log Service databse"/>
+ <attr name="HelpURL" type="string" val=""/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+ <rel name="ProcessEnvironment">
+  <ref class="Variable" id="CORAL_AUTH_PATH"/>
+ </rel>
+</obj>
+
+<obj class="Binary" id="mda">
+ <attr name="BinaryName" type="string" val="mda"/>
+ <attr name="Description" type="string" val="Copying histos from OHS to CoCa"/>
+ <attr name="HelpURL" type="string" val=""/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="Binary" id="mda_eor">
+ <attr name="BinaryName" type="string" val="mda_eor"/>
+ <attr name="Description" type="string" val="Copying histos from OHS to CoCa"/>
+ <attr name="HelpURL" type="string" val=""/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="Binary" id="mda_stat_publish">
+ <attr name="BinaryName" type="string" val="mda_stat_publish"/>
+ <attr name="Description" type="string" val="Publishes histograms with MDA/CoCa statistics"/>
+ <attr name="HelpURL" type="string" val=""/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="Binary" id="mts2splunk_receiver">
+ <attr name="BinaryName" type="string" val="mts2splunk_receiver"/>
+ <attr name="Description" type="string" val="MTS 2 Splunk indexer application"/>
+ <attr name="HelpURL" type="string" val=""/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="Binary" id="mts_ers_receiver">
+ <attr name="BinaryName" type="string" val="mts_ers_receiver"/>
+ <attr name="Description" type="string" val="MTS example receiver application"/>
+ <attr name="HelpURL" type="string" val="https://its.cern.ch/jira/secure/attachment/11500/HLD_draft_v0.3.pdf"/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="Binary" id="mts_ers_sender">
+ <attr name="BinaryName" type="string" val="mts_ers_sender"/>
+ <attr name="Description" type="string" val="MTS example sender application"/>
+ <attr name="HelpURL" type="string" val="https://its.cern.ch/jira/secure/attachment/11500/HLD_draft_v0.3.pdf"/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="Binary" id="mts_worker">
+ <attr name="BinaryName" type="string" val="mts_worker"/>
+ <attr name="Description" type="string" val="Message Transfer System worker"/>
+ <attr name="HelpURL" type="string" val="https://its.cern.ch/jira/secure/attachment/11500/HLD_draft_v0.3.pdf"/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="Binary" id="np2lan">
+ <attr name="BinaryName" type="string" val="np2lan"/>
+ <attr name="HelpURL" type="string" val=""/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="Binary" id="oh_cp">
+ <attr name="BinaryName" type="string" val="oh_cp"/>
+ <attr name="HelpURL" type="string" val=""/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="Binary" id="oh_graph_provider">
+ <attr name="BinaryName" type="string" val="oh_graph_provider"/>
+ <attr name="HelpURL" type="string" val=""/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="Binary" id="oh_ls">
+ <attr name="BinaryName" type="string" val="oh_ls"/>
+ <attr name="HelpURL" type="string" val=""/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="Binary" id="oh_mv">
+ <attr name="BinaryName" type="string" val="oh_mv"/>
+ <attr name="HelpURL" type="string" val=""/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="Binary" id="oh_raw_provider">
+ <attr name="BinaryName" type="string" val="oh_raw_provider"/>
+ <attr name="HelpURL" type="string" val=""/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="Binary" id="oh_rm">
+ <attr name="BinaryName" type="string" val="oh_rm"/>
+ <attr name="HelpURL" type="string" val=""/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="Binary" id="oh_root_provider">
+ <attr name="BinaryName" type="string" val="oh_root_provider"/>
+ <attr name="HelpURL" type="string" val=""/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="Binary" id="oh_test_provider">
+ <attr name="BinaryName" type="string" val="oh_test_provider"/>
+ <attr name="HelpURL" type="string" val=""/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="Binary" id="oks2coral">
+ <attr name="BinaryName" type="string" val="oks2coral"/>
+ <attr name="HelpURL" type="string" val=""/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="Binary" id="olc2hlt-invalidate">
+ <attr name="BinaryName" type="string" val="olc2hlt-invalidate"/>
+ <attr name="HelpURL" type="string" val=""/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="Binary" id="opmon_analyser">
+ <attr name="BinaryName" type="string" val="opmon_analyser"/>
+ <attr name="HelpURL" type="string" val=""/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="Binary" id="opmon_logger">
+ <attr name="BinaryName" type="string" val="opmon_logger"/>
+ <attr name="Description" type="string" val="Records timing of Run Control transitions to a ROOT file"/>
+ <attr name="HelpURL" type="string" val=""/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="Binary" id="opmon_monitor">
+ <attr name="BinaryName" type="string" val="opmon_monitor"/>
+ <attr name="HelpURL" type="string" val=""/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="Binary" id="pbeast_is_receiver">
+ <attr name="BinaryName" type="string" val="pbeast_is_receiver"/>
+ <attr name="Description" type="string" val="P-BEAST IS Receiver Application"/>
+ <attr name="HelpURL" type="string" val=""/>
+ <attr name="DefaultParameters" type="string" val="-s"/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="Binary" id="pbeast_repository_server">
+ <attr name="BinaryName" type="string" val="pbeast_repository_server"/>
+ <attr name="Description" type="string" val="P-BEAST Repository Server and Merger Application"/>
+ <attr name="HelpURL" type="string" val=""/>
+ <attr name="DefaultParameters" type="string" val="-s"/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="Binary" id="pbeast_server">
+ <attr name="BinaryName" type="string" val="pbeast_server"/>
+ <attr name="Description" type="string" val="P-BEAST Server Application"/>
+ <attr name="HelpURL" type="string" val=""/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="Binary" id="pbeast_web_receiver">
+ <attr name="BinaryName" type="string" val="pbeast_web_receiver"/>
+ <attr name="Description" type="string" val="P-BEAST WEB Receiver Application"/>
+ <attr name="HelpURL" type="string" val=""/>
+ <attr name="DefaultParameters" type="string" val="-s"/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="Binary" id="pmg_sleep_process">
+ <attr name="BinaryName" type="string" val="pmg_sleep_process"/>
+ <attr name="Description" type="string" val="dummy test process"/>
+ <attr name="HelpURL" type="string" val="http://atddoc.cern.ch/Atlas/DaqSoft/components/pmgr/Welcome.html"/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="Binary" id="pmgserver">
+ <attr name="BinaryName" type="string" val="pmgserver"/>
+ <attr name="Description" type="string" val="Process Manager agent"/>
+ <attr name="HelpURL" type="string" val="http://atddoc.cern.ch/Atlas/DaqSoft/components/pmgr/Welcome.html"/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+ <rel name="ProcessEnvironment">
+  <ref class="Variable" id="TDAQ_PMG_MANIFEST_DIR"/>
+ </rel>
+</obj>
+
+<obj class="Binary" id="quest_test">
+ <attr name="BinaryName" type="string" val="quest_test"/>
+ <attr name="Description" type="string" val="Binary for quest_test"/>
+ <attr name="HelpURL" type="string" val=""/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="Binary" id="rc_bootstrap">
+ <attr name="BinaryName" type="string" val="rc_bootstrap"/>
+ <attr name="Description" type="string" val="Application to start the basic infrastructure before launching the RootController"/>
+ <attr name="HelpURL" type="string" val=""/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="Binary" id="rc_controller">
+ <attr name="BinaryName" type="string" val="rc_controller"/>
+ <attr name="Description" type="string" val="A Controller implementing all the default actions"/>
+ <attr name="HelpURL" type="string" val=""/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="Binary" id="rc_ctp_emulator">
+ <attr name="BinaryName" type="string" val="rc_ctp_emulator"/>
+ <attr name="Description" type="string" val="Dispatches the commands received from RC to the CTP to all L2SVs, for emulation"/>
+ <attr name="HelpURL" type="string" val=""/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="Binary" id="rc_dq_flag_writer">
+ <attr name="BinaryName" type="string" val="rc_dq_flag_writer"/>
+ <attr name="Description" type="string" val="Application to archive DQ flag into COOL"/>
+ <attr name="HelpURL" type="string" val="https://twiki.cern.ch/twiki/bin/view/Atlas/DaqHltControlAndConfiguration"/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+ <rel name="ProcessEnvironment">
+  <ref class="Variable" id="CORAL_AUTH_PATH"/>
+ </rel>
+</obj>
+
+<obj class="Binary" id="rc_example_app">
+ <attr name="BinaryName" type="string" val="rc_example_app"/>
+ <attr name="Description" type="string" val="Example dummy leaf application"/>
+ <attr name="HelpURL" type="string" val=""/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="Binary" id="rc_example_app_rm">
+ <attr name="BinaryName" type="string" val="rc_example_app_rm"/>
+ <attr name="Description" type="string" val="Example leaf application requesting RM resources during state transitions"/>
+ <attr name="HelpURL" type="string" val=""/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="Binary" id="rc_get_apps_start_order">
+ <attr name="BinaryName" type="string" val="rc_get_apps_start_order"/>
+ <attr name="Description" type="string" val="Application unfolding start dependencies for a given segment/transition"/>
+ <attr name="HelpURL" type="string" val=""/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="Binary" id="rc_get_efficiency">
+ <attr name="BinaryName" type="string" val="rc_get_efficiency"/>
+ <attr name="Description" type="string" val="Application to evaluate data taking efficency"/>
+ <attr name="HelpURL" type="string" val="https://twiki.cern.ch/twiki/bin/view/Atlas/DaqHltControlAndConfiguration"/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+ <rel name="ProcessEnvironment">
+  <ref class="Variable" id="CORAL_AUTH_PATH"/>
+ </rel>
+</obj>
+
+<obj class="Binary" id="rc_get_running_time">
+ <attr name="BinaryName" type="string" val="rc_get_running_time"/>
+ <attr name="Description" type="string" val="Application to read run control information about the running time from COOL"/>
+ <attr name="HelpURL" type="string" val="https://twiki.cern.ch/twiki/bin/view/Atlas/DaqHltControlAndConfiguration"/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+ <rel name="ProcessEnvironment">
+  <ref class="Variable" id="CORAL_AUTH_PATH"/>
+ </rel>
+</obj>
+
+<obj class="Binary" id="rc_hlt_controller">
+ <attr name="BinaryName" type="string" val="rc_hlt_controller"/>
+ <attr name="Description" type="string" val="A specialized controller for the HLT farm"/>
+ <attr name="HelpURL" type="string" val=""/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="Binary" id="rc_is2cool_archive">
+ <attr name="BinaryName" type="string" val="rc_is2cool_archive"/>
+ <attr name="Description" type="string" val="Application to archive run control information into COOL"/>
+ <attr name="HelpURL" type="string" val="https://twiki.cern.ch/twiki/bin/view/Atlas/DaqHltControlAndConfiguration"/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+ <rel name="ProcessEnvironment">
+  <ref class="Variable" id="CORAL_AUTH_PATH"/>
+ </rel>
+</obj>
+
+<obj class="Binary" id="rc_pixel_ready_reactor">
+ <attr name="BinaryName" type="string" val="rc_pixel_ready_reactor"/>
+ <attr name="Description" type="string" val="Utility to launch PixelUp if HV ready"/>
+ <attr name="HelpURL" type="string" val=""/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="Binary" id="rc_pyrunner">
+ <attr name="BinaryName" type="string" val="rc_pyrunner"/>
+ <attr name="Description" type="string" val="Application launcher for Controllable&apos;s python modules"/>
+ <attr name="HelpURL" type="string" val=""/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="Binary" id="rc_root_controller">
+ <attr name="BinaryName" type="string" val="rc_root_controller"/>
+ <attr name="Description" type="string" val="A Controller implementing the RootController functionalities"/>
+ <attr name="HelpURL" type="string" val=""/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="Binary" id="rc_sender">
+ <attr name="BinaryName" type="string" val="rc_sender"/>
+ <attr name="Description" type="string" val="Application to send commands to run control applications"/>
+ <attr name="HelpURL" type="string" val=""/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="Binary" id="rc_sound_player">
+ <attr name="BinaryName" type="string" val="rc_sound_player"/>
+ <attr name="Description" type="string" val="Plays sounds if some RC ERS issues are sent."/>
+ <attr name="HelpURL" type="string" val=""/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="Binary" id="rc_test_ctrl">
+ <attr name="BinaryName" type="string" val="rc_test_ctrl"/>
+ <attr name="Description" type="string" val="Test to check if a run control application is alive"/>
+ <attr name="HelpURL" type="string" val=""/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="Binary" id="rdb_server">
+ <attr name="BinaryName" type="string" val="rdb_server"/>
+ <attr name="Description" type="string" val="Read-only remote database server"/>
+ <attr name="HelpURL" type="string" val="http://atddoc.cern.ch/Atlas/Notes/122/Note122-1.html"/>
+ <attr name="DefaultParameters" type="string" val="-s -p env(TDAQ_PARTITION) -d env(TDAQ_APPLICATION_NAME)"/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="Binary" id="rdb_writer">
+ <attr name="BinaryName" type="string" val="rdb_writer"/>
+ <attr name="Description" type="string" val="Read-write remote database server"/>
+ <attr name="HelpURL" type="string" val=""/>
+ <attr name="DefaultParameters" type="string" val="-s -p env(TDAQ_PARTITION) -d env(TDAQ_APPLICATION_NAME)"/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="Binary" id="res_info_archiver">
+ <attr name="BinaryName" type="string" val="res_info_archiver"/>
+ <attr name="HelpURL" type="string" val=""/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="Binary" id="res_info_provider">
+ <attr name="BinaryName" type="string" val="res_info_provider"/>
+ <attr name="Description" type="string" val="Resource Information Publisher in IS and COOL Archiver"/>
+ <attr name="HelpURL" type="string" val=""/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="Binary" id="rmgr_free_resource">
+ <attr name="BinaryName" type="string" val="rmgr_free_resource"/>
+ <attr name="Description" type="string" val="RM utility for freeing a resource"/>
+ <attr name="HelpURL" type="string" val="http://atddoc.cern.ch/Atlas/DaqSoft/components/ResourceManager/Welcome.html"/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="Binary" id="rmgr_request_resources">
+ <attr name="BinaryName" type="string" val="rmgr_request_resources"/>
+ <attr name="Description" type="string" val="RC app ask resources during connect"/>
+ <attr name="HelpURL" type="string" val="http://atddoc.cern.ch/Atlas/DaqSoft/components/ResourceManager/Welcome.html"/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="Binary" id="rmgr_server">
+ <attr name="BinaryName" type="string" val="rmgr_server"/>
+ <attr name="Description" type="string" val="Resource Manager"/>
+ <attr name="HelpURL" type="string" val="http://atddoc.cern.ch/Atlas/DaqSoft/components/ResourceManager/Welcome.html"/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="Binary" id="robinCheck">
+ <attr name="BinaryName" type="string" val="robinCheck"/>
+ <attr name="Description" type="string" val="Stand alone Robin test program. Includes extanded PCI check"/>
+ <attr name="HelpURL" type="string" val=""/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="Binary" id="robin_irq_catch">
+ <attr name="BinaryName" type="string" val="robin_irq_catch"/>
+ <attr name="Description" type="string" val="A test program to catch Robin-generated interrupts"/>
+ <attr name="HelpURL" type="string" val=""/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="Binary" id="robin_slink_dst">
+ <attr name="BinaryName" type="string" val="robin_slink_dst"/>
+ <attr name="Description" type="string" val="A program to receive events sequentially with a Robin"/>
+ <attr name="HelpURL" type="string" val=""/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="Binary" id="robin_slink_src">
+ <attr name="BinaryName" type="string" val="robin_slink_src"/>
+ <attr name="Description" type="string" val="A program to upload events into a Robin"/>
+ <attr name="HelpURL" type="string" val=""/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="Binary" id="robinscope">
+ <attr name="BinaryName" type="string" val="robinscope"/>
+ <attr name="Description" type="string" val="A general purpose program to display and modify the state of Robins (for experts only)"/>
+ <attr name="HelpURL" type="string" val=""/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="Binary" id="robinstress">
+ <attr name="BinaryName" type="string" val="robinstress"/>
+ <attr name="Description" type="string" val="Utility for testing Robins. For experts only"/>
+ <attr name="HelpURL" type="string" val=""/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="Binary" id="siom_application">
+ <attr name="BinaryName" type="string" val="siom_application"/>
+ <attr name="Description" type="string" val="Simple IOManager application"/>
+ <attr name="HelpURL" type="string" val=""/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="Binary" id="slink_dst">
+ <attr name="BinaryName" type="string" val="slink_dst"/>
+ <attr name="Description" type="string" val="Test for an slink connection, destination side"/>
+ <attr name="HelpURL" type="string" val=""/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="Binary" id="slink_src">
+ <attr name="BinaryName" type="string" val="slink_src"/>
+ <attr name="Description" type="string" val="Test for an slink connection, source side"/>
+ <attr name="HelpURL" type="string" val=""/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="Binary" id="solarscope">
+ <attr name="BinaryName" type="string" val="solarscope"/>
+ <attr name="Description" type="string" val="Binary for solarscope"/>
+ <attr name="HelpURL" type="string" val=""/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="Binary" id="swrod_application">
+ <attr name="BinaryName" type="string" val="swrod_application"/>
+ <attr name="Description" type="string" val="Dataflow application that receives data from FELIX and serves it to the HLT like a ROS"/>
+ <attr name="HelpURL" type="string" val=""/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+ <rel name="Uses">
+  <ref class="SW_Repository" id="LIBSODIUM"/>
+ </rel>
+</obj>
+
+<obj class="Binary" id="testDCM">
+ <attr name="BinaryName" type="string" val="testDCM"/>
+ <attr name="Description" type="string" val="Tester for hltsv"/>
+ <attr name="HelpURL" type="string" val=""/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="Binary" id="testROS">
+ <attr name="BinaryName" type="string" val="testROS"/>
+ <attr name="Description" type="string" val="Tester for hltsv"/>
+ <attr name="HelpURL" type="string" val=""/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="Binary" id="testTTC2LAN">
+ <attr name="BinaryName" type="string" val="testTTC2LAN"/>
+ <attr name="Description" type="string" val="TTC2LAN Tester for hltsv"/>
+ <attr name="HelpURL" type="string" val=""/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="Binary" id="test_app_log">
+ <attr name="BinaryName" type="string" val="test_app_log"/>
+ <attr name="HelpURL" type="string" val=""/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="Binary" id="test_app_pmg">
+ <attr name="BinaryName" type="string" val="test_app_pmg"/>
+ <attr name="HelpURL" type="string" val=""/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="Binary" id="test_computer">
+ <attr name="BinaryName" type="string" val="test_computer"/>
+ <attr name="Description" type="string" val="runs few commands remotely and checks that computer&apos;s name and HW Tag corresonds the database description"/>
+ <attr name="HelpURL" type="string" val=""/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="Binary" id="test_corba_server">
+ <attr name="BinaryName" type="string" val="test_corba_server"/>
+ <attr name="HelpURL" type="string" val=""/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="Binary" id="test_drivers">
+ <attr name="BinaryName" type="string" val="test_drivers"/>
+ <attr name="Description" type="string" val="For DVS: Test presence of BPA and suitable drivers"/>
+ <attr name="HelpURL" type="string" val=""/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="Binary" id="test_dummy">
+ <attr name="BinaryName" type="string" val="test_dummy"/>
+ <attr name="HelpURL" type="string" val=""/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="Binary" id="test_host_ip">
+ <attr name="BinaryName" type="string" val="test_host_ip"/>
+ <attr name="Description" type="string" val="resolves computer name and pings it"/>
+ <attr name="HelpURL" type="string" val=""/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="Binary" id="test_ipc_server">
+ <attr name="BinaryName" type="string" val="test_ipc_server"/>
+ <attr name="HelpURL" type="string" val=""/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="Binary" id="test_is_info">
+ <attr name="BinaryName" type="string" val="test_is_info"/>
+ <attr name="HelpURL" type="string" val=""/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="Binary" id="test_is_server">
+ <attr name="BinaryName" type="string" val="test_is_server"/>
+ <attr name="HelpURL" type="string" val=""/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="Binary" id="test_pmg_agent">
+ <attr name="BinaryName" type="string" val="test_pmg_agent"/>
+ <attr name="Description" type="string" val="test application for agent"/>
+ <attr name="HelpURL" type="string" val="http://atddoc.cern.ch/Atlas/DaqSoft/components/pmgr/Welcome.html"/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="Binary" id="test_process_id">
+ <attr name="BinaryName" type="string" val="test_process_id"/>
+ <attr name="HelpURL" type="string" val=""/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="Binary" id="test_program_file">
+ <attr name="BinaryName" type="string" val="test_program_file"/>
+ <attr name="HelpURL" type="string" val=""/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="Binary" id="test_rdb_server">
+ <attr name="BinaryName" type="string" val="test_rdb_server"/>
+ <attr name="HelpURL" type="string" val=""/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="Binary" id="test_rdb_writer">
+ <attr name="BinaryName" type="string" val="test_rdb_writer"/>
+ <attr name="HelpURL" type="string" val=""/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="Binary" id="test_tcp_port">
+ <attr name="BinaryName" type="string" val="test_tcp_port"/>
+ <attr name="Description" type="string" val="checks that some service is listening on a remoted port"/>
+ <attr name="HelpURL" type="string" val=""/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="Binary" id="trg_dummy_master_trigger">
+ <attr name="BinaryName" type="string" val="trg_dummy_master_trigger"/>
+ <attr name="Description" type="string" val="Dummy implementation of the MasterTrigger interface"/>
+ <attr name="HelpURL" type="string" val=""/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="Binary" id="trpgui">
+ <attr name="BinaryName" type="string" val="trpgui"/>
+ <attr name="Description" type="string" val="Trigger Rate Presenter GUI"/>
+ <attr name="HelpURL" type="string" val="https://twiki.cern.ch/twiki/bin/viewauth/Atlas/TriggerRatePresenter"/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="Binary" id="wmi_server">
+ <attr name="BinaryName" type="string" val="wmi_server"/>
+ <attr name="HelpURL" type="string" val=""/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="JarFile" id="AutoPrescaleEditor.jar">
+ <attr name="BinaryName" type="string" val="AutoPrescaleEditor.jar"/>
+ <attr name="HelpURL" type="string" val="http://"/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="JarFile" id="DF_IS_Info.jar">
+ <attr name="BinaryName" type="string" val="DF_IS_Info.jar"/>
+ <attr name="HelpURL" type="string" val="http://"/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="JarFile" id="DFdal.jar">
+ <attr name="BinaryName" type="string" val="DFdal.jar"/>
+ <attr name="HelpURL" type="string" val="http://"/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="JarFile" id="ESInterface.jar">
+ <attr name="BinaryName" type="string" val="ESInterface.jar"/>
+ <attr name="Description" type="string" val="jar for Expert System interface"/>
+ <attr name="HelpURL" type="string" val="http://"/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="JarFile" id="Igui.Common.jar">
+ <attr name="BinaryName" type="string" val="Igui.Common.jar"/>
+ <attr name="Description" type="string" val="jar for IGUI containing common classes"/>
+ <attr name="HelpURL" type="string" val="http://"/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="JarFile" id="Igui.jar">
+ <attr name="BinaryName" type="string" val="Igui.jar"/>
+ <attr name="Description" type="string" val="jar for IGUI"/>
+ <attr name="HelpURL" type="string" val="http://"/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="JarFile" id="IguiCommander.jar">
+ <attr name="BinaryName" type="string" val="IguiCommander.jar"/>
+ <attr name="Description" type="string" val="jar for IGUI idl interface"/>
+ <attr name="HelpURL" type="string" val="http://"/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="JarFile" id="IguiPanels.jar">
+ <attr name="BinaryName" type="string" val="IguiPanels.jar"/>
+ <attr name="Description" type="string" val="jar for different Igui panels"/>
+ <attr name="HelpURL" type="string" val="http://"/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="JarFile" id="PmgGui.jar">
+ <attr name="BinaryName" type="string" val="PmgGui.jar"/>
+ <attr name="Description" type="string" val="jar for the ProcessManager GUI"/>
+ <attr name="HelpURL" type="string" val="http://"/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="JarFile" id="PrescaleWriter.jar">
+ <attr name="BinaryName" type="string" val="PrescaleWriter.jar"/>
+ <attr name="HelpURL" type="string" val="http://"/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="JarFile" id="RCInfo.jar">
+ <attr name="BinaryName" type="string" val="RCInfo.jar"/>
+ <attr name="Description" type="string" val="jar for IS information about DAQ applications, RC states, run parameters and condition"/>
+ <attr name="HelpURL" type="string" val="http://"/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="JarFile" id="RCUtils.jar">
+ <attr name="BinaryName" type="string" val="RCUtils.jar"/>
+ <attr name="Description" type="string" val="jar with common utilities for the Run Control system"/>
+ <attr name="HelpURL" type="string" val="http://"/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="JarFile" id="RODBusydal.jar">
+ <attr name="BinaryName" type="string" val="RODBusydal.jar"/>
+ <attr name="Description" type="string" val="jar for the Central Expert System (CES)"/>
+ <attr name="HelpURL" type="string" val="http://"/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="JarFile" id="ROSModulesNP_IS.jar">
+ <attr name="BinaryName" type="string" val="ROSModulesNP_IS.jar"/>
+ <attr name="Description" type="string" val="ROS NPReadoutModule IS java classes"/>
+ <attr name="HelpURL" type="string" val="http://"/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="JarFile" id="ROSModules_IS.jar">
+ <attr name="BinaryName" type="string" val="ROSModules_IS.jar"/>
+ <attr name="Description" type="string" val="ROS ReadoutModule IS java classes"/>
+ <attr name="HelpURL" type="string" val="http://"/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="JarFile" id="RmGui.jar">
+ <attr name="BinaryName" type="string" val="RmGui.jar"/>
+ <attr name="Description" type="string" val="jar for the ResourceManager GUI"/>
+ <attr name="HelpURL" type="string" val="http://"/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="JarFile" id="RunControl.jar">
+ <attr name="BinaryName" type="string" val="RunControl.jar"/>
+ <attr name="Description" type="string" val="jar for sending commands to RC applications and build leaf applications"/>
+ <attr name="HelpURL" type="string" val="http://"/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="JarFile" id="TTCInfo.jar">
+ <attr name="BinaryName" type="string" val="TTCInfo.jar"/>
+ <attr name="Description" type="string" val="jar for IS information about TTC applications, run parameters and conditions"/>
+ <attr name="HelpURL" type="string" val="http://"/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="JarFile" id="TriggerCommander.jar">
+ <attr name="BinaryName" type="string" val="TriggerCommander.jar"/>
+ <attr name="Description" type="string" val="jar for the MasterTrigger and the AutoPrescaler"/>
+ <attr name="HelpURL" type="string" val="http://"/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="JarFile" id="TriggerPanel.jar">
+ <attr name="BinaryName" type="string" val="TriggerPanel.jar"/>
+ <attr name="HelpURL" type="string" val="http://"/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="JarFile" id="ces.jar">
+ <attr name="BinaryName" type="string" val="ces.jar"/>
+ <attr name="Description" type="string" val="jar for the Central Expert System"/>
+ <attr name="HelpURL" type="string" val="http://"/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="JarFile" id="cocadal.jar">
+ <attr name="BinaryName" type="string" val="cocadal.jar"/>
+ <attr name="HelpURL" type="string" val="http://"/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="JarFile" id="config.jar">
+ <attr name="BinaryName" type="string" val="config.jar"/>
+ <attr name="Description" type="string" val="contains classes providing abstract interface to database information"/>
+ <attr name="HelpURL" type="string" val="http://"/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="JarFile" id="coral_auth.jar">
+ <attr name="BinaryName" type="string" val="coral_auth.jar"/>
+ <attr name="Description" type="string" val="jar for Coral authentication"/>
+ <attr name="HelpURL" type="string" val="http://"/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="JarFile" id="dal.jar">
+ <attr name="BinaryName" type="string" val="dal.jar"/>
+ <attr name="Description" type="string" val="automatically generated dal for database classes defined by the core.schema.xml"/>
+ <attr name="HelpURL" type="string" val="http://"/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="JarFile" id="daq_tokens.jar">
+ <attr name="BinaryName" type="string" val="daq_tokens.jar"/>
+ <attr name="Description" type="string" val="jar for the DAQ Tokens package"/>
+ <attr name="HelpURL" type="string" val="http://"/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="JarFile" id="ddcInfo.jar">
+ <attr name="BinaryName" type="string" val="ddcInfo.jar"/>
+ <attr name="Description" type="string" val="jar for IS information about DCS IS types."/>
+ <attr name="HelpURL" type="string" val="http://"/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="JarFile" id="elisaJClientAPI-Helper_get.jar">
+ <attr name="BinaryName" type="string" val="elisaJClientAPI-Helper_get.jar"/>
+ <attr name="Description" type="string" val="jar for java wrapper to use ELisA API"/>
+ <attr name="HelpURL" type="string" val="http://"/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="JarFile" id="elisaJClientAPI-Helper_insert.jar">
+ <attr name="BinaryName" type="string" val="elisaJClientAPI-Helper_insert.jar"/>
+ <attr name="Description" type="string" val="jar for java wrapper to use ELisA API"/>
+ <attr name="HelpURL" type="string" val="http://"/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="JarFile" id="elisaJClientAPI.jar">
+ <attr name="BinaryName" type="string" val="elisaJClientAPI.jar"/>
+ <attr name="Description" type="string" val="jar for java client API"/>
+ <attr name="HelpURL" type="string" val="http://"/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="JarFile" id="ers.jar">
+ <attr name="BinaryName" type="string" val="ers.jar"/>
+ <attr name="Description" type="string" val="jar for the error report system"/>
+ <attr name="HelpURL" type="string" val="http://"/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="JarFile" id="esperUtils.jar">
+ <attr name="BinaryName" type="string" val="esperUtils.jar"/>
+ <attr name="Description" type="string" val="jar containing shared esper utility classes"/>
+ <attr name="HelpURL" type="string" val="http://"/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="JarFile" id="external.jar">
+ <attr name="BinaryName" type="string" val="external.jar"/>
+ <attr name="Description" type="string" val="Collection of externals jars"/>
+ <attr name="HelpURL" type="string" val="http://"/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="JarFile" id="ipc.jar">
+ <attr name="BinaryName" type="string" val="ipc.jar"/>
+ <attr name="HelpURL" type="string" val="http://"/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="JarFile" id="is.jar">
+ <attr name="BinaryName" type="string" val="is.jar"/>
+ <attr name="HelpURL" type="string" val="http://"/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="JarFile" id="jTm.jar">
+ <attr name="BinaryName" type="string" val="jTm.jar"/>
+ <attr name="Description" type="string" val="jar for the jTestManager (jTm.jar)"/>
+ <attr name="HelpURL" type="string" val="http://"/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="JarFile" id="jeformat.jar">
+ <attr name="BinaryName" type="string" val="jeformat.jar"/>
+ <attr name="Description" type="string" val="jar for eformat"/>
+ <attr name="HelpURL" type="string" val="http://"/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="JarFile" id="jers2idl.jar">
+ <attr name="BinaryName" type="string" val="jers2idl.jar"/>
+ <attr name="Description" type="string" val="ERS2IDL helper library"/>
+ <attr name="HelpURL" type="string" val="http://"/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="JarFile" id="logManager.jar">
+ <attr name="BinaryName" type="string" val="logManager.jar"/>
+ <attr name="Description" type="string" val="User interface to view the log messages"/>
+ <attr name="HelpURL" type="string" val="http://"/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="JarFile" id="mdadal.jar">
+ <attr name="BinaryName" type="string" val="mdadal.jar"/>
+ <attr name="HelpURL" type="string" val="http://"/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="JarFile" id="mts.jar">
+ <attr name="BinaryName" type="string" val="mts.jar"/>
+ <attr name="Description" type="string" val="jar for message transfer system"/>
+ <attr name="HelpURL" type="string" val="http://"/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="JarFile" id="oks.jar">
+ <attr name="BinaryName" type="string" val="oks.jar"/>
+ <attr name="Description" type="string" val="OKS library"/>
+ <attr name="HelpURL" type="string" val="http://"/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="JarFile" id="oksconfig.jar">
+ <attr name="BinaryName" type="string" val="oksconfig.jar"/>
+ <attr name="Description" type="string" val="implements config interface to oks using JNI"/>
+ <attr name="HelpURL" type="string" val="http://"/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="JarFile" id="pmg.jar">
+ <attr name="BinaryName" type="string" val="pmg.jar"/>
+ <attr name="Description" type="string" val="jar for the PMG commands and IS information"/>
+ <attr name="HelpURL" type="string" val="http://"/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="JarFile" id="pmgsync.jar">
+ <attr name="BinaryName" type="string" val="pmgsync.jar"/>
+ <attr name="Description" type="string" val="it implements the PMG sync mechanism via JNI"/>
+ <attr name="HelpURL" type="string" val="http://"/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="JarFile" id="rdb.jar">
+ <attr name="BinaryName" type="string" val="rdb.jar"/>
+ <attr name="Description" type="string" val="implements interface to remote database server"/>
+ <attr name="HelpURL" type="string" val="http://"/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="JarFile" id="rdbconfig.jar">
+ <attr name="BinaryName" type="string" val="rdbconfig.jar"/>
+ <attr name="Description" type="string" val="implements config interface to remote database server"/>
+ <attr name="HelpURL" type="string" val="http://"/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="JarFile" id="res-info-utils.jar">
+ <attr name="BinaryName" type="string" val="res-info-utils.jar"/>
+ <attr name="HelpURL" type="string" val="http://"/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="JarFile" id="rmgr.jar">
+ <attr name="BinaryName" type="string" val="rmgr.jar"/>
+ <attr name="Description" type="string" val="jar for resource manager"/>
+ <attr name="HelpURL" type="string" val="http://"/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="JarFile" id="swroddal.jar">
+ <attr name="BinaryName" type="string" val="swroddal.jar"/>
+ <attr name="Description" type="string" val="SW ROD DAL"/>
+ <attr name="HelpURL" type="string" val="http://"/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="JarFile" id="testdal.jar">
+ <attr name="BinaryName" type="string" val="testdal.jar"/>
+ <attr name="Description" type="string" val="automatically generated dal for database classes defined by the test_repository.schema.xml"/>
+ <attr name="HelpURL" type="string" val="http://"/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="SW_Repository" id="Online">
+ <attr name="Name" type="string" val="Online"/>
+ <attr name="InstallationPath" type="string" val="/sw/atlas/tdaq/tdaq-11-02-00/installed"/>
+ <attr name="PythonPaths" type="string">
+  <data val="${TAG}/lib"/>
+  <data val="share/lib/python"/>
+  <data val="external/${TAG}/lib/python3.9/site-packages"/>
+ </attr>
+ <attr name="ISInfoDescriptionFiles" type="string">
+  <data val="share/data/AltiController//alti_is_info.xml"/>
+  <data val="share/data/BeamSpotUtils//beamspot_is_info.xml"/>
+  <data val="share/data/CES//ces_metrics_is_info.xml"/>
+  <data val="share/data/CoolUtils//coolutils_is_info.xml"/>
+  <data val="share/data/DFConfiguration/schema/dc_is_info.xml"/>
+  <data val="share/data/DFConfiguration/schema/ros_is_info.xml"/>
+  <data val="share/data/DFTools/schema/dfs_is_info.xml"/>
+  <data val="share/data/ExpertSystemInterface//esint_is_info.xml"/>
+  <data val="share/data/FELIXPyTools//flxregmon_is_info.xml"/>
+  <data val="share/data/HLTMPPU/schema/HLTMPPU_ISInfo.schema.xml"/>
+  <data val="share/data/Igui//Igui_is_info.xml"/>
+  <data val="share/data/MuCalStream/schema/mucal_info.xml"/>
+  <data val="share/data/OLC2HLT//olc2hlt_is_info.xml"/>
+  <data val="share/data/ProcessManager//pmg_is_info.xml"/>
+  <data val="share/data/RCDExampleModules//RCDModulesInfo.schema.xml"/>
+  <data val="share/data/RCInfo//daq_app_is_info.xml"/>
+  <data val="share/data/ROSCore//ROSCoreInfo.schema.xml"/>
+  <data val="share/data/ROSDescriptor//ROSDescriptorInfo.schema.xml"/>
+  <data val="share/data/ROSDescriptorNP//NPDescriptorInfo.schema.xml"/>
+  <data val="share/data/ROSIO//ROSIOinfo.schema.xml"/>
+  <data val="share/data/ROSInterruptScheduler//ROSInterruptSchedulerInfo.schema.xml"/>
+  <data val="share/data/ROSModules//ROSModulesInfo.schema.xml"/>
+  <data val="share/data/ROSModulesNP/schema/ROSModulesNPInfo.schema.xml"/>
+  <data val="share/data/ROSNP2lan//NP2lanInfo.schema.xml"/>
+  <data val="share/data/ROSQuestNP//QuestNPInfo.schema.xml"/>
+  <data val="share/data/ROSTester//ROSTesterInfo.schema.xml"/>
+  <data val="share/data/ResourcesInfo//resources-info.xml"/>
+  <data val="share/data/SFOTZ/schema/SFOTZ_ISInfo.schema.xml"/>
+  <data val="share/data/SFOng/schema/SFOng_ISInfo.schema.xml"/>
+  <data val="share/data/SFOng/schema/CastorScript.IS.schema.xml"/>
+  <data val="share/data/TRP//is_timepoint.schema.xml"/>
+  <data val="share/data/TRP//L1_Rate.xml"/>
+  <data val="share/data/TRP//HLT_Rate.xml"/>
+  <data val="share/data/TRP//L1_Rate_Pred.xml"/>
+  <data val="share/data/TRP//HLT_Rate_Pred.xml"/>
+  <data val="share/data/TTCInfo//ttc_is_info.xml"/>
+  <data val="share/data/asyncmsg/schema/MsgInfo_is.schema.xml"/>
+  <data val="share/data/dal//oks-version.schema.xml"/>
+  <data val="share/data/dcm/schema/dcm_is.schema.xml"/>
+  <data val="share/data/ddcInfo//isddc.schema.xml"/>
+  <data val="share/data/dqm_config/is/dqm_config_is.xml"/>
+  <data val="share/data/dqmf/is/dqmf_is_info.xml"/>
+  <data val="share/data/emon//emon.xml"/>
+  <data val="share/data/felix2atlas//FELIX_IS.schema.xml"/>
+  <data val="share/data/hltsv/schema/hltsv_is.schema.xml"/>
+  <data val="share/data/is//is.xml"/>
+  <data val="share/data/ls//ls_is.xml"/>
+  <data val="share/data/mts//mts.schema.xml"/>
+  <data val="share/data/oh//histogram.xml"/>
+  <data val="share/data/oks2coral//oks-archive-info.xml"/>
+  <data val="share/data/pudummy/schema/pudummy_is.schema.xml"/>
+  <data val="share/data/siom/schema/siom_core_info.xml"/>
+  <data val="share/data/siom/schema/siom_plugin_info.xml"/>
+  <data val="share/data/swrod//swrod_is_info.xml"/>
+ </attr>
+ <attr name="IGUIProperties" type="string">
+  <data val="-Digui.panel=IguiPanels.DFPanel.DFPanel"/>
+  <data val="-Digui.panel=PmgGui.PmgISPanel"/>
+ </attr>
+ <attr name="InstallationPathVariableName" type="string" val="TDAQ_INST_PATH"/>
+ <rel name="Uses">
+  <ref class="SW_Repository" id="TDAQExternal"/>
+  <ref class="SW_Repository" id="TDAQ Common"/>
+  <ref class="SW_Repository" id="MYSQL"/>
+  <ref class="SW_Repository" id="ORACLE"/>
+  <ref class="SW_Repository" id="XERCESC"/>
+  <ref class="SW_Repository" id="SQLITE"/>
+  <ref class="SW_Repository" id="TBB"/>
+  <ref class="SW_Repository" id="PROTOBUF"/>
+  <ref class="SW_Repository" id="ZEROMQ"/>
+  <ref class="SW_Repository" id="LIBSODIUM"/>
+  <ref class="SW_Repository" id="GSL"/>
+  <ref class="SW_Repository" id="LZ4"/>
+  <ref class="SW_Repository" id="PNG"/>
+  <ref class="SW_Repository" id="GIT"/>
+ </rel>
+ <rel name="Tags">
+  <ref class="Tag" id="x86_64-el9-gcc13-opt"/>
+  <ref class="Tag" id="x86_64-el9-gcc13-dbg"/>
+  <ref class="Tag" id="x86_64-centos7-gcc11-opt"/>
+  <ref class="Tag" id="x86_64-centos7-gcc11-dbg"/>
+  <ref class="Tag" id="aarch64-el9-gcc13-opt"/>
+  <ref class="Tag" id="aarch64-centos7-gcc11-opt"/>
+ </rel>
+ <rel name="SW_Objects">
+  <ref class="JarFile" id="AutoPrescaleEditor.jar"/>
+  <ref class="JarFile" id="PrescaleWriter.jar"/>
+  <ref class="JarFile" id="ces.jar"/>
+  <ref class="Script" id="ces"/>
+  <ref class="JarFile" id="rdbconfig.jar"/>
+  <ref class="JarFile" id="logManager.jar"/>
+  <ref class="JarFile" id="rmgr.jar"/>
+  <ref class="JarFile" id="pmgsync.jar"/>
+  <ref class="JarFile" id="is.jar"/>
+  <ref class="JarFile" id="IguiCommander.jar"/>
+  <ref class="JarFile" id="config.jar"/>
+  <ref class="JarFile" id="Igui.Common.jar"/>
+  <ref class="JarFile" id="DF_IS_Info.jar"/>
+  <ref class="JarFile" id="ddcInfo.jar"/>
+  <ref class="JarFile" id="ipc.jar"/>
+  <ref class="JarFile" id="jTm.jar"/>
+  <ref class="JarFile" id="coral_auth.jar"/>
+  <ref class="JarFile" id="testdal.jar"/>
+  <ref class="JarFile" id="Igui.jar"/>
+  <ref class="JarFile" id="elisaJClientAPI-Helper_get.jar"/>
+  <ref class="JarFile" id="RunControl.jar"/>
+  <ref class="JarFile" id="RCInfo.jar"/>
+  <ref class="JarFile" id="cocadal.jar"/>
+  <ref class="JarFile" id="DFdal.jar"/>
+  <ref class="JarFile" id="rdb.jar"/>
+  <ref class="JarFile" id="esperUtils.jar"/>
+  <ref class="JarFile" id="RmGui.jar"/>
+  <ref class="JarFile" id="mts.jar"/>
+  <ref class="JarFile" id="PmgGui.jar"/>
+  <ref class="JarFile" id="oksconfig.jar"/>
+  <ref class="JarFile" id="ROSModules_IS.jar"/>
+  <ref class="JarFile" id="external.jar"/>
+  <ref class="JarFile" id="ers.jar"/>
+  <ref class="JarFile" id="ESInterface.jar"/>
+  <ref class="JarFile" id="res-info-utils.jar"/>
+  <ref class="JarFile" id="TTCInfo.jar"/>
+  <ref class="JarFile" id="jeformat.jar"/>
+  <ref class="JarFile" id="IguiPanels.jar"/>
+  <ref class="JarFile" id="elisaJClientAPI-Helper_insert.jar"/>
+  <ref class="JarFile" id="pmg.jar"/>
+  <ref class="JarFile" id="elisaJClientAPI.jar"/>
+  <ref class="JarFile" id="dal.jar"/>
+  <ref class="JarFile" id="TriggerCommander.jar"/>
+  <ref class="JarFile" id="RODBusydal.jar"/>
+  <ref class="JarFile" id="ROSModulesNP_IS.jar"/>
+  <ref class="JarFile" id="mdadal.jar"/>
+  <ref class="Binary" id="dqm_archiver"/>
+  <ref class="Binary" id="res_info_provider"/>
+  <ref class="Binary" id="emon_push_sampler"/>
+  <ref class="Binary" id="oh_graph_provider"/>
+  <ref class="Binary" id="test_is_info"/>
+  <ref class="Binary" id="emon_task"/>
+  <ref class="Script" id="olc2hlt.py"/>
+  <ref class="Script" id="dal_load_is_info_files.sh"/>
+  <ref class="Binary" id="mts_ers_sender"/>
+  <ref class="Binary" id="trg_dummy_master_trigger"/>
+  <ref class="Binary" id="rc_get_running_time"/>
+  <ref class="Binary" id="SFOng_main"/>
+  <ref class="Binary" id="eff_csv_splunk"/>
+  <ref class="Binary" id="mda_eor"/>
+  <ref class="Binary" id="gnam"/>
+  <ref class="Binary" id="eff_make_combined_graphs"/>
+  <ref class="Binary" id="eff_daq_splunk"/>
+  <ref class="Binary" id="emon_conductor"/>
+  <ref class="Script" id="test_nic.sh"/>
+  <ref class="Binary" id="emon_pull_sampler"/>
+  <ref class="Script" id="sfo-db-display.py"/>
+  <ref class="Binary" id="dqmf_rm"/>
+  <ref class="Script" id="Igui_start"/>
+  <ref class="Binary" id="testROS"/>
+  <ref class="Binary" id="config_dump"/>
+  <ref class="Binary" id="ipc_proxy"/>
+  <ref class="Binary" id="np2lan"/>
+  <ref class="Binary" id="test_process_id"/>
+  <ref class="Binary" id="lsReceiver"/>
+  <ref class="Binary" id="quest_test"/>
+  <ref class="Binary" id="test_pmg_agent"/>
+  <ref class="Binary" id="rc_ctp_emulator"/>
+  <ref class="Binary" id="test_rdb_writer"/>
+  <ref class="Binary" id="test_computer"/>
+  <ref class="Binary" id="mda"/>
+  <ref class="Binary" id="ROSTester"/>
+  <ref class="Binary" id="oh_raw_provider"/>
+  <ref class="Binary" id="testTTC2LAN"/>
+  <ref class="Binary" id="opmon_analyser"/>
+  <ref class="Binary" id="is_rm"/>
+  <ref class="Binary" id="circ_generator"/>
+  <ref class="Script" id="log_manager"/>
+  <ref class="Binary" id="is_server"/>
+  <ref class="Binary" id="pmg_sleep_process"/>
+  <ref class="Script" id="test_slink.py"/>
+  <ref class="Binary" id="dozolar_setup"/>
+  <ref class="Binary" id="robinCheck"/>
+  <ref class="Binary" id="mts2splunk_receiver"/>
+  <ref class="Binary" id="eth_dst"/>
+  <ref class="Binary" id="oh_rm"/>
+  <ref class="Binary" id="robin_slink_dst"/>
+  <ref class="Script" id="start_rm_gui"/>
+  <ref class="Binary" id="robinstress"/>
+  <ref class="Binary" id="hltpuEmu"/>
+  <ref class="Script" id="test_host_system.sh"/>
+  <ref class="Binary" id="dolarscope"/>
+  <ref class="Binary" id="rc_is2cool_archive"/>
+  <ref class="Binary" id="robin_irq_catch"/>
+  <ref class="Binary" id="test_drivers"/>
+  <ref class="Script" id="reset-or-kill-all-gnam.py"/>
+  <ref class="Binary" id="eff_run_efficiency"/>
+  <ref class="Binary" id="robinscope"/>
+  <ref class="Binary" id="ddc_dt_dim_init"/>
+  <ref class="Binary" id="olc2hlt-invalidate"/>
+  <ref class="Binary" id="rmgr_request_resources"/>
+  <ref class="Binary" id="ddc_dt_dim"/>
+  <ref class="Binary" id="oks2coral"/>
+  <ref class="Binary" id="oh_ls"/>
+  <ref class="Binary" id="res_info_archiver"/>
+  <ref class="Binary" id="MonInfoGatherer"/>
+  <ref class="Binary" id="ipc_server"/>
+  <ref class="Binary" id="mda_stat_publish"/>
+  <ref class="Binary" id="test_app_pmg"/>
+  <ref class="Binary" id="rc_pixel_ready_reactor"/>
+  <ref class="Binary" id="eth_src"/>
+  <ref class="Binary" id="robin_slink_src"/>
+  <ref class="Binary" id="dozolar_fmctest"/>
+  <ref class="Script" id="rosmon.py"/>
+  <ref class="Binary" id="is_ls"/>
+  <ref class="Binary" id="coca_server"/>
+  <ref class="Binary" id="oh_root_provider"/>
+  <ref class="Binary" id="mts_worker"/>
+  <ref class="Binary" id="slink_src"/>
+  <ref class="Binary" id="test_dummy"/>
+  <ref class="Script" id="change_node_state.py"/>
+  <ref class="Script" id="oks2coral_mk_tmp_file.sh"/>
+  <ref class="Binary" id="test_program_file"/>
+  <ref class="Binary" id="eff_make_csv_file"/>
+  <ref class="Script" id="hilltrotQt.py"/>
+  <ref class="Binary" id="test_app_log"/>
+  <ref class="Binary" id="eff_daq_efficiency"/>
+  <ref class="Binary" id="test_corba_server"/>
+  <ref class="Binary" id="rmgr_server"/>
+  <ref class="Binary" id="rc_sound_player"/>
+  <ref class="Binary" id="oh_cp"/>
+  <ref class="Binary" id="pmgserver"/>
+  <ref class="Binary" id="test_tcp_port"/>
+  <ref class="Binary" id="dolar_slink_src"/>
+  <ref class="Binary" id="rmgr_free_resource"/>
+  <ref class="Binary" id="logTest"/>
+  <ref class="Binary" id="slink_dst"/>
+  <ref class="Binary" id="hltsv_main"/>
+  <ref class="Binary" id="ddc_ct_dim"/>
+  <ref class="Binary" id="test_ipc_server"/>
+  <ref class="Binary" id="test_is_server"/>
+  <ref class="Binary" id="ReadoutApplication"/>
+  <ref class="Binary" id="testDCM"/>
+  <ref class="Binary" id="littlejohn"/>
+  <ref class="Binary" id="trpgui"/>
+  <ref class="Binary" id="mts_ers_receiver"/>
+  <ref class="Binary" id="test_host_ip"/>
+  <ref class="Binary" id="oh_mv"/>
+  <ref class="Binary" id="test_rdb_server"/>
+  <ref class="Binary" id="solarscope"/>
+  <ref class="Binary" id="dcm_main"/>
+  <ref class="Binary" id="ddc_mt_dim"/>
+  <ref class="Binary" id="RobinTestSuite"/>
+  <ref class="Binary" id="opmon_monitor"/>
+  <ref class="Binary" id="wmi_server"/>
+  <ref class="Binary" id="dal_create_db_connection_files"/>
+  <ref class="Binary" id="rc_dq_flag_writer"/>
+  <ref class="Script" id="sfo-display.py"/>
+  <ref class="Binary" id="siom_application"/>
+  <ref class="Script" id="dfs_server.py"/>
+  <ref class="Binary" id="HLTMPPU_main"/>
+  <ref class="Binary" id="oh_test_provider"/>
+  <ref class="Script" id="sfo-db-gui.py"/>
+  <ref class="Binary" id="rc_get_efficiency"/>
+  <ref class="Binary" id="HLTRC_main"/>
+  <ref class="Binary" id="ROx"/>
+  <ref class="Script" id="flx-reg-mon.py"/>
+  <ref class="JarFile" id="RCUtils.jar"/>
+  <ref class="Binary" id="rc_controller"/>
+  <ref class="Binary" id="rc_hlt_controller"/>
+  <ref class="Binary" id="rc_root_controller"/>
+  <ref class="Binary" id="rc_example_app"/>
+  <ref class="Binary" id="rc_example_app_rm"/>
+  <ref class="Binary" id="rc_sender"/>
+  <ref class="Binary" id="rc_bootstrap"/>
+  <ref class="Binary" id="rc_test_ctrl"/>
+  <ref class="Binary" id="rc_pyrunner"/>
+  <ref class="Binary" id="rc_get_apps_start_order"/>
+  <ref class="Script" id="jrc_example_application"/>
+  <ref class="JarFile" id="TriggerPanel.jar"/>
+  <ref class="JarFile" id="daq_tokens.jar"/>
+  <ref class="Binary" id="dqmf_agent"/>
+  <ref class="Script" id="generate_core_file.sh"/>
+  <ref class="JarFile" id="jers2idl.jar"/>
+  <ref class="Script" id="ers2splunk.sh"/>
+  <ref class="JarFile" id="oks.jar"/>
+  <ref class="Binary" id="opmon_logger"/>
+  <ref class="Binary" id="pbeast_web_receiver"/>
+  <ref class="Binary" id="pbeast_is_receiver"/>
+  <ref class="Binary" id="pbeast_repository_server"/>
+  <ref class="Binary" id="pbeast_server"/>
+  <ref class="Binary" id="rdb_writer"/>
+  <ref class="Binary" id="rdb_server"/>
+  <ref class="JarFile" id="swroddal.jar"/>
+  <ref class="Binary" id="swrod_application"/>
+  <ref class="Script" id="webis_server"/>
+ </rel>
+</obj>
+
+<obj class="Script" id="Igui_start">
+ <attr name="BinaryName" type="string" val="Igui_start"/>
+ <attr name="Description" type="string" val="IGUI start up script"/>
+ <attr name="HelpURL" type="string" val=""/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="Script" id="ces">
+ <attr name="BinaryName" type="string" val="ces"/>
+ <attr name="Description" type="string" val="Central Expert System (CES) start up script"/>
+ <attr name="HelpURL" type="string" val=""/>
+ <attr name="Shell" type="string" val="java"/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+ <rel name="ProcessEnvironment">
+  <ref class="Variable" id="TDAQ_JAVA_HOME"/>
+  <ref class="Variable" id="TDAQ_CES_DIR"/>
+  <ref class="Variable" id="TDAQ_CES_CACHE_DIR"/>
+ </rel>
+</obj>
+
+<obj class="Script" id="change_node_state.py">
+ <attr name="BinaryName" type="string" val="change_node_state.py"/>
+ <attr name="Description" type="string" val="Change the state in OKS of a Computer (used especially for xpu/ef)"/>
+ <attr name="HelpURL" type="string" val=""/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="Script" id="dal_load_is_info_files.sh">
+ <attr name="BinaryName" type="string" val="dal_load_is_info_files.sh"/>
+ <attr name="Description" type="string" val="load IS info files on rdb server"/>
+ <attr name="HelpURL" type="string" val=""/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="Script" id="dfs_server.py">
+ <attr name="BinaryName" type="string" val="dfs_server.py"/>
+ <attr name="Description" type="string" val="Fill the DF.DFSummary IS variable - used for monitoring data flow"/>
+ <attr name="HelpURL" type="string" val=""/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="Script" id="ers2splunk.sh">
+ <attr name="BinaryName" type="string" val="ers2splunk.sh"/>
+ <attr name="Description" type="string" val="TCP forwarder of ERS messages to splunk"/>
+ <attr name="HelpURL" type="string" val=""/>
+ <attr name="Shell" type="string" val="bash"/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="Script" id="flx-reg-mon.py">
+ <attr name="BinaryName" type="string" val="flx-reg-mon.py"/>
+ <attr name="Description" type="string" val="Utility to publish on IS FELIX card registers"/>
+ <attr name="HelpURL" type="string" val="https://gitlab.cern.ch/atlas-tdaq-software/FELIXPyTools"/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="Script" id="generate_core_file.sh">
+ <attr name="BinaryName" type="string" val="generate_core_file.sh"/>
+ <attr name="Description" type="string" val="Utility to generate core file for a running process as execute TestFailureAction"/>
+ <attr name="HelpURL" type="string" val="https://twiki.cern.ch/twiki/bin/viewauth/Atlas/DaqHltTestManager#How_to_Configure_Tests"/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="Script" id="hilltrotQt.py">
+ <attr name="BinaryName" type="string" val="hilltrotQt.py"/>
+ <attr name="HelpURL" type="string" val=""/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="Script" id="jrc_example_application">
+ <attr name="BinaryName" type="string" val="jrc_example_application"/>
+ <attr name="Description" type="string" val="Simple java run control application"/>
+ <attr name="HelpURL" type="string" val=""/>
+ <attr name="Shell" type="string" val="java"/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+ <rel name="ProcessEnvironment">
+  <ref class="Variable" id="TDAQ_JAVA_HOME"/>
+ </rel>
+</obj>
+
+<obj class="Script" id="log_manager">
+ <attr name="BinaryName" type="string" val="log_manager"/>
+ <attr name="Description" type="string" val="Log Manager start up script"/>
+ <attr name="HelpURL" type="string" val=""/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="Script" id="oks2coral_mk_tmp_file.sh">
+ <attr name="BinaryName" type="string" val="oks2coral_mk_tmp_file.sh"/>
+ <attr name="HelpURL" type="string" val=""/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="Script" id="olc2hlt.py">
+ <attr name="BinaryName" type="string" val="olc2hlt.py"/>
+ <attr name="Description" type="string" val="Copies OLC-produced preferred luminosity to CTP for HLT use."/>
+ <attr name="HelpURL" type="string" val=""/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="Script" id="reset-or-kill-all-gnam.py">
+ <attr name="BinaryName" type="string" val="reset-or-kill-all-gnam.py"/>
+ <attr name="Description" type="string" val="Script to reset or kill all the gnam instances in a given partition"/>
+ <attr name="HelpURL" type="string" val=""/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="Script" id="rosmon.py">
+ <attr name="BinaryName" type="string" val="rosmon.py"/>
+ <attr name="Description" type="string" val="Produces aggregate ROS monitoring histograms from the IS information"/>
+ <attr name="HelpURL" type="string" val=""/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="Script" id="sfo-db-display.py">
+ <attr name="BinaryName" type="string" val="sfo-db-display.py"/>
+ <attr name="Description" type="string" val="Display the transfer from the SFO to Tier0"/>
+ <attr name="HelpURL" type="string" val=""/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="Script" id="sfo-db-gui.py">
+ <attr name="BinaryName" type="string" val="sfo-db-gui.py"/>
+ <attr name="HelpURL" type="string" val=""/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="Script" id="sfo-display.py">
+ <attr name="BinaryName" type="string" val="sfo-display.py"/>
+ <attr name="HelpURL" type="string" val=""/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="Script" id="start_rm_gui">
+ <attr name="BinaryName" type="string" val="start_rm_gui"/>
+ <attr name="Description" type="string" val="ResourceManager GUI start up script"/>
+ <attr name="HelpURL" type="string" val=""/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="Script" id="test_host_system.sh">
+ <attr name="BinaryName" type="string" val="test_host_system.sh"/>
+ <attr name="Description" type="string" val="launched on the remote host and performs a number of checks, like filesystem mounts and usage, system load, logs directory presence"/>
+ <attr name="HelpURL" type="string" val=""/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="Script" id="test_nic.sh">
+ <attr name="BinaryName" type="string" val="test_nic.sh"/>
+ <attr name="Description" type="string" val="pings the closest router from this NIC"/>
+ <attr name="HelpURL" type="string" val=""/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="Script" id="test_slink.py">
+ <attr name="BinaryName" type="string" val="test_slink.py"/>
+ <attr name="Description" type="string" val="Test slink status based on channels enabled in OKS"/>
+ <attr name="HelpURL" type="string" val=""/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+<obj class="Script" id="webis_server">
+ <attr name="BinaryName" type="string" val="webis_server"/>
+ <attr name="HelpURL" type="string" val=""/>
+ <rel name="BelongsTo" class="SW_Repository" id="Online"/>
+</obj>
+
+</oks-data>

@@ -1,0 +1,714 @@
+<?xml version="1.0" encoding="ASCII"?>
+
+<!-- oks-schema version 2.0 -->
+
+
+<!DOCTYPE oks-schema [
+  <!ELEMENT oks-schema (info, (include)?, (comments)?, (class)+)>
+  <!ELEMENT info EMPTY>
+  <!ATTLIST info
+      name CDATA #REQUIRED
+      type CDATA #REQUIRED
+      num-of-includes CDATA #REQUIRED
+      num-of-items CDATA #REQUIRED
+      oks-format CDATA #FIXED "schema"
+      oks-version CDATA #REQUIRED
+      created-by CDATA #REQUIRED
+      created-on CDATA #REQUIRED
+      creation-time CDATA #REQUIRED
+      last-modified-by CDATA #REQUIRED
+      last-modified-on CDATA #REQUIRED
+      last-modification-time CDATA #REQUIRED
+  >
+  <!ELEMENT include (file)+>
+  <!ELEMENT file EMPTY>
+  <!ATTLIST file
+      path CDATA #REQUIRED
+  >
+  <!ELEMENT comments (comment)+>
+  <!ELEMENT comment EMPTY>
+  <!ATTLIST comment
+      creation-time CDATA #REQUIRED
+      created-by CDATA #REQUIRED
+      created-on CDATA #REQUIRED
+      author CDATA #REQUIRED
+      text CDATA #REQUIRED
+  >
+  <!ELEMENT class (superclass | attribute | relationship | method)*>
+  <!ATTLIST class
+      name CDATA #REQUIRED
+      description CDATA ""
+      is-abstract (yes|no) "no"
+  >
+  <!ELEMENT superclass EMPTY>
+  <!ATTLIST superclass name CDATA #REQUIRED>
+  <!ELEMENT attribute EMPTY>
+  <!ATTLIST attribute
+      name CDATA #REQUIRED
+      description CDATA ""
+      type (bool|s8|u8|s16|u16|s32|u32|s64|u64|float|double|date|time|string|uid|enum|class) #REQUIRED
+      range CDATA ""
+      format (dec|hex|oct) "dec"
+      is-multi-value (yes|no) "no"
+      multi-value-implementation (list|vector) "list"
+      init-value CDATA ""
+      is-not-null (yes|no) "no"
+  >
+  <!ELEMENT relationship EMPTY>
+  <!ATTLIST relationship
+      name CDATA #REQUIRED
+      description CDATA ""
+      class-type CDATA #REQUIRED
+      low-cc (zero|one) #REQUIRED
+      high-cc (one|many) #REQUIRED
+      is-composite (yes|no) #REQUIRED
+      is-exclusive (yes|no) #REQUIRED
+      is-dependent (yes|no) #REQUIRED
+      multi-value-implementation (list|vector) "list"
+  >
+  <!ELEMENT method (method-implementation*)>
+  <!ATTLIST method
+      name CDATA #REQUIRED
+      description CDATA ""
+  >
+  <!ELEMENT method-implementation EMPTY>
+  <!ATTLIST method-implementation
+      language CDATA #REQUIRED
+      prototype CDATA #REQUIRED
+      body CDATA ""
+  >
+]>
+
+<oks-schema>
+
+<info name="" type="" num-of-includes="2" num-of-items="87" oks-format="schema" oks-version="oks-06-06-08 built &quot;Oct 17 2013&quot;" created-by="glehmann" created-on="pcatd86" creation-time="20030820T141734" last-modified-by="rhauser" last-modified-on="msu-pc7.cern.ch" last-modification-time="20131017T133335"/>
+
+<include>
+ <file path="daq/schema/core.schema.xml"/>
+ <file path="daq/schema/emon.schema.xml"/>
+</include>
+
+
+ <class name="CircBuffer" description="Description of a shared ring buffer. Used by Muon Calibration SW (siom pkg) and HLT">
+  <attribute name="CircName" description="Name of the buffer" type="string" init-value="/tmp/_Circ_"/>
+  <attribute name="CircSize" description="Buffer size in bytes. If 0, connect in slave mode." type="u32"/>
+ </class>
+
+ <class name="CircDataOut" description="Output class for the IO Manager to
+send events to a circular buffer.
+Can work in both master and 
+slave mode, either pretending 
+to write out all the events
+or to skip them when the output
+buffer is full.">
+  <superclass name="ReadoutOutput"/>
+  <attribute name="OutputCircName" description="This is the name of the output circular buffer.
+" type="string" init-value="/tmp/RCDdefCirc"/>
+  <attribute name="SamplingGap" description="Define the minimum gap between two sampled
+events. As a consequence, a maximum sampling 
+ratio is defined.
+If the ThrowIfFull parameter is true,
+sampled event can be skipped if the buffer is
+full, else all the events are written as soon
+as there is room in the buffer.
+The default value (1) means that all the events
+are sent to the output, 0 means that no event
+is sent." type="u32" init-value="1"/>
+  <attribute name="OutputDelay" description="Delay the output" type="u32" init-value="0"/>
+  <attribute name="BufferSize" description="The size of the circular buffer to be used.
+BufferSize=0 means that the access will be 
+in slave mode (i.e., the buffer is created 
+by someone else)." type="u32" init-value="0"/>
+  <attribute name="ThrowIfFull" description="If the ThrowIfFull parameter is true,
+sampled event can be skipped if the buffer is
+full, else all the events are written as soon
+as there is room in the buffer, thus generating
+backpressure." type="bool" init-value="false"/>
+ </class>
+
+ <class name="DFParameters" description="Global configuration parameters for the DataFLow.">
+  <superclass name="DataFlowParameters"/>
+  <attribute name="BasePortEFD_SFI" description="Base port for the calculation of Ports
+for EFD for the SFIs." type="u16" init-value="10000" is-not-null="yes"/>
+  <attribute name="BasePortEFD_SFO" description="Base port for the calculation of Ports
+for EFD for the SFOs." type="u16" init-value="11000" is-not-null="yes"/>
+  <attribute name="MulticastAddress" description="Define the multicast address for message passing. Format is IPaddress/IPNetwork, using the IPV4 dot notation." type="string"/>
+  <attribute name="DefaultDataNetworks" description="A list of network addresses/mask to specify the default networks to be
+used for message passing. The addresses and masks should be given in the IPV4 dot notation." type="string" is-multi-value="yes"/>
+  <relationship name="UsesDataFiles" description="Link to the files containing raw detector data." class-type="DataFile" low-cc="zero" high-cc="many" is-composite="no" is-exclusive="no" is-dependent="no"/>
+ </class>
+
+ <class name="DataDrivenTriggerIn">
+  <superclass name="ReadoutTrigger"/>
+  <attribute name="QueueSize" description="Determines the queue size between datainput and trigger." type="u32" init-value="200" is-not-null="yes"/>
+  <attribute name="QueueUnblockOffset" description="Number of elements in the queue that must be popped before the queue is
+unblocked i.e. enabled for push. To avoid excessive thread switching." type="u32" init-value="1" is-not-null="yes"/>
+  <attribute name="RequestType" description="Type of request instantiated when data arrives. Known types are: AllRequestWithRelease and EBRequestWithRelease." type="enum" range="AllRequestWithRelease,EBRequestWithRelease" init-value="AllRequestWithRelease" is-not-null="yes"/>
+  <attribute name="SingleFragmentMode" description="This flag, if set causes the DataDrivenTrigger and Sequential Input mechanism to operate in a mode where a new data request is generated for each channel individually.
+That is, the system will not wait for a fragment with the same l1id on all channels before generating a request." type="bool" init-value="false"/>
+ </class>
+
+ <class name="DataFile">
+  <attribute name="FileName" description="Name of file containing raw data to be uploaded in the ROS for HLT studies." type="string" init-value="noname.dat" is-not-null="yes"/>
+ </class>
+
+ <class name="DcDataOut">
+  <superclass name="ReadoutOutput"/>
+ </class>
+
+ <class name="DcTriggerIn">
+  <superclass name="ReadoutTrigger"/>
+  <attribute name="ClearLossThreshold" description="Number of DFM_Clear_Messages allowed to be lost before garbage collection is triggered.  A value of 0 means never trigger garbage collection." type="u32" init-value="1" is-not-null="yes"/>
+  <relationship name="MessageLossEmulations" description="Specifies the percentage of lost messages arriving to the ROS (for clear, ROI and EB messages)." class-type="MessageLossEmulation" low-cc="zero" high-cc="one" is-composite="no" is-exclusive="no" is-dependent="no"/>
+ </class>
+
+ <class name="EFIOConfiguration" description="Defines network attributes for the SFI-EFD and EFD-SFO connections">
+  <attribute name="MaxEFIOHandlers" description="Maximum number of EFIO handlers (threads). Unlimited is 0 (zero)." type="u32" init-value="0" is-not-null="yes"/>
+  <attribute name="SFI_EFD_AckTimeout_ms" description="Timeout for the acknowledgement to be received at SFI after all event data is sent to the EFD (ms)" type="u32" init-value="10000"/>
+  <attribute name="EFD_SFO_RcvTimeout_ms" description="Timeout for the event data to be received at SFO after an EventRequest sent to the EFD (ms)" type="u32" init-value="10000"/>
+  <attribute name="SendTimeout_ms" description="Timeout for sending (ms)" type="u32" init-value="5000"/>
+  <attribute name="NagleEnable" description="Switches the Nagle Algorithm for the EFIO TCP data transfer" type="bool" init-value="0" is-not-null="yes"/>
+  <attribute name="TCPSendBufferSize" description="Sets the TCP send buffer size. 0 means default." type="u32" init-value="0" is-not-null="yes"/>
+  <attribute name="TCPRecvBufferSize" description="Sets the TCP receive Buffer size. 0 means default." type="u32" init-value="0" is-not-null="yes"/>
+  <attribute name="TCPKeepIdle" description="Timeout in sec before sending the first TCPKEEPALIVE probe; if zero TCPKEEPALIVE is disabled (default)" type="u32" init-value="0" is-not-null="yes"/>
+  <attribute name="TCPKeepIntvl" description="Interval in sec. between subsequential TCPKEEPALIVE probes." type="u32" init-value="5" is-not-null="yes"/>
+  <attribute name="TCPKeepCnt" description="Number of TCPKEEPALIVE probes before considering the connection dead" type="u32" init-value="9" is-not-null="yes"/>
+  <attribute name="NetLabel" description="Label of the network to be used for the connection (to be removed; use NetMask instead)" type="enum" range="NONE,CTRL,DC1,DC2,EF,DATA" init-value="NONE"/>
+  <attribute name="NetMask" description="Network addr/mask used for EFD-&gt;SFI/O connections (eg: &apos;10.147.0.0/16&apos; or &apos;10.147.0.0/255.255.0.0&apos;). If missing NetLabel is used" type="string"/>
+  <attribute name="QoSPriority" description="DSCP priority. 0 means default." type="u8" init-value="0"/>
+  <attribute name="ClientCommunicationErrorRetryIntervalLong_s" description="Waiting time between reconnections after a number of communication errors greater than ClientCommunicationErrorThreshold (s)" type="u32" init-value="10"/>
+  <attribute name="ClientCommunicationErrorRetryIntervalShort_s" description="Waiting time between reconnections after a number of communication errors less than ClientCommunicationErrorThreshold (s)" type="u32" init-value="1 "/>
+  <attribute name="ClientCommunicationErrorThreshold" description="Maximum number of communication errors before switching to slow reconnection mode" type="u32" init-value="5"/>
+  <attribute name="ClientConnectionErrorRetryIntervalLong_s" description="Waiting time between reconnections after a number of connection errors greater than ClientConnectionErrorThreshold (s)" type="u32" init-value="30"/>
+  <attribute name="ClientConnectionErrorRetryIntervalShort_s" description="Waiting time between reconnections after a number of connection errors less than ClientConnectionErrorThreshold (s)" type="u32" init-value="1 "/>
+  <attribute name="ClientConnectionErrorThreshold" description="Maximum number of connection errors before switching to slow reconnection mode" type="u32" init-value="60"/>
+  <attribute name="ClientConnectionTimeout_ms" description="Timeout for connection to the server (ms)" type="u32" init-value="10000"/>
+  <attribute name="MaxEventSize" description="Maximum Event Size (B) (used for detecting communication errors) (default is 64 MiB)" type="u32" init-value="67108864"/>
+  <attribute name="HiddenParams" description="it might be useful" type="string" is-multi-value="yes"/>
+ </class>
+
+ <class name="EMonDataOut" description="DataOut plugin for sending data to the emon system">
+  <superclass name="ReadoutOutput"/>
+  <attribute name="key" description="emon::Sampling address key component" type="string"/>
+  <attribute name="value" description="emon::SamplingAddress value component" type="string"/>
+ </class>
+
+ <class name="EmulatedDataOut" description="A DataOut plugin for the ReadoutApplication that simply delays by the time specified and does not actually write anything.
+Only used for timing tests without real dataflow infrastructure.">
+  <superclass name="ReadoutOutput"/>
+  <attribute name="OutputDelay" type="u32" init-value="0" is-not-null="yes"/>
+ </class>
+
+ <class name="EmulatedHardwareTriggerIn" description="Internal generation of Hardware Triggers. Emulates CORBO, TCP or other real hardware triggers.">
+  <superclass name="HardwareTriggerIn"/>
+ </class>
+
+ <class name="EmulatedReadoutConfiguration">
+  <attribute name="GetFragmentDelay" type="u32" init-value="0" is-not-null="yes"/>
+  <attribute name="MessageDelay" type="u32" init-value="0" is-not-null="yes"/>
+  <attribute name="ReleaseDelay" type="u32" init-value="0" is-not-null="yes"/>
+  <attribute name="ReleaseGroupDelay" type="u32" init-value="0" is-not-null="yes"/>
+  <attribute name="GetMissingFragment" type="float" init-value="0.0" is-not-null="yes"/>
+  <attribute name="DetEvType" type="u32" init-value="0" is-not-null="yes"/>
+  <attribute name="NumberOfStatusElements" type="s32" init-value="1" is-not-null="yes"/>
+  <attribute name="StatusBlockPosition" type="u32" init-value="0" is-not-null="yes"/>
+  <attribute name="DataSize" type="enum" range="FIXED,RANDOM" init-value="FIXED" is-not-null="yes"/>
+ </class>
+
+ <class name="EmulatedReadoutModule">
+  <superclass name="ReadoutModule"/>
+  <superclass name="ResourceSetAND"/>
+  <relationship name="Configuration" class-type="EmulatedReadoutConfiguration" low-cc="one" high-cc="one" is-composite="no" is-exclusive="no" is-dependent="no"/>
+ </class>
+
+ <class name="EmulatedSequentialReadoutModule" description="Readout module that emulates sequential input.">
+  <superclass name="SequentialInputModule"/>
+  <superclass name="ResourceSetAND"/>
+ </class>
+
+ <class name="EmulatedSingleFragmentReadoutModule" description="ReadoutModule for testing ROD emulation. Corresponding data channels create emulated hardware fragments via getNextFragment().">
+  <superclass name="ReadoutModule"/>
+  <superclass name="ResourceSetAND"/>
+ </class>
+
+ <class name="EmulatedTriggerIn">
+  <superclass name="ReadoutTrigger"/>
+  <superclass name="TriggerGenerator"/>
+  <attribute name="ClearLossThreshold" description="Number of DFM_Clear_Messages allowed to be lost before garbage collection is triggered.  A value of 0 means never trigger garbage collection." type="u32" init-value="0" is-not-null="yes"/>
+  <attribute name="DeltaNumberOfLostClears" description="Number of clear messages before we pretend to miss one" type="u32" init-value="100" is-not-null="yes"/>
+ </class>
+
+ <class name="EthSequentialReadoutModule">
+  <superclass name="SequentialInputModule"/>
+  <superclass name="ResourceSetAND"/>
+ </class>
+
+ <class name="EventStorage">
+  <attribute name="DirectoryToWrite" description="Directory in which the data will be written." type="string" init-value="." is-not-null="yes"/>
+  <attribute name="MaxEventsPerFile" type="u32" init-value="0"/>
+  <attribute name="MaxMegaBytesPerFile" description="Max size of an output file in MB. New file is open automatically by
+EventStorage." type="u32" range="1..2047" init-value="1024" is-not-null="yes"/>
+ </class>
+
+ <class name="Exclusion">
+  <attribute name="Histograms" description="Regular expression which defines what histograms have to be recived" type="string" init-value=".+" is-not-null="yes"/>
+  <attribute name="SummingMode" description="A enum which defines if the histograms should be merged or summed" type="enum" range="Add,Merge,AdvancedMerge" init-value="Merge" is-not-null="yes"/>
+  <attribute name="ResultContent" description="A enum which defines if the histograms should be summed or averaged" type="enum" range="Sum,Average,NormalizedSum" init-value="Sum" is-not-null="yes"/>
+ </class>
+
+ <class name="FilarReadoutModule">
+  <superclass name="SequentialInputModule"/>
+  <superclass name="ResourceSetAND"/>
+  <attribute name="RevisionNumber" description="Revision number of FILAR." type="u32"/>
+  <attribute name="FastTestMode" description="Allows to control whether event data should go
+to the output stage (for experts). 
+Possible values: 
+0 - all events to output (default); 
+1 - no events to output; 
+&gt;= 2 - 1% of events to output." type="u32" range="0..10" init-value="0" is-not-null="yes"/>
+  <attribute name="ByteSwapping" type="bool" init-value="false"/>
+ </class>
+
+ <class name="FileDataOut" description="DataOut plugin for ReadoutApplication that writes data to a file.">
+  <superclass name="ReadoutOutput"/>
+  <attribute name="SamplingGap" description="Write every this many events. 0=&gt;no writing at all" type="u32" init-value="0" is-not-null="yes"/>
+  <attribute name="FormattedOutput" description="Set to true when data have to be written to a file using the EventStorage library.
+Set to false for a simple binary dump." type="bool" init-value="true"/>
+  <attribute name="FileTag" description="Optional file tag used instead of the fileTag from RunParams." type="string"/>
+  <attribute name="StreamType" description="StreamType to be used for the fileName." type="enum" range="physics,calibration,debug,express,unknown,reserved" init-value="calibration" is-not-null="yes"/>
+  <relationship name="EventStorageConfiguration" description="Parameters to write data with event storage." class-type="EventStorage" low-cc="zero" high-cc="one" is-composite="no" is-exclusive="no" is-dependent="no"/>
+  <relationship name="TZdbConfiguration" description="Tier 0 database configuration.
+Only needed for LAr calibration runs everyone else should leave this undefined!" class-type="SFODBConnection" low-cc="zero" high-cc="one" is-composite="no" is-exclusive="no" is-dependent="no"/>
+ </class>
+
+ <class name="GATHERERApplication" description="Describes the GATHERER application.">
+  <superclass name="Resource"/>
+  <superclass name="RunControlApplicationBase"/>
+  <superclass name="Application"/>
+  <relationship name="GATHERERConfiguration" description="Relation to the GATHERER&apos;s configuration." class-type="GATHERERConfiguration" low-cc="one" high-cc="many" is-composite="no" is-exclusive="no" is-dependent="no"/>
+ </class>
+
+ <class name="GATHERERConfiguration">
+  <relationship name="Input" description="Configuration used by gatherer to receive histograms" class-type="HistogramReceiverConfig" low-cc="one" high-cc="one" is-composite="no" is-exclusive="no" is-dependent="no"/>
+  <relationship name="Output" description="Configuration used by gatherer to publish summed histograms" class-type="HistogramProviderConfig" low-cc="one" high-cc="one" is-composite="no" is-exclusive="no" is-dependent="no"/>
+ </class>
+
+ <class name="HW_InputChannel">
+  <superclass name="HW_ConnectableObject"/>
+  <superclass name="InputChannel"/>
+  <attribute name="PhysAddress" type="u32" init-value="0"/>
+ </class>
+
+ <class name="HardwareTriggerIn" description="Base class for hardware triggers. Generates RODEmulation requests or ROSRequests (unusual)." is-abstract="yes">
+  <superclass name="ReadoutTrigger"/>
+  <attribute name="RequestType" description="Type of Request to be generated and queued by this Trigger" type="enum" range="HWTriggeredROSDataRequest,HWTriggeredRODEmulationRequest,HWTriggeredRemoteRequest" init-value="HWTriggeredRODEmulationRequest" is-not-null="yes"/>
+ </class>
+
+ <class name="HistogramOperation" description="The object defining operations which can be performed on histograms">
+  <attribute name="Operation" description="The operation to be performed on histograms + arguments" type="string" is-not-null="yes"/>
+ </class>
+
+ <class name="HistogramProviderConfig">
+  <attribute name="PublishProviderName" description="Name of provider with which the gatherer will publish summed up histograms." type="string" init-value="gatherer_PT"/>
+  <attribute name="UseHistory" type="bool" init-value="false"/>
+  <attribute name="UpdateFrequency" description="Interval between subsequent updates of a histogram in seconds." type="u32"/>
+  <attribute name="SummingMode" description="A enum which defines if the histograms should be merged or summed" type="enum" range="Add,Merge,AdvancedMerge" init-value="Merge" is-not-null="yes"/>
+  <attribute name="ResultContent" description="A enum which defines if the histograms should be summed or averaged" type="enum" range="Sum,Average,NormalizedSum" init-value="Sum" is-not-null="yes"/>
+  <relationship name="Storage" class-type="HistogramStorage" low-cc="one" high-cc="many" is-composite="no" is-exclusive="no" is-dependent="no"/>
+ </class>
+
+ <class name="HistogramReceiverConfig">
+  <attribute name="Providers" description="Regular expression which definens the histogram providers whose histograms have to be received" type="string" init-value=".+" is-not-null="yes"/>
+  <attribute name="Histograms" description="Regular expression which defines what histograms have to be recived" type="string" init-value=".+" is-not-null="yes"/>
+  <attribute name="SumTags" description="A history parameter which defines number of LNB to sum" type="u32" init-value="0"/>
+  <relationship name="Exclusion" description="A relation that specifies special sets of histogram to be summed differently" class-type="Exclusion" low-cc="zero" high-cc="many" is-composite="no" is-exclusive="yes" is-dependent="no"/>
+  <relationship name="Storage" class-type="HistogramStorage" low-cc="one" high-cc="many" is-composite="no" is-exclusive="no" is-dependent="no"/>
+ </class>
+
+ <class name="HistogramStorage">
+  <attribute name="ISServerName" description="Name of the IS server which stores histograms" type="string"/>
+ </class>
+
+ <class name="IO_Device" description="The class describes input/output devices such as ROD processing units.">
+  <superclass name="HW_ConnectableObject"/>
+  <relationship name="Has" class-type="HW_InputChannel" low-cc="zero" high-cc="many" is-composite="yes" is-exclusive="no" is-dependent="no"/>
+ </class>
+
+ <class name="IO_Module">
+  <superclass name="Module"/>
+  <relationship name="IO_Devices" description="If module object is a resource set, do not use this relationship; use the &quot;Contains&quot; one instead." class-type="IO_Device" low-cc="zero" high-cc="many" is-composite="yes" is-exclusive="yes" is-dependent="no"/>
+ </class>
+
+ <class name="InputChannel">
+  <superclass name="Resource"/>
+  <attribute name="Id" description="Identifier of the ROB. Unique across the system." type="u32" init-value="0"/>
+  <relationship name="MemoryConfiguration" description="Links the ROB to a memory pool which is used to store events." class-type="MemoryPool" low-cc="zero" high-cc="one" is-composite="no" is-exclusive="no" is-dependent="no"/>
+ </class>
+
+ <class name="MemoryPool" description="Description of memory pool">
+  <attribute name="Type" description="Type of memory to use." type="enum" range="MALLOC,CMEM,CMEM_BPA" init-value="MALLOC" is-not-null="yes"/>
+  <attribute name="NumberOfPages" description="Number of pages in the pool." type="u32" is-not-null="yes"/>
+  <attribute name="PageSize" description="Size of an individual memory page." type="u32" init-value="4096"/>
+ </class>
+
+ <class name="MessageLossEmulation" description="Allows to emulate the loss of several types of messages arriving to a ROS (clear, ROI and EB), in terms of percentage.">
+  <attribute name="ClearLostPercent" description="Percentage (0..100) of lost clear messages." type="float" init-value="0" is-not-null="yes"/>
+  <attribute name="ROILostPercent" description="Percentage (0..100) of lost ROI messages." type="float" init-value="0" is-not-null="yes"/>
+  <attribute name="EBLostPercent" description="Percentage (0..100) of lost EB messages." type="float" init-value="0" is-not-null="yes"/>
+ </class>
+
+ <class name="MonObjectGroupConf">
+  <attribute name="MatchingChar" description="Name od the MonObjectGroupConf. Each object constains the configuration for a series of MonObjects selected by the MatchingChar." type="string" init-value=".*\..*\..*" is-not-null="yes"/>
+  <attribute name="ServerNames" description="These are the servers where the GATHERER will publish the info." type="string" init-value="Monitoring" is-not-null="yes"/>
+  <attribute name="ClientProtocol" description="Client protocol for the MonObjectGroupConf.  The GATHERER receives info via any of these protocols (ONLINE, DIM)." type="enum" range="ONLINE,DIM" init-value="ONLINE" is-not-null="yes"/>
+  <attribute name="ServerProtocol" description="Server protocol for the MonObjectGroupConf.  The GATHERER publishes info via any of these protocols (ONLINE, DIM)." type="enum" range="ONLINE,DIM" init-value="ONLINE" is-not-null="yes"/>
+  <attribute name="InfoTreatment" description="What the GATHERER does with the info: sumUp -&gt; sum information substitute -&gt; replace old by new info" type="enum" range="sumUp,substitute" init-value="sumUp" is-not-null="yes"/>
+  <attribute name="RetrievalMode" description="How the info is sent to the GATHERER: pull -&gt; push mode with some frequency waitInfo -&gt; info sent after condition is met" type="enum" range="pull,waitInfo" init-value="pull" is-not-null="yes"/>
+  <attribute name="BroadcastMode" description="How the GATHERER publishes the info: request -&gt; requested by client condition -&gt; sent when condition is met" type="enum" range="request,condition" init-value="request" is-not-null="yes"/>
+  <attribute name="Frequency" description="Frequency (time in seconds) at which the MonObjects in MonObjectGroupConf will update." type="u32" init-value="10" is-not-null="yes"/>
+  <attribute name="PublishProviderName" description="Name of the MonObjectGroupConf. Provider name used to publish histograms by Gatherer." type="string" init-value="gatherer_Provider" is-not-null="yes"/>
+ </class>
+
+
+ <class name="NullTriggerIn" description="Plugin to IOManager used when no external or internal Trigger is needed,
+i.e. when no data are requested and the IOManager exists for control 
+purposes only.">
+  <superclass name="ReadoutTrigger"/>
+ </class>
+
+ <class name="PreloadedReadoutModule" description="Module that reads raw data from a file.">
+  <superclass name="ReadoutModule"/>
+  <superclass name="ResourceSetAND"/>
+ </class>
+
+ <class name="PseudoROSModule" description="Describes the parameters needed for a pseudo ros.">
+  <superclass name="ReadoutModule"/>
+  <superclass name="ResourceSetAND"/>
+  <attribute name="TriggerQueue" description="Describes the way in which the trigger is activated." type="enum" range="Trgin,Direct" init-value="Trgin"/>
+ </class>
+
+ <class name="RCD">
+  <superclass name="ReadoutApplication"/>
+ </class>
+
+ <class name="ROS">
+  <superclass name="ReadoutApplication"/>
+ </class>
+
+ <class name="ReadoutApplication">
+  <superclass name="RunControlApplicationBase"/>
+  <superclass name="Application"/>
+  <superclass name="ResourceSetAND"/>
+  <attribute name="Id" description="Id of the ROS. It is included in the lower 16 bits of the source identifier of the ROS header." type="u16" init-value="0" is-not-null="yes"/>
+  <attribute name="DataRequestDestination" description="Path for getting requests from and serving the data to the DataCollection applications (L2 and EB)" type="enum" range="PC,ROBIN,l2ROBIN_ebPC,l2PC_ebROBIN" init-value="PC" is-not-null="yes"/>
+  <relationship name="MemoryConfiguration" description="Memory pool for ROS headers" class-type="MemoryPool" low-cc="one" high-cc="one" is-composite="no" is-exclusive="no" is-dependent="no"/>
+  <relationship name="Detector" description="Relationship to associate a ROS to a detector." class-type="Detector" low-cc="one" high-cc="one" is-composite="no" is-exclusive="no" is-dependent="no"/>
+  <relationship name="MonitoringMemoryConfiguration" description="Memory pool for user command statistics" class-type="MemoryPool" low-cc="zero" high-cc="one" is-composite="no" is-exclusive="no" is-dependent="no"/>
+  <relationship name="MonitoringSchedule" description="List of monitoring actions to be scheduled." class-type="ScheduledMonitoringAction" low-cc="zero" high-cc="many" is-composite="no" is-exclusive="no" is-dependent="no"/>
+  <relationship name="Configuration" description="The configuration of this readout application." class-type="ReadoutConfigurationBase" low-cc="one" high-cc="one" is-composite="yes" is-exclusive="no" is-dependent="no"/>
+  <relationship name="Output" description="An output plugin for the main data flow" class-type="ReadoutOutput" low-cc="zero" high-cc="one" is-composite="no" is-exclusive="no" is-dependent="no"/>
+  <relationship name="Trigger" class-type="ReadoutTrigger" low-cc="zero" high-cc="many" is-composite="no" is-exclusive="no" is-dependent="no"/>
+  <relationship name="MonitoringOutput" description="An output plugin for monitoring" class-type="ReadoutOutput" low-cc="zero" high-cc="one" is-composite="no" is-exclusive="no" is-dependent="no"/>
+  <relationship name="DebugOutput" description="An output plugin for debugging, not for the monitoring of normal events" class-type="ReadoutOutput" low-cc="zero" high-cc="one" is-composite="no" is-exclusive="no" is-dependent="no"/>
+  <relationship name="PluginConfiguration" description="Optional pointer to a class which lists the IO plugins used by this ReadoutApplication.
+If set it overrides th values given for Trigger, Output, MonitoringOutput and DebugOutput." class-type="ReadoutPluginConfigurationBase" low-cc="zero" high-cc="one" is-composite="no" is-exclusive="no" is-dependent="no"/>
+ </class>
+
+ <class name="ReadoutConfiguration">
+  <superclass name="ReadoutConfigurationBase"/>
+  <attribute name="TraceLevel" description="Level of debug output 0=none 20=full" type="u32" range="0..20" init-value="0" is-not-null="yes"/>
+  <attribute name="TracePackage" description="Which package the TraceLevel applies to 0=ALL" type="u32" init-value="0" is-not-null="yes"/>
+  <attribute name="QueueSize" description="Determines how many requests can be pending inside the IOManager." type="u32" init-value="100" is-not-null="yes"/>
+  <attribute name="QueueUnblockOffset" description="Determines when the Request queue shall be unblocked (low mark).." type="u32" init-value="90" is-not-null="yes"/>
+  <attribute name="NumberOfRequestHandlers" description="Defines how many requests can be processed in parallel in a IOManager" type="u32" range="1..64" init-value="8" is-not-null="yes"/>
+  <attribute name="RequestTimeOut" description="Maximum time a Request survives in the Request queue (in microseconds)." type="u32" init-value="0" is-not-null="yes"/>
+  <attribute name="ReleaseDelay" description="Time (in us) to hold off on executing ReleaseRequests" type="u32" init-value="0" is-not-null="yes"/>
+  <attribute name="MonitoringScalingFactor" description="ScalingFactor applied to calls to the sendData() method of the MonitoringDataOut" type="u32" init-value="10" is-not-null="yes"/>
+  <attribute name="ThreadedConfigure" description="Flag to control whether or not a separate thread should be created for configuring each ReadoutModule." type="bool" init-value="false" is-not-null="yes"/>
+  <attribute name="ISServerName" description="Name of IS server for publishing statistics" type="string" init-value="DF" is-not-null="yes"/>
+  <attribute name="ConfigurationType" description="Type of configuration can be used ofr selecting among different configurations in a ReadoutConfigurationMUX
+e.g. &apos;Calibration&apos; or &apos;Physics&apos;" type="string"/>
+ </class>
+
+ <class name="ReadoutConfigurationBase" is-abstract="yes">
+ </class>
+
+ <class name="ReadoutConfigurationMUX">
+  <superclass name="ReadoutConfigurationSet"/>
+  <superclass name="ReadoutConfigurationBase"/>
+  <relationship name="Configurations" description="Array of ReadoutConfigurations to choose from according to Selector
+" class-type="ReadoutConfiguration" low-cc="one" high-cc="many" is-composite="no" is-exclusive="no" is-dependent="no"/>
+ </class>
+
+ <class name="ReadoutConfigurationSet" is-abstract="yes">
+  <relationship name="Selector" description="Variable which names which configuration to use" class-type="Variable" low-cc="one" high-cc="one" is-composite="no" is-exclusive="no" is-dependent="no"/>
+ </class>
+
+ <class name="ReadoutModule">
+  <attribute name="PhysAddress" description="Physical address of the module." type="u32" format="hex" init-value="0"/>
+ </class>
+
+ <class name="ReadoutOutput" is-abstract="yes">
+ </class>
+
+ <class name="ReadoutPluginConfiguration" description="List of IO plugins for the ReadoutApplication">
+  <superclass name="ReadoutPluginConfigurationBase"/>
+  <attribute name="ConfigurationType" description="Type of configuration can be used ofr selecting among different configurations in a ReadoutConfigurationMUX
+e.g. &apos;Calibration&apos; or &apos;Physics&apos;" type="string"/>
+  <relationship name="TriggerIn" class-type="ReadoutTrigger" low-cc="zero" high-cc="many" is-composite="no" is-exclusive="no" is-dependent="no"/>
+  <relationship name="MainOutput" class-type="ReadoutOutput" low-cc="zero" high-cc="one" is-composite="no" is-exclusive="no" is-dependent="no"/>
+  <relationship name="DebugOutput" description="DataOutput plugin used for sending corrupted fragments for debugging.
+" class-type="ReadoutOutput" low-cc="zero" high-cc="one" is-composite="no" is-exclusive="no" is-dependent="no"/>
+  <relationship name="MonitoringOutput" description="Output plugin for sending data to the event monitoring system" class-type="ReadoutOutput" low-cc="zero" high-cc="one" is-composite="no" is-exclusive="no" is-dependent="no"/>
+ </class>
+
+ <class name="ReadoutPluginConfigurationBase" is-abstract="yes">
+ </class>
+
+ <class name="ReadoutPluginConfigurationMUX">
+  <superclass name="ReadoutPluginConfigurationBase"/>
+  <superclass name="ReadoutConfigurationSet"/>
+  <relationship name="Configurations" class-type="ReadoutPluginConfiguration" low-cc="one" high-cc="many" is-composite="no" is-exclusive="no" is-dependent="no"/>
+ </class>
+
+ <class name="ReadoutTrigger" is-abstract="yes">
+  <attribute name="DeleteGrouping" description="Number of level1 IDs that are grouped together in a CLEAR request." type="u32" init-value="100" is-not-null="yes"/>
+ </class>
+
+ <class name="RoIBApplication" description="Describes a single RoIB.">
+  <superclass name="RunControlApplication"/>
+  <relationship name="RoIBConfiguration" class-type="RoIBConfiguration" low-cc="one" high-cc="one" is-composite="no" is-exclusive="no" is-dependent="no"/>
+ </class>
+
+ <class name="RoIBConfiguration" description="Describes the RoI Builder.">
+  <attribute name="roibTtype" description="Method to trigger the RoIB" type="enum" range="TRG_RAM,TRG_ROD,TRG_TTC" init-value="TRG_RAM" is-not-null="yes"/>
+  <attribute name="liveChannel" description="Bit mask describing live 
+input channels" type="u16" format="hex" init-value="0xf" is-not-null="yes"/>
+  <attribute name="eventrate" description="integer setting the event rate" type="u16" range="0..11" init-value="6" is-not-null="yes"/>
+  <attribute name="EnableStandalone" description="Flag to enable/disable standalone operation of the Input modules, i.e. capture data disregarding flow control
+from the Output modules" type="bool" init-value="false"/>
+  <attribute name="EnableFlowControl" description="Flag to enable/disable flow control on the Output modules" type="bool" init-value="true"/>
+  <attribute name="MaxInputSkew" description="Maximum time (microseconds) to allow between the first and last fragment received on the Input module" type="u32" init-value="100"/>
+  <attribute name="UsesTestFiles" description="List of test pattern files which
+will loaded into Diagnostic RAM of the Input modules" type="string" is-multi-value="yes" init-value="test0.d"/>
+ </class>
+
+ <class name="RoIBInputBoard">
+  <superclass name="ResourceSetAND"/>
+  <attribute name="VMESlot" type="u32" range="12..15" init-value="15" is-not-null="yes"/>
+ </class>
+
+ <class name="RoIBInputChannel">
+  <superclass name="Resource"/>
+  <attribute name="ChannelID" type="u32" range="0..11" init-value="0" is-not-null="yes"/>
+  <relationship name="L1Source" class-type="Resource" low-cc="zero" high-cc="one" is-composite="no" is-exclusive="no" is-dependent="no"/>
+ </class>
+
+ <class name="RoIBOutputBoard">
+  <superclass name="ResourceSetAND"/>
+  <attribute name="VMESlot" type="u32" range="16..19" init-value="16" is-not-null="yes"/>
+ </class>
+
+ <class name="RoIBOutputChannel">
+  <superclass name="Resource"/>
+  <attribute name="ChannelID" type="u32" range="0..15" init-value="0" is-not-null="yes"/>
+  <relationship name="L2SVConnection" class-type="Component" low-cc="zero" high-cc="one" is-composite="no" is-exclusive="no" is-dependent="no"/>
+ </class>
+
+ <class name="RobinChannelConfiguration" description="Configuration of a ROBIN data channel">
+  <superclass name="RobinChannelConfigurationBase"/>
+  <attribute name="TestSize" description="The size, in words, of the generated fragments (in rolemu or roldatagen mode)." type="u32" init-value="100"/>
+  <attribute name="RolDataGen" description="Enables the internal data generator (incompatible with rolemu)." type="bool" init-value="0" is-not-null="yes"/>
+  <attribute name="Rolemu" description="Should the channel work in emulated data mode.
+Loads data into the ROBIN buffer memory on start-up (incompatible
+with RolDataGen)" type="bool" init-value="false"/>
+  <attribute name="Keepfrags" description="Should event fragments be kept even if requested to be cleared.
+Usually only used in testing with Rolemu mode.
+" type="bool" init-value="false"/>
+  <attribute name="ForceL1ID" description="Used only with Rolemu. If set, a request for a level1 ID higher than the max present in the robin will be transformed into a request for a lower ID and the ID of the returned fragment will be replaced by the one requested." type="bool" init-value="false"/>
+  <attribute name="CrcCheckInterval" description="Check the CRC every time this many fragments been requested.
+0 =&gt; never check the CRC." type="u32" init-value="0" is-not-null="yes"/>
+  <attribute name="ConfigurationType" type="string"/>
+  <relationship name="ExpertParameters" description="ROL expert parameters, to be set ONLY by Robin experts." class-type="RobinExpertParameter" low-cc="zero" high-cc="many" is-composite="no" is-exclusive="no" is-dependent="no"/>
+ </class>
+
+ <class name="RobinChannelConfigurationBase" is-abstract="yes">
+ </class>
+
+ <class name="RobinChannelConfigurationMUX">
+  <superclass name="RobinChannelConfigurationBase"/>
+  <superclass name="ReadoutConfigurationSet"/>
+  <relationship name="Configurations" description="Array of RobinChannelConfiguration objects to select from
+" class-type="RobinChannelConfiguration" low-cc="one" high-cc="many" is-composite="no" is-exclusive="no" is-dependent="no"/>
+ </class>
+
+ <class name="RobinConfiguration">
+  <superclass name="RobinConfigurationBase"/>
+  <attribute name="RevisionNumber" description="Revision number of the ROBIN PowerPC firmware." type="u32" format="hex" init-value="0x60016" is-not-null="yes"/>
+  <attribute name="FPGAVersion" description="Revision number of the ROBIN&apos;s FPGA firmware." type="u32" format="hex" init-value="0x04093003" is-not-null="yes"/>
+  <attribute name="Timeout" description="Timeout for PCI based communication with ROBIN in seconds." type="float" init-value="10" is-not-null="yes"/>
+  <attribute name="NumberOfOutstandingReq" description="The max. number of entries in the message passing FIFO that the application may use." type="u32" range="1..128" init-value="28" is-not-null="yes"/>
+  <attribute name="MsgInputMemorySize" description="The amount of DPM in the Robin reserved for message passing." type="u32" range="0x20..0x4000" format="hex" init-value="0x1800" is-not-null="yes"/>
+  <attribute name="MiscSize" description="The amount of PC RAM reserved for the reception of messages other than event fragments." type="u32" format="hex" init-value="0x10000" is-not-null="yes"/>
+  <attribute name="NetworkEnabled" description="Enables or disables the Robin GbE port." type="bool" init-value="0" is-not-null="yes"/>
+  <attribute name="UDPBasePort" description="The Robin base UDP port." type="u32" init-value="9000"/>
+  <attribute name="MaxRxPages" description="Maximum number of pages per fragment (fragment truncation limit)" type="u32" range="1..512" init-value="16" is-not-null="yes"/>
+  <attribute name="Pagesize" description="Size (in words) of a page in the page managed buffer." type="u32" range="256..2048" init-value="512" is-not-null="yes"/>
+  <attribute name="ConfigurationType" type="string"/>
+  <relationship name="ExpertParameters" description="List of Robin expert parameters, to be used ONLY by Robin experts." class-type="RobinExpertParameter" low-cc="zero" high-cc="many" is-composite="no" is-exclusive="no" is-dependent="no"/>
+ </class>
+
+ <class name="RobinConfigurationBase" is-abstract="yes">
+ </class>
+
+ <class name="RobinConfigurationMUX">
+  <superclass name="ReadoutConfigurationSet"/>
+  <superclass name="RobinConfigurationBase"/>
+  <relationship name="Configurations" description="Array of RobinConfiguration objects to select from" class-type="RobinConfiguration" low-cc="one" high-cc="many" is-composite="no" is-exclusive="no" is-dependent="no"/>
+ </class>
+
+ <class name="RobinDataChannel" description="Rol specific description.">
+  <superclass name="HW_InputChannel"/>
+  <relationship name="Configuration" description="Configuration of this readout link" class-type="RobinChannelConfigurationBase" low-cc="one" high-cc="one" is-composite="no" is-exclusive="no" is-dependent="no"/>
+ </class>
+
+ <class name="RobinDataDrivenTriggerIn" description="Data driven trigger for the Robin.">
+  <superclass name="DataDrivenTriggerIn"/>
+  <superclass name="EmulatedTriggerIn"/>
+  <attribute name="RobinProbeInterval" description="Interval, in ms, between probes of the Robin for event id info." type="u32" range="1..2000" init-value="50" is-not-null="yes"/>
+ </class>
+
+ <class name="RobinExpertParameter" description="Robin expert parameter, to be used ONLY by Robin experts.">
+  <attribute name="Name" description="Name of the Robin expert parameter." type="string" is-not-null="yes"/>
+  <attribute name="Value" description="Value of the Robin expert parameter." type="u32" format="hex" is-not-null="yes"/>
+ </class>
+
+ <class name="RobinReadoutModule" description="Robin board configuration.">
+  <superclass name="ReadoutModule"/>
+  <superclass name="Interface"/>
+  <superclass name="ResourceSetAND"/>
+  <relationship name="HasNetworkInterface" description="Describes the network interface of the ROBIN." class-type="NetworkInterface" low-cc="zero" high-cc="one" is-composite="no" is-exclusive="no" is-dependent="no"/>
+  <relationship name="Configuration" description="The configuration of this robin" class-type="RobinConfigurationBase" low-cc="one" high-cc="one" is-composite="yes" is-exclusive="no" is-dependent="no"/>
+ </class>
+
+ <class name="SFODBConnection">
+  <attribute name="IndexTable" description="Name of the Index table" type="string" init-value="SFO_TZ_INDEX" is-not-null="yes"/>
+  <attribute name="RunTableName" description="Name of the Run table" type="string" init-value="SFO_TZ_RUN" is-not-null="yes"/>
+  <attribute name="LumiBlockTableName" description="Name of the LumiBlock table" type="string" init-value="SFO_TZ_LUMIBLOCK" is-not-null="yes"/>
+  <attribute name="FileTableName" description="Name of the File table" type="string" init-value="SFO_TZ_FILE" is-not-null="yes"/>
+  <attribute name="OverlapTableName" description="Name of the Overlap table" type="string" init-value="SFO_TZ_OVERLAP" is-not-null="yes"/>
+  <attribute name="QueueMonitoringEnabled" description="Whether the monitoring for SFOTZ publication queues is enabled or not" type="bool" init-value="false"/>
+  <relationship name="MainDBConnection" description="Points to the object describing the main DB" class-type="DBConnection" low-cc="one" high-cc="one" is-composite="no" is-exclusive="no" is-dependent="no"/>
+  <relationship name="FallbackDBConnection" description="Points to the object describing the fallback DB" class-type="DBConnection" low-cc="zero" high-cc="one" is-composite="no" is-exclusive="no" is-dependent="no"/>
+ </class>
+
+ <class name="SLink" description="Describes an S-Link connection.">
+  <superclass name="HW_Object"/>
+ </class>
+
+ <class name="SLinkDataOut">
+  <superclass name="ReadoutOutput"/>
+  <attribute name="SLinkOccurrence" type="u32" init-value="1" is-not-null="yes"/>
+ </class>
+
+ <class name="SLinkEthernet" description="S-Link connection emulation by means of an ethernet connection.">
+  <superclass name="SLink"/>
+ </class>
+
+ <class name="SLinkFILAR" description="Describes a FILAR based S-Link connection.">
+  <superclass name="SLink"/>
+ </class>
+
+ <class name="SLinkSSPCI" description="Describes an SSPCI based S-Link connection.">
+  <superclass name="SLink"/>
+ </class>
+
+ <class name="SSPCIReadoutModule">
+  <superclass name="SequentialInputModule"/>
+  <superclass name="ResourceSetAND"/>
+  <attribute name="ByteSwapping" type="bool" init-value="false"/>
+ </class>
+
+ <class name="ScheduledMonitoringAction">
+  <attribute name="Name" description="Name of this action.  This will be passed to the ReadoutModule when this action is scheduled." type="string" is-not-null="yes"/>
+  <attribute name="Interval" description="The interval in milliseconds between scheduling of this action." type="string" init-value="1000" is-not-null="yes"/>
+ </class>
+
+ <class name="SequentialInputModule" is-abstract="yes">
+  <superclass name="ReadoutModule"/>
+  <attribute name="InputFragmentType" description="Indicates which type of fragment is input by this module" type="enum" range="RODFragment,ROSFragment" init-value="RODFragment" is-not-null="yes"/>
+ </class>
+
+ <class name="TCPDataOut" description="Output class for the ReadoutApplication to send data through a TCP connection.">
+  <superclass name="ReadoutOutput"/>
+  <attribute name="DestinationPort" description="Destination port for the event fragments" type="u32" init-value="11000"/>
+  <relationship name="Configuration" description="The configuration of this Output" class-type="TCPDataOutConfig" low-cc="one" high-cc="one" is-composite="yes" is-exclusive="no" is-dependent="no"/>
+ </class>
+
+ <class name="TCPDataOutConfig" description="Configuration for the TCPDataOut">
+  <attribute name="DestinationNode" description="Name or IP address of the destination node for event fragments" type="string" is-multi-value="yes" is-not-null="yes"/>
+  <attribute name="SamplingGap" description="Define the minimum gap between two sampled
+events. As a consequence, a maximum sampling ratio is defined.
+The default value (1) means that all the events are sent to the output, 0 means that no event
+is sent." type="u32" init-value="1"/>
+  <attribute name="TCPBufferSize" description="Size of the TCP internal buffer" type="u32" init-value="32768"/>
+  <attribute name="ThrowIfUnavailable" description="If the ThrowIfUnavailable parameter is true,
+sampled event can be skipped if no resources are vailable, else all the events are written as soon
+as possible, thus generating backpressure." type="bool" init-value="false"/>
+ </class>
+
+ <class name="TCPTriggerIn" description="Trigger coming via TCP.">
+  <superclass name="HardwareTriggerIn"/>
+  <attribute name="TriggerSourceIPAddress" description="Trigger source network address." type="string" is-not-null="yes"/>
+  <attribute name="TriggerSourcePort" description="Trigger source network port. Cannot be zero." type="u32" init-value="10001" is-not-null="yes"/>
+  <attribute name="ConnectTimeout" description="Timeout to connect to trigger server (in sec)." type="u32" init-value="1" is-not-null="yes"/>
+  <attribute name="ClearDelay" description="Introduce a delay before sending a clear
+to the server (for debug)." type="u32" init-value="0"/>
+ </class>
+
+ <class name="TCPTriggerReadoutModule" description="Trigger server module for remote TCPTriggerIns.">
+  <superclass name="ReadoutModule"/>
+  <superclass name="ResourceSetAND"/>
+  <attribute name="ConnectTimeout" description="Time to accept connections during configuration." type="u32" init-value="3" is-not-null="yes"/>
+  <attribute name="TriggerSourcePort" description="Trigger source network port. Cannot be zero." type="u32" init-value="10001" is-not-null="yes"/>
+ </class>
+
+ <class name="TESTNODEID_ROSTestDC" description="Test program that, when connected to a ROS, emulates the behaviour of a Data Collection system.">
+  <superclass name="Application"/>
+  <superclass name="TriggerGenerator"/>
+  <attribute name="DeleteGrouping" type="u32" init-value="100" is-not-null="yes"/>
+  <attribute name="TraceLevel" description="Level of debug output 0=none 20=full" type="u32" range="0..20" init-value="0" is-not-null="yes"/>
+  <attribute name="TracePackage" description="Which package the TraceLevel applies to 0=ALL" type="u32" init-value="0" is-not-null="yes"/>
+  <relationship name="ConnectsToROS" description="ROS to which the ROSTestDC connects to." class-type="ROS" low-cc="one" high-cc="one" is-composite="no" is-exclusive="no" is-dependent="no"/>
+ </class>
+
+ <class name="TTC2LAN">
+  <superclass name="RCD"/>
+ </class>
+
+ <class name="TcpReadoutModule">
+  <superclass name="SequentialInputModule"/>
+  <superclass name="ResourceSetAND"/>
+  <attribute name="Port" type="u16" init-value="11000"/>
+  <attribute name="ConnectTimeout" description="Timeout on waiting for connections from input ROSes in milliseconds" type="u32" init-value="10000"/>
+  <attribute name="channelId" type="u32" init-value="0" is-not-null="yes"/>
+ </class>
+
+ <class name="TriggerApplication" description="A base class for all trigger applications in the OKS database" is-abstract="yes">
+  <relationship name="HLTImplementation" description="Defines a specific implementation for the HLT processor, if you don&apos;t want to use the partition one. Use this link *only* for testing. Avoid using this for production partitions." class-type="HLTImplementation" low-cc="zero" high-cc="one" is-composite="no" is-exclusive="no" is-dependent="no"/>
+ </class>
+
+ <class name="TriggerGenerator" description="ROS trigger emulation">
+  <attribute name="L2RequestFraction" description="The number of ROI requests per readout link (data channel) 
+as percentage of the number of level1 triggers." type="float" init-value="6."/>
+  <attribute name="EBRequestFraction" description="The number of EB requests received by the ROS as percentage of the number
+of level1 triggers. Equal to the number of EB requests per readout link.
+(data channel) in percent of the number of level1 triggers." type="float" init-value="2." is-not-null="yes"/>
+  <attribute name="ROIDistribution" description="Distribution of the number of readout links per ROI request expressed in
+percent. Sum should be equal to 100." type="u32" is-multi-value="yes" init-value="100"/>
+  <attribute name="TestGarbageCollection" description="Enable testing of garbage collection in the robin by &quot;losing&quot; some clear messages and tracking the oldest valid L1Id in the trigger generator." type="bool" init-value="0" is-not-null="yes"/>
+  <attribute name="InputDelay" description="Delay in microseconds before a request (EB,ROI or CLEAR) is generated." type="u32" init-value="0" is-not-null="yes"/>
+  <attribute name="SyncDeletesWithEBRequests" description="CLEARs delayed until the CLEAR associated with the next Event Builder request can be sent to the ROBIN" type="bool" init-value="false"/>
+ </class>
+
+</oks-schema>

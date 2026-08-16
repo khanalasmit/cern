@@ -1,0 +1,181 @@
+<?xml version="1.0" encoding="ASCII"?>
+
+<!-- oks-schema version 2.0 -->
+
+
+<!DOCTYPE oks-schema [
+  <!ELEMENT oks-schema (info, (include)?, (comments)?, (class)+)>
+  <!ELEMENT info EMPTY>
+  <!ATTLIST info
+      name CDATA #REQUIRED
+      type CDATA #REQUIRED
+      num-of-items CDATA #REQUIRED
+      oks-format CDATA #FIXED "schema"
+      oks-version CDATA #REQUIRED
+      created-by CDATA #REQUIRED
+      created-on CDATA #REQUIRED
+      creation-time CDATA #REQUIRED
+      last-modified-by CDATA #REQUIRED
+      last-modified-on CDATA #REQUIRED
+      last-modification-time CDATA #REQUIRED
+  >
+  <!ELEMENT include (file)+>
+  <!ELEMENT file EMPTY>
+  <!ATTLIST file
+      path CDATA #REQUIRED
+  >
+  <!ELEMENT comments (comment)+>
+  <!ELEMENT comment EMPTY>
+  <!ATTLIST comment
+      creation-time CDATA #REQUIRED
+      created-by CDATA #REQUIRED
+      created-on CDATA #REQUIRED
+      author CDATA #REQUIRED
+      text CDATA #REQUIRED
+  >
+  <!ELEMENT class (superclass | attribute | relationship | method)*>
+  <!ATTLIST class
+      name CDATA #REQUIRED
+      description CDATA ""
+      is-abstract (yes|no) "no"
+  >
+  <!ELEMENT superclass EMPTY>
+  <!ATTLIST superclass name CDATA #REQUIRED>
+  <!ELEMENT attribute EMPTY>
+  <!ATTLIST attribute
+      name CDATA #REQUIRED
+      description CDATA ""
+      type (bool|s8|u8|s16|u16|s32|u32|s64|u64|float|double|date|time|string|uid|enum|class) #REQUIRED
+      range CDATA ""
+      format (dec|hex|oct) "dec"
+      is-multi-value (yes|no) "no"
+      init-value CDATA ""
+      is-not-null (yes|no) "no"
+  >
+  <!ELEMENT relationship EMPTY>
+  <!ATTLIST relationship
+      name CDATA #REQUIRED
+      description CDATA ""
+      class-type CDATA #REQUIRED
+      low-cc (zero|one) #REQUIRED
+      high-cc (one|many) #REQUIRED
+      is-composite (yes|no) #REQUIRED
+      is-exclusive (yes|no) #REQUIRED
+      is-dependent (yes|no) #REQUIRED
+  >
+  <!ELEMENT method (method-implementation*)>
+  <!ATTLIST method
+      name CDATA #REQUIRED
+      description CDATA ""
+  >
+  <!ELEMENT method-implementation EMPTY>
+  <!ATTLIST method-implementation
+      language CDATA #REQUIRED
+      prototype CDATA #REQUIRED
+      body CDATA ""
+  >
+]>
+
+<oks-schema>
+
+<info name="" type="" num-of-items="13" oks-format="schema" oks-version="oks-06-08-03 built &quot;Dec 17 2014&quot;" created-by="glehmann" created-on="pcatd86" creation-time="20030820T141734" last-modified-by="vandelli" last-modified-on="pc-tbed-pub-10.cern.ch" last-modification-time="20141218T150203"/>
+
+<include>
+ <file path="daq/schema/core.schema.xml"/>
+ <file path="daq/schema/df.schema.xml"/>
+ <file path="daq/schema/monsvc_config.schema.xml"/>
+</include>
+
+
+ <class name="DcmApplication">
+  <superclass name="RunControlTemplateApplication"/>
+  <superclass name="PublishingApplication"/>
+  <attribute name="infoAverageInterval_s" description="Time interval over which IS averages are calculated (in s)." type="u32" init-value="100" is-not-null="yes"/>
+  <attribute name="histogramVerbosity" description="Parameter to control the number of histrograms published in OH. The higher the value the more technical histograms are published." type="u32" init-value="0" is-not-null="yes"/>
+  <attribute name="hiddenParameters" description="Entry point for rescue parameters" type="string" is-multi-value="yes"/>
+  <attribute name="dynamicUpdate" description="Set to true to enable dynamic updates of some configuration parameters via user commands" type="bool" init-value="true" is-not-null="yes"/>
+  <attribute name="samplerBufferSize" description="Number of events that can be buffered" type="u32" init-value="5" is-not-null="yes"/>
+  <attribute name="maxConnectDelay_s" description="In order to spread the system load during the connect transition the DCM will sleep a random amount of time between zero and this attribute (in s)." type="u32" init-value="0" is-not-null="yes"/>
+  <attribute name="sbaDirectory" description="Path to the directory where the SBA file will be created" type="string" init-value="/tmp" is-not-null="yes"/>
+  <attribute name="sbaBaseName" description="Base name to construct the full file name" type="string" init-value="dcm" is-not-null="yes"/>
+  <attribute name="sbaNumOfBlocks" description="Number of blocks in the array. Each block is supposed to contain all the ROB fragments of one event. NB: the number of blocks must be greater that the number of HLTPUs in the host. NB: the total SBA size in MiB is: numOfBlocks * blockSize" type="u32" init-value="32" is-not-null="yes"/>
+  <attribute name="sbaBlockSize_MiB" description="Block size in MiB. NB: it must be greater that maximum event size." type="u32" init-value="32" is-not-null="yes"/>
+  <attribute name="sbaRecoveryMode" description="Select event recovery procedure in case of Dcm crash. NONE: do nothing; FILE: events dumped on the local file system; SFO: events delivered to SFO" type="enum" range="NONE,FILE,SFO" init-value="NONE" is-not-null="yes"/>
+  <attribute name="compressionAlgorithm" description="Algorithm used to compress the full event payload" type="enum" range="NONE,ZLIB" init-value="NONE" is-not-null="yes"/>
+  <attribute name="UpperEdgeSizeHistos" description="Upper edge of the histograms related to fragment size (kB) " type="float" range="" init-value="3000." is-not-null="yes"/>
+  <attribute name="UpperEdgeTimeHistos" description="Upper edge of the histograms related to time intervals (ms)" type="float" range="" init-value="2000." is-not-null="yes"/>
+  <relationship name="l1Source" description="It manages the L1-Results request" class-type="DcmL1Source" low-cc="one" high-cc="one" is-composite="no" is-exclusive="no" is-dependent="no"/>
+  <relationship name="dataCollector" description="It manages the ROB fragments request" class-type="DcmDataCollector" low-cc="one" high-cc="one" is-composite="no" is-exclusive="no" is-dependent="no"/>
+  <relationship name="processor" description="It manages the interface with HLTPU (daq::dfinterface)" class-type="DcmProcessor" low-cc="one" high-cc="one" is-composite="no" is-exclusive="no" is-dependent="no"/>
+  <relationship name="output" description="It manages the full event output" class-type="DcmOutput" low-cc="one" high-cc="one" is-composite="no" is-exclusive="no" is-dependent="no"/>
+ </class>
+
+ <class name="DcmDataCollector">
+ </class>
+
+ <class name="DcmDummyDataCollector">
+  <superclass name="DcmDataCollector"/>
+  <attribute name="delayDistribution_us" description="Distribution of the ROB fragment collection delay in microseconds according to the syntax defined in dccommon::Distribution." type="string" init-value="C|0" is-not-null="yes"/>
+  <attribute name="robSizeDistribution_words" description="Distribution of the ROB fragment sizes in words, according to the syntax defined in dccommon::Distribution." type="string" init-value="C|256" is-not-null="yes"/>
+ </class>
+
+ <class name="DcmDummyL1Source">
+  <superclass name="DcmL1Source"/>
+  <attribute name="delayDistribution_us" description="Distribution of the L1Result fetching delay in microseconds, according to the syntax defined in dccommon::Distribution" type="string" init-value="C|0" is-not-null="yes"/>
+  <attribute name="sizeDistribution_words" description="Distribution of the CTP fragment sizes in words, according to the syntax defined in dccommon::Distribution." type="string" init-value="C|256" is-not-null="yes"/>
+ </class>
+
+ <class name="DcmDummyProcessor">
+  <superclass name="DcmProcessor"/>
+  <attribute name="nUnits" description="Number of emulated processor processing units." type="u32" init-value="16" is-not-null="yes"/>
+  <attribute name="l2ProcessingTimeDistribution_ms" description="L2 processing time distribution in ms according to the syntax defined in dccommon::Distribution" type="string" init-value="C|50" is-not-null="yes"/>
+  <attribute name="l2RequestsDistribution" description="Number of requested fragments distribution according to the syntax defined in dccommon::Distribution" type="string" init-value="C|10" is-not-null="yes"/>
+  <attribute name="l2RequestsPerSourceDistribution" description="Number of fragments requested from each source distribution according to the syntax defined in dccommon::Distribution, or the string NULL to disable source-aware requests" type="string" init-value="NULL" is-not-null="yes"/>
+  <attribute name="l2Acceptance" description="Average acceptance for event building" type="float" range="0.0..1.0" init-value="0.05" is-not-null="yes"/>
+  <attribute name="efProcessingTimeDistribution_ms" description="EF processing time distribution in ms according to the syntax defined in dccommon::Distribution" type="string" init-value="C|1000" is-not-null="yes"/>
+  <attribute name="efAcceptance" description="Average EF acceptance" type="float" range="0.0..1.0" init-value="0.1" is-not-null="yes"/>
+ </class>
+
+ <class name="DcmFileOutput">
+  <superclass name="DcmOutput"/>
+  <attribute name="directory" description="Directory where the event data files are written." type="string" init-value="/tmp" is-not-null="yes"/>
+  <attribute name="storageAcceptance" description="If different from 1, specifies the fraction of events that are actually stored." type="float" range="0.0..1.0" init-value="1.0" is-not-null="yes"/>
+ </class>
+
+ <class name="DcmHltpuProcessor">
+  <superclass name="DcmProcessor"/>
+ </class>
+
+ <class name="DcmHltsvL1Source">
+  <superclass name="DcmL1Source"/>
+  <attribute name="maxClearDelay_ms" description="Maximum event clear delay in milliseconds. If different from 0, clears are cached until they can be piggybacked on a new event request or the delay expires." type="u32" init-value="1000" is-not-null="yes"/>
+ </class>
+
+ <class name="DcmL1Source" is-abstract="yes">
+ </class>
+
+ <class name="DcmOutput" is-abstract="yes">
+ </class>
+
+ <class name="DcmProcessor" is-abstract="yes">
+  <attribute name="processingTimeOut_ms" description="PU processing time-out in milliseconds. At expiration the event is forcefully accepted." type="u32" init-value="60000" is-not-null="yes"/>
+  <attribute name="maxOutputEvents" description="Maximum number of events waiting for output delivery. If exceeded, the DCM will stop asking for L1 results." type="u32" init-value="10" is-not-null="yes"/>
+  <relationship name="bcidCheckIgnoreSubdetectors" description="Set of sub-detectors whose fragments are not checked for BCID mismatches" class-type="Detector" low-cc="zero" high-cc="many" is-composite="no" is-exclusive="no" is-dependent="no"/>
+  <relationship name="bcidCheckSilentSubdetectors" description="Set of sub-detectors whose fragments&apos; BCID mismatches are not reported in ERS" class-type="Detector" low-cc="zero" high-cc="many" is-composite="no" is-exclusive="no" is-dependent="no"/>
+  <attribute name="markDoneAfterEventBuilding" description="True if markDone should be sent after event building, otherwise it is called after event has been sent to the SFO" type="bool" init-value="true" is-not-null="yes"/>
+ </class>
+
+ <class name="DcmRosDataCollector">
+  <superclass name="DcmDataCollector"/>
+  <attribute name="nRequestCredits" description="Maximum number of outstanding ROS requests (0 means unlimited)" type="u32" init-value="64" is-not-null="yes"/>
+  <attribute name="requestTimeout_s" description="Maximum amount of time to wait for a response to a ROS request (s)" type="u32" range="1..*" init-value="10" is-not-null="yes"/>
+ </class>
+
+ <class name="DcmSfoOutput">
+  <superclass name="DcmOutput"/>
+  <attribute name="requestTimeout_s" description="Maximum amount of time, in seconds, to wait for a transfer request from a SFO after an event was assigned to it." type="u32" range="1..*" init-value="100" is-not-null="yes"/>
+  <attribute name="acknowledgmentTimeout_s" description="Maximum amount of time, in seconds, to wait for an acknowledgment from a SFO after an event was transferred to it." type="u32" range="1..*" init-value="10" is-not-null="yes"/>
+  <attribute name="onlyLocalSfo" description="If set, this instance will connect only to SFO applications running on the same node." type="bool" init-value="false"/>
+ </class>
+
+</oks-schema>
