@@ -41,12 +41,30 @@ Copy the example to `.env`; `.env` is intentionally ignored by Git. Do not put c
 
 ```text
 translator_module/   Application source, CLI, dependency list, and unit tests
+eval_dataset/        Schema corpus and evaluation query set, plus the builder that generates them
+test_schema/         ATLAS TDAQ OKS schema files (XML and a derived JSON inventory)
+test_data/           ATLAS TDAQ OKS data files (concrete objects)
 oks_scraped/         Curated OKS schema, examples, source material, and report
 output/              Research collection scripts and extracted reference material
-*.pdf                Project and OKS reference documents
+docs/                Project and OKS reference documents, architecture diagram
 ```
 
 The application expects `oks_scraped/oks_schema_examples.xml` and `oks_scraped/gold_pairs.jsonl` at their current paths. Keep those files alongside the source unless the application paths are updated too.
+
+## Evaluation
+
+`eval_dataset/` holds the two files the pipeline is scored against:
+
+- `oks_schema_corpus.xml` — the retrieval corpus (454 configuration classes, 825 objects, and the OKS C++ API as 22 OKS classes). Drop-in for `HybridIndexer.ingest_xml`.
+- `oks_eval_queries.jsonl` — 144 shifter questions stratified easy/medium/hard, each with the ground-truth `OksQuery`, its IR, the gold schema elements and the expected result set.
+
+Regenerate them after changing `test_schema/`, `test_data/` or `eval_dataset/query_specs.py`:
+
+```bash
+python eval_dataset/build_dataset.py
+```
+
+See [`eval_dataset/README.md`](eval_dataset/README.md) for the field reference and metric definitions, and [`rag.md`](rag.md) for the retrieval architecture they measure.
 
 ## Development notes
 

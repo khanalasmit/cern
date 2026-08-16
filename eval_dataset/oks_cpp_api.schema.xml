@@ -1,0 +1,339 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- oks-schema version 2.2 -->
+<!--
+  oks_cpp_api.schema.xml
+  ======================
+  The public OKS C++ API surface, expressed in the OKS schema format itself so
+  that the translator pipeline's schema indexer can ingest it with no special
+  casing: every C++ class becomes an <class>, every data member / configuration
+  flag / enumerator set becomes an <attribute>, every "owns / refers to"
+  association becomes a <relationship>, and every documented public method
+  becomes a <method> carrying its verbatim C++ prototype.
+
+  Why this file exists: questions asked of the agent split into two families.
+  "Which applications run on lxplus001?" needs the *configuration* schema
+  (test_schema/xml/*.schema.xml). "Which C++ call executes a parsed query?" or
+  "how do I build an (and ...) expression programmatically?" needs the *API*
+  schema, and until now nothing in the corpus carried it.
+
+  Sources (all verbatim from docs/OKS_Grammar_Query_CppAPI_Reference.pdf, which
+  in turn quotes include/oks/*.hpp, src/query.cpp and oks_utils/examples/*.cpp):
+    section 2  query grammar reserved tokens
+    section 3  OksQuery string parser + OksClass::execute_query
+    section 4  QueryPath / QueryPathExpression
+    section 6  full public API surface of every core header
+    section 10 the 16 worked oks_utils examples
+    section 11 oks_tutorial.cpp
+  Type mapping note: C++ types have no OKS equivalent, so `string` is used for
+  every scalar member and the real C++ type is stated in the description.
+-->
+<oks-schema>
+
+<info name="oks-cpp-api" type="api-reference" num-of-items="22" oks-format="schema"
+      oks-version="oks-08-03-03" created-by="minor-project" created-on="eval_dataset"
+      creation-time="20260816T000000" last-modified-by="minor-project"
+      last-modified-on="eval_dataset" last-modification-time="20260816T000000"/>
+
+ <!-- ==================================================================== -->
+ <!-- Kernel, files, schema reflection                                     -->
+ <!-- ==================================================================== -->
+ <class name="OksKernel" description="C++ API (include/oks/kernel.hpp). The root object of the OKS in-memory database: it loads schema and data files, owns every OksClass and OksObject, and exposes the git-backed configuration repository. Most methods are thread-safe; those prefixed k_ are not.">
+  <attribute name="verbose_mode" description="C++ bool. get_verbose_mode()/set_verbose_mode(bool); env override OKS_KERNEL_VERBOSE." type="bool" init-value="false"/>
+  <attribute name="silence_mode" description="C++ bool. get_silence_mode()/set_silence_mode(bool); env override OKS_KERNEL_SILENCE." type="bool" init-value="false"/>
+  <attribute name="profiling_mode" description="C++ bool. get_profiling_mode()/set_profiling_mode(bool); env override OKS_KERNEL_PROFILING." type="bool" init-value="false"/>
+  <attribute name="allow_duplicated_classes_mode" description="C++ bool. Tolerate the same class name arriving from two schema files." type="bool" init-value="false"/>
+  <attribute name="allow_duplicated_objects_mode" description="C++ bool. Tolerate the same object id appearing twice." type="bool" init-value="false"/>
+  <attribute name="repository_root" description="C++ std::string, from the TDAQ_DB_REPOSITORY environment variable. Static accessor get_repository_root()." type="string"/>
+  <attribute name="user_repository_root" description="C++ std::string, from TDAQ_DB_USER_REPOSITORY. get_user_repository_root()/set_user_repository_root(path, version)." type="string"/>
+  <attribute name="repository_version" description="C++ std::string. The checked-out configuration version; selectors are hash:&lt;sha&gt;, tag:&lt;tag&gt; or date:&lt;timestamp&gt;." type="string"/>
+  <attribute name="repository_update_type" description="C++ enum RepositoryUpdateType, passed to update_repository()." type="enum" range="DiscardChanges,MergeChanges,NoChanges" init-value="NoChanges"/>
+  <attribute name="number_of_classes" description="C++ size_t number_of_classes(); size of classes()." type="u32" init-value="0"/>
+  <attribute name="number_of_objects" description="C++ size_t number_of_objects(); size of objects()." type="u32" init-value="0"/>
+  <relationship name="SchemaFiles" description="OksFile::Map schema_files(): every loaded *.schema.xml." class-type="OksFile" low-cc="zero" high-cc="many" is-composite="yes" is-exclusive="yes" is-dependent="yes"/>
+  <relationship name="DataFiles" description="OksFile::Map data_files(): every loaded *.data.xml." class-type="OksFile" low-cc="zero" high-cc="many" is-composite="yes" is-exclusive="yes" is-dependent="yes"/>
+  <relationship name="Classes" description="OksClass::Map classes(): every class known to this kernel." class-type="OksClass" low-cc="zero" high-cc="many" is-composite="yes" is-exclusive="yes" is-dependent="yes"/>
+  <relationship name="Objects" description="OksObject::Set objects(): every object bound in this kernel." class-type="OksObject" low-cc="zero" high-cc="many" is-composite="yes" is-exclusive="yes" is-dependent="yes"/>
+  <relationship name="RepositoryVersions" description="get_repository_versions(): git history of the configuration repository." class-type="OksRepositoryVersion" low-cc="zero" high-cc="many" is-composite="no" is-exclusive="no" is-dependent="no"/>
+  <method name="find_class" description="Look a class up by name. Returns nullptr when the schema does not define it; this is the schema-grounding check the agent must run before serialising a query.">
+   <method-implementation language="c++" prototype="OksClass * find_class(const std::string&amp;) const" body=""/>
+  </method>
+  <method name="load_schema" description="Load an OKS schema file (class definitions) and any file it includes.">
+   <method-implementation language="c++" prototype="OksFile * load_schema(const std::string&amp; name, const OksFile * parent = 0)" body=""/>
+  </method>
+  <method name="load_data" description="Load an OKS data file (concrete objects) and bind its references.">
+   <method-implementation language="c++" prototype="OksFile * load_data(const std::string&amp; name, bool bind = true)" body=""/>
+  </method>
+  <method name="load_file" description="Load either a schema or a data file, dispatching on the oks-format info attribute.">
+   <method-implementation language="c++" prototype="OksFile * load_file(const std::string&amp; name, bool bind = true)" body=""/>
+  </method>
+  <method name="update_repository" description="Check the configuration repository out at a version selector of type hash, tag or date.">
+   <method-implementation language="c++" prototype="void update_repository(const std::string&amp; param, const std::string&amp; val, RepositoryUpdateType update_type)" body=""/>
+  </method>
+  <method name="get_repository_versions_by_hash" description="List repository versions between two commit hashes. Backs the run/revision resolver.">
+   <method-implementation language="c++" prototype="std::vector&lt;OksRepositoryVersion&gt; get_repository_versions_by_hash(bool skip_irrelevant = true, const std::string&amp; sha1 = &quot;&quot;, const std::string&amp; sha2 = &quot;&quot;)" body=""/>
+  </method>
+  <method name="get_repository_versions_by_date" description="List repository versions in a date interval.">
+   <method-implementation language="c++" prototype="std::vector&lt;OksRepositoryVersion&gt; get_repository_versions_by_date(bool skip_irrelevant = true, const std::string&amp; since = &quot;&quot;, const std::string&amp; until = &quot;&quot;)" body=""/>
+  </method>
+  <method name="get_repository_versions_diff" description="Files that differ between two repository revisions. Backs revision diff/comparison.">
+   <method-implementation language="c++" prototype="std::list&lt;std::string&gt; get_repository_versions_diff(const std::string&amp; sha1, const std::string&amp; sha2)" body=""/>
+  </method>
+  <method name="bind_objects" description="Resolve every relationship reference; get_bind_objects_status() returns a non-empty string when references dangle.">
+   <method-implementation language="c++" prototype="void bind_objects()" body=""/>
+  </method>
+ </class>
+
+ <class name="OksFile" description="C++ API (include/oks/file.hpp). One OKS XML file on disk: its info header, its include list, its lock state and its repository provenance. get_oks_format() returns schema, data, extended or compact.">
+  <attribute name="short_file_name" description="C++ std::string get_short_file_name(): the path as written in the include directive." type="string"/>
+  <attribute name="full_file_name" description="C++ std::string get_full_file_name(): the resolved absolute path." type="string"/>
+  <attribute name="oks_format" description="C++ std::string get_oks_format(). 'compact' is the default save format; 'extended' writes explicit &lt;attr name type val&gt; tags." type="enum" range="schema,data,extended,compact" init-value="compact"/>
+  <attribute name="number_of_items" description="C++ long get_number_of_items(): the num-of-items info attribute." type="u32" init-value="0"/>
+  <attribute name="mode" description="C++ enum Mode." type="enum" range="ReadOnly,ReadWrite" init-value="ReadWrite"/>
+  <attribute name="status_of_file" description="C++ enum FileStatus get_status_of_file()." type="enum" range="FileNotModified,FileModified,FileWasNotSaved,FileRemoved" init-value="FileNotModified"/>
+  <attribute name="is_repository_file" description="C++ bool. GlobalRepository when the file sits under TDAQ_DB_REPOSITORY, UserRepository under TDAQ_DB_USER_REPOSITORY, otherwise NoneRepository." type="bool" init-value="false"/>
+  <attribute name="created_by" description="C++ std::string get_created_by(): the created-by info attribute." type="string"/>
+  <attribute name="last_modified_by" description="C++ std::string get_last_modified_by()." type="string"/>
+  <attribute name="include_files" description="C++ std::list&lt;std::string&gt; get_include_files(): the &lt;include&gt;&lt;file path=.../&gt; entries." type="string" is-multi-value="yes"/>
+  <relationship name="Parent" description="get_parent(): the file that included this one." class-type="OksFile" low-cc="zero" high-cc="one" is-composite="no" is-exclusive="no" is-dependent="no"/>
+  <method name="add_include_file" description="Add an include directive, which is how a site schema builds on a shared core schema.">
+   <method-implementation language="c++" prototype="void add_include_file(const std::string&amp; name)" body=""/>
+  </method>
+ </class>
+
+ <class name="OksClass" description="C++ API (include/oks/class.hpp). The runtime reflection of one schema class: its inheritance closure, its direct and inherited attributes and relationships, its object map, and execute_query(), the entry point that runs an OksQuery.">
+  <attribute name="name" description="C++ std::string get_name()." type="string" is-not-null="yes"/>
+  <attribute name="description" description="C++ std::string get_description(). This is the text the schema retriever embeds." type="string"/>
+  <attribute name="is_abstract" description="C++ bool get_is_abstract(). An abstract class holds no direct objects, so it is never a valid target for a query that must return instances." type="bool" init-value="false"/>
+  <attribute name="number_of_objects" description="C++ size_t number_of_objects()." type="u32" init-value="0"/>
+  <attribute name="change_type" description="C++ enum ChangeType, delivered to subscribe_change_class() callbacks." type="enum" range="ChangeSuperClassesList,ChangeSubClassesList,ChangeDescription,ChangeIsAbstract,ChangeAttributesList,ChangeAttributeType,ChangeAttributeRange,ChangeAttributeFormat,ChangeAttributeMultiValueCardinality,ChangeAttributeInitValue,ChangeAttributeDescription,ChangeAttributeIsNoNull,ChangeRelationshipOther,ChangeRelationshipClassType,ChangeRelationshipDescription,ChangeRelationshipLowCC,ChangeRelationshipHighCC,ChangeRelationshipComposite,ChangeRelationshipExclusive,ChangeRelationshipDependent,ChangeMethodsList,ChangeMethodDescription,ChangeMethodImplementation" init-value="ChangeDescription"/>
+  <relationship name="Kernel" description="get_kernel(): the owning OksKernel." class-type="OksKernel" low-cc="one" high-cc="one" is-composite="no" is-exclusive="no" is-dependent="no"/>
+  <relationship name="File" description="get_file(): the schema file that defines this class." class-type="OksFile" low-cc="one" high-cc="one" is-composite="no" is-exclusive="no" is-dependent="no"/>
+  <relationship name="SuperClasses" description="all_super_classes() / direct_super_classes(). OKS supports multiple inheritance." class-type="OksClass" low-cc="zero" high-cc="many" is-composite="no" is-exclusive="no" is-dependent="no"/>
+  <relationship name="SubClasses" description="all_sub_classes(): the set scanned when a query uses scope 'all'." class-type="OksClass" low-cc="zero" high-cc="many" is-composite="no" is-exclusive="no" is-dependent="no"/>
+  <relationship name="Attributes" description="all_attributes() / direct_attributes()." class-type="OksAttribute" low-cc="zero" high-cc="many" is-composite="yes" is-exclusive="yes" is-dependent="yes"/>
+  <relationship name="Relationships" description="all_relationships() / direct_relationships()." class-type="OksRelationship" low-cc="zero" high-cc="many" is-composite="yes" is-exclusive="yes" is-dependent="yes"/>
+  <relationship name="Methods" description="all_methods() / direct_methods()." class-type="OksMethod" low-cc="zero" high-cc="many" is-composite="yes" is-exclusive="yes" is-dependent="yes"/>
+  <relationship name="Objects" description="objects(): the instances of this class." class-type="OksObject" low-cc="zero" high-cc="many" is-composite="no" is-exclusive="no" is-dependent="no"/>
+  <relationship name="Indices" description="The OksIndex objects built over this class's attributes; execute_query() prefers an indexed lookup when one matches the comparator." class-type="OksIndex" low-cc="zero" high-cc="many" is-composite="yes" is-exclusive="yes" is-dependent="yes"/>
+  <method name="execute_query" description="Run a query over this class, and over its subclasses when the query has search_in_subclasses() set. Checks CheckSyntax() first, uses an OksIndex when the comparator attribute is indexed, otherwise scans linearly calling OksObject::SatisfiesQueryExpression. Throws oks::QueryFailed.">
+   <method-implementation language="c++" prototype="OksObject::List * execute_query(OksQuery * query) const" body=""/>
+  </method>
+  <method name="find_attribute" description="Resolve an attribute name over the inheritance closure. Returning nullptr is what makes a generated attribute name invalid.">
+   <method-implementation language="c++" prototype="OksAttribute * find_attribute(const std::string&amp; name) const noexcept" body=""/>
+  </method>
+  <method name="find_relationship" description="Resolve a relationship name over the inheritance closure. The query parser calls this to type the nested expression of a relationship term.">
+   <method-implementation language="c++" prototype="OksRelationship * find_relationship(const std::string&amp; name) const noexcept" body=""/>
+  </method>
+  <method name="get_object" description="Direct object lookup by id, without building a query. This is the cheap path when the exact object id is already known.">
+   <method-implementation language="c++" prototype="OksObject * get_object(const std::string&amp; id) const noexcept" body=""/>
+  </method>
+ </class>
+
+ <class name="OksAttribute" description="C++ API (include/oks/attribute.hpp). One typed field of a class, with range, format, multi-value, init-value and nullability metadata. Every value constraint the query validator enforces comes from here.">
+  <attribute name="name" description="C++ std::string get_name()." type="string" is-not-null="yes"/>
+  <attribute name="description" description="C++ std::string get_description()." type="string"/>
+  <attribute name="type" description="C++ std::string get_type(); OksData::Type get_data_type(). This is the DTD type enumeration and it decides whether a comparison is numeric or lexicographic." type="enum" range="bool,s8,u8,s16,u16,s32,u32,s64,u64,float,double,date,time,string,uid,enum,class" init-value="string"/>
+  <attribute name="range" description="C++ std::string get_range(). Notation 'A,B,C..D,*..F,G..*': literals, closed intervals, open-below and open-above. Spaces are not allowed. An enum attribute must have a non-empty range; bool has the predefined range true,false." type="string"/>
+  <attribute name="format" description="C++ enum Format { Oct = 8, Dec = 10, Hex = 16 }." type="enum" range="dec,hex,oct" init-value="dec"/>
+  <attribute name="is_multi_value" description="C++ bool get_is_multi_values(). A multi-value attribute holds a list, so a comparison tests the elements." type="bool" init-value="false"/>
+  <attribute name="init_value" description="C++ std::string get_init_value(); std::list&lt;std::string&gt; get_init_values() for multi-value. Objects that store no value are evaluated against this." type="string"/>
+  <attribute name="is_not_null" description="C++ bool get_is_no_null()." type="bool" init-value="false"/>
+  <attribute name="ordered" description="C++ bool. Collection ordering for multi-value attributes." type="bool" init-value="false"/>
+  <relationship name="Class" description="The class that declares this attribute; OksClass::source_class(attr) resolves it through inheritance." class-type="OksClass" low-cc="one" high-cc="one" is-composite="no" is-exclusive="no" is-dependent="no"/>
+  <method name="get_enum_index" description="Position of an enumerator inside the range, or -1. Used to validate an enum value before it reaches the query string.">
+   <method-implementation language="c++" prototype="int get_enum_index(const std::string&amp;) const noexcept" body=""/>
+  </method>
+  <method name="constructor" description="The full constructor used by every oks_utils example, e.g. OksAttribute a(&quot;Max Speed&quot;, OksAttribute::u16_int_type, false, &quot;&quot;, &quot;160&quot;, &quot;max speed of car (km/h)&quot;, true).">
+   <method-implementation language="c++" prototype="OksAttribute(const std::string&amp; name, const std::string&amp; type, bool is_mv, const std::string&amp; range, const std::string&amp; init_v, const std::string&amp; description, bool no_null, Format format = Dec, OksClass * p = nullptr)" body=""/>
+  </method>
+ </class>
+
+ <class name="OksRelationship" description="C++ API (include/oks/relationship.hpp). A typed reference from one object to one or many others. A relationship is either a general (weak) reference or a composite (strong) one; a composite reference may be exclusive or shared, and dependent or independent. Deleting every composite parent deletes a dependent child.">
+  <attribute name="name" description="C++ std::string get_name()." type="string" is-not-null="yes"/>
+  <attribute name="description" description="C++ std::string get_description()." type="string"/>
+  <attribute name="class_type" description="C++ std::string get_type(); OksClass * get_class_type(). The class of the referenced objects, and therefore the class against which a nested relationship expression is parsed." type="string" is-not-null="yes"/>
+  <attribute name="low_cardinality_constraint" description="C++ enum CardinalityConstraint { Zero, One, Many }, low end." type="enum" range="Zero,One,Many" init-value="Zero"/>
+  <attribute name="high_cardinality_constraint" description="C++ enum CardinalityConstraint, high end. 'Many' is what makes the some/all quantifier meaningful." type="enum" range="Zero,One,Many" init-value="One"/>
+  <attribute name="is_composite" description="C++ bool get_is_composite(). A composite (strong) reference owns its target." type="bool" init-value="false"/>
+  <attribute name="is_exclusive" description="C++ bool get_is_exclusive(). An exclusive component belongs to exactly one composite parent." type="bool" init-value="false"/>
+  <attribute name="is_dependent" description="C++ bool get_is_dependent(). A dependent child is destroyed with its last composite parent." type="bool" init-value="false"/>
+  <attribute name="ordered" description="C++ bool. Whether the reference list preserves order." type="bool" init-value="false"/>
+  <relationship name="Class" description="The class that declares this relationship." class-type="OksClass" low-cc="one" high-cc="one" is-composite="no" is-exclusive="no" is-dependent="no"/>
+  <relationship name="TargetClass" description="get_class_type() resolved to the referenced OksClass." class-type="OksClass" low-cc="one" high-cc="one" is-composite="no" is-exclusive="no" is-dependent="no"/>
+  <method name="constructor" description="Example from oks_utils/examples/relationship.cpp: OksRelationship r(&quot;consists of&quot;, &quot;Element&quot;, OksRelationship::Zero, OksRelationship::Many, true, true, true, false, &quot;A structure consists of zero or many elements&quot;).">
+   <method-implementation language="c++" prototype="OksRelationship(const std::string&amp; name, const std::string&amp; type, CardinalityConstraint low_cc, CardinalityConstraint high_cc, bool composite, bool exclusive, bool dependent, const std::string&amp; description, OksClass * p = nullptr)" body=""/>
+  </method>
+ </class>
+
+ <class name="OksMethod" description="C++ API (include/oks/method.hpp). A named algorithm attached to a schema class, carrying one implementation per language. DAL generates typed accessors from these.">
+  <attribute name="name" description="C++ std::string get_name()." type="string" is-not-null="yes"/>
+  <attribute name="description" description="C++ std::string get_description()." type="string"/>
+  <relationship name="Implementations" description="One entry per language." class-type="OksMethodImplementation" low-cc="zero" high-cc="many" is-composite="yes" is-exclusive="yes" is-dependent="yes"/>
+  <method name="add_implementation" description="Example from oks_utils/examples/method.cpp: m.add_implementation(&quot;c++&quot;, &quot;void print(const char * s)&quot;, &quot;std::cout &lt;&lt; s &lt;&lt; std::endl;&quot;).">
+   <method-implementation language="c++" prototype="void add_implementation(const std::string&amp; language, const std::string&amp; prototype, const std::string&amp; body)" body=""/>
+  </method>
+ </class>
+
+ <class name="OksMethodImplementation" description="C++ API. One language binding of an OksMethod; serialised as the &lt;method-implementation&gt; element of the schema DTD.">
+  <attribute name="language" description="C++ std::string, e.g. c++, c, java." type="string" is-not-null="yes"/>
+  <attribute name="prototype" description="C++ std::string: the declaration." type="string" is-not-null="yes"/>
+  <attribute name="body" description="C++ std::string: the implementation text." type="string"/>
+ </class>
+
+ <!-- ==================================================================== -->
+ <!-- Objects and runtime values                                           -->
+ <!-- ==================================================================== -->
+ <class name="OksObject" description="C++ API (include/oks/object.hpp). One instance: a class, a unique object id, attribute values and relationship references. SatisfiesQueryExpression() is the per-object predicate the query engine evaluates, and find_path() runs a path query.">
+  <attribute name="id" description="C++ std::string GetId(). The object id compared by the (object-id &quot;ID&quot; =) query term. An id lookup is cheaper than a non-indexed attribute scan and works for objects with no searchable attributes." type="string" is-not-null="yes"/>
+  <attribute name="int32_id" description="C++ int32_t get_int32_id(): the optional numeric alias." type="s32" init-value="0"/>
+  <relationship name="Class" description="GetClass(): the class this object instantiates." class-type="OksClass" low-cc="one" high-cc="one" is-composite="no" is-exclusive="no" is-dependent="no"/>
+  <relationship name="File" description="get_file(): the data file that stores this object." class-type="OksFile" low-cc="one" high-cc="one" is-composite="no" is-exclusive="no" is-dependent="no"/>
+  <relationship name="AttributeValues" description="GetAttributeValue(name) returns the OksData held for each attribute." class-type="OksData" low-cc="zero" high-cc="many" is-composite="yes" is-exclusive="yes" is-dependent="yes"/>
+  <relationship name="ReverseCompositeRels" description="reverse_composite_rels(): the OksRCR entries naming every composite parent of this object." class-type="OksObject" low-cc="zero" high-cc="many" is-composite="no" is-exclusive="no" is-dependent="no"/>
+  <method name="SatisfiesQueryExpression" description="Evaluate one query expression against this object. For a comparator with a nil attribute it compares OksData(GetId()), which is how object-id terms work. For a relationship term it walks the reference list; check-all-objects true means every target must match, false means at least one must.">
+   <method-implementation language="c++" prototype="bool SatisfiesQueryExpression(OksQueryExpression * query_exp) const" body=""/>
+  </method>
+  <method name="find_path" description="Run a path query from this object; returns the list of objects between the start and the destination, or 0 when no path exists.">
+   <method-implementation language="c++" prototype="OksObject::List * find_path(const QueryPath&amp; query) const" body=""/>
+  </method>
+  <method name="GetAttributeValue" description="Read one attribute value. Object lookup plus this call is the no-query path for a question that already names an exact object id.">
+   <method-implementation language="c++" prototype="OksData * GetAttributeValue(const std::string&amp; name) const" body=""/>
+  </method>
+  <method name="GetRelationshipValue" description="Read the references held by one relationship. This is relationship navigation: start at an object, follow a named link, land on the target.">
+   <method-implementation language="c++" prototype="OksData * GetRelationshipValue(const std::string&amp;) const" body=""/>
+  </method>
+  <method name="SetAttributeValue" description="Write one attribute value. Writes belong behind the policy layer, never on the read path.">
+   <method-implementation language="c++" prototype="void SetAttributeValue(const std::string&amp; name, OksData * data)" body=""/>
+  </method>
+  <method name="references" description="Collect the objects reachable from this one up to a recursion depth, optionally filtered by class.">
+   <method-implementation language="c++" prototype="void references(OksObject::FSet&amp; refs, unsigned long recursion_depth, bool add_self = false, ClassSet * classes = 0) const" body=""/>
+  </method>
+ </class>
+
+ <class name="OksData" description="C++ API (include/oks/object.hpp). A discriminated runtime value. Query comparators compare OksData against OksData, which is why a query string writes every value as a quoted token and lets the attribute's type decide the comparison.">
+  <attribute name="type" description="C++ enum OksData::Type." type="enum" range="unknown_type,s8_type,u8_type,s16_type,u16_type,s32_type,u32_type,s64_type,u64_type,float_type,double_type,bool_type,class_type,object_type,date_type,time_type,string_type,list_type,uid_type,uid2_type,enum_type" init-value="unknown_type"/>
+  <attribute name="value" description="C++ union payload, rendered by str()." type="string"/>
+  <method name="SetValues" description="Parse a textual value into this OksData using an attribute's type and range. The parser calls it for every non-regex comparator.">
+   <method-implementation language="c++" prototype="void SetValues(const char * s, const OksAttribute * a)" body=""/>
+  </method>
+  <method name="check_range" description="Validate the held value against the attribute range.">
+   <method-implementation language="c++" prototype="void check_range(const OksAttribute * a) const" body=""/>
+  </method>
+ </class>
+
+ <class name="OksIndex" description="C++ API (include/oks/index.hpp). A sorted multiset of one class's objects keyed on one attribute. OksClass::execute_query() uses it instead of a linear scan when the comparator attribute is indexed, including two-sided lookups for an and/or of two comparators on the same attribute.">
+  <attribute name="attribute_offset" description="C++ size_t: the data slot the index sorts on." type="u32" init-value="0"/>
+  <relationship name="Class" description="The indexed class." class-type="OksClass" low-cc="one" high-cc="one" is-composite="no" is-exclusive="no" is-dependent="no"/>
+  <relationship name="Attribute" description="The indexed attribute." class-type="OksAttribute" low-cc="one" high-cc="one" is-composite="no" is-exclusive="no" is-dependent="no"/>
+  <method name="FindEqual" description="Indexed '=' lookup.">
+   <method-implementation language="c++" prototype="OksObject::List * FindEqual(OksData * d) const" body=""/>
+  </method>
+  <method name="FindGreatEqual" description="Indexed '&gt;=' lookup, as in oks_utils/examples/index.cpp.">
+   <method-implementation language="c++" prototype="OksObject::List * FindGreatEqual(OksData * d) const" body=""/>
+  </method>
+  <method name="FindLessEqualAndGreatEqual" description="Indexed closed-interval lookup, used for (and (&quot;A&quot; &quot;lo&quot; &gt;=) (&quot;A&quot; &quot;hi&quot; &lt;=)).">
+   <method-implementation language="c++" prototype="OksObject::List * FindLessEqualAndGreatEqual(OksData * d1, OksData * d2) const" body=""/>
+  </method>
+ </class>
+
+ <class name="OksRepositoryVersion" description="C++ API (include/oks/kernel.hpp). One commit of the git-backed configuration repository: the unit a run number resolves to before any query is executed.">
+  <attribute name="commit_hash" description="C++ std::string m_commit_hash." type="string"/>
+  <attribute name="user" description="C++ std::string m_user." type="string"/>
+  <attribute name="date" description="C++ std::time_t m_date." type="time"/>
+  <attribute name="comment" description="C++ std::string m_comment." type="string"/>
+  <attribute name="files" description="C++ std::vector&lt;std::string&gt; m_files: the files this commit touched." type="string" is-multi-value="yes"/>
+ </class>
+
+ <!-- ==================================================================== -->
+ <!-- The query API                                                        -->
+ <!-- ==================================================================== -->
+ <class name="OksQuery" description="C++ API (include/oks/query.hpp). A complete query: a scope flag plus one root expression. It can be built programmatically from expression objects or parsed from a query string; good() reports whether the parse succeeded. Streaming it back out prints the canonical (all|this (&lt;expr&gt;)) form.">
+  <attribute name="search_in_subclasses" description="C++ bool search_in_subclasses(). True is the 'all' scope token, false is 'this'. This is the OksQuery(bool b, ...) first constructor argument." type="bool" init-value="true"/>
+  <attribute name="status" description="C++ int p_status, surfaced by good(). Non-zero means the string failed to parse and the query must not be executed." type="s32" init-value="0"/>
+  <attribute name="query_type" description="C++ enum QueryType, the tag on every expression node." type="enum" range="unknown_type,comparator_type,relationship_type,not_type,and_type,or_type" init-value="unknown_type"/>
+  <attribute name="reserved_tokens" description="C++ static const char * members: OR=&quot;or&quot;, AND=&quot;and&quot;, NOT=&quot;not&quot;, SOME=&quot;some&quot;, THIS_CLASS=&quot;this&quot;, ALL_SUBCLASSES=&quot;all&quot;, OID=&quot;object-id&quot;, PATH_TO=&quot;path-to&quot;, DIRECT=&quot;direct&quot;, NESTED=&quot;nested&quot;. These are the only structural keywords in the grammar." type="string" is-multi-value="yes" init-value="or,and,not,some,this,all,object-id,path-to,direct,nested"/>
+  <attribute name="comparators" description="C++ static comparator function pointers: equal_cmp '=', not_equal_cmp '!=', reg_exp_cmp '~=', less_or_equal_cmp '&lt;=', greater_or_equal_cmp '&gt;=', less_cmp '&lt;', greater_cmp '&gt;'. reg_exp_cmp uses boost::regex_match, so '~=' matches the whole value." type="string" is-multi-value="yes" init-value="=,!=,~=,&lt;=,&gt;=,&lt;,&gt;"/>
+  <relationship name="Expression" description="get()/set(): the single root expression. The parser rejects a query whose first token is neither 'all' nor 'this'." class-type="OksQueryExpression" low-cc="one" high-cc="one" is-composite="yes" is-exclusive="yes" is-dependent="yes"/>
+  <method name="parse_constructor" description="Parse a query string against a class. Every attribute, relationship and enum value in the string is resolved through that class, so an unknown name fails here rather than at execution time.">
+   <method-implementation language="c++" prototype="OksQuery(const OksClass * c, const std::string&amp; query_string)" body=""/>
+  </method>
+  <method name="build_constructor" description="Build a query from an already-constructed expression tree, e.g. OksQuery q(false, new OksComparator(a, new OksData((unsigned short)200), OksQuery::greater_cmp)).">
+   <method-implementation language="c++" prototype="OksQuery(bool search_in_subclasses, OksQueryExpression * q = 0)" body=""/>
+  </method>
+  <method name="good" description="Whether the query parsed. oks_dump checks q-&gt;good() before calling execute_query and exits with code 3 when it is false.">
+   <method-implementation language="c++" prototype="bool good() const" body=""/>
+  </method>
+ </class>
+
+ <class name="OksQueryExpression" description="C++ API (include/oks/query.hpp). The abstract base of every query node. CheckSyntax() enforces the structural rules the IR validator mirrors: and/or need two or more operands, not needs exactly one, a relationship node needs a nested expression." is-abstract="yes">
+  <attribute name="type" description="C++ OksQuery::QueryType type()." type="enum" range="unknown_type,comparator_type,relationship_type,not_type,and_type,or_type" init-value="unknown_type"/>
+  <method name="CheckSyntax" description="Structural validation of the node and its children. OksClass::execute_query refuses to run when it returns false.">
+   <method-implementation language="c++" prototype="bool CheckSyntax() const" body=""/>
+  </method>
+ </class>
+
+ <class name="OksComparator" description="C++ API. The leaf node of the grammar: an attribute, a value and a comparator function. Serialises as (&quot;attr-name&quot; &quot;value&quot; op). When the attribute pointer is null the node is an object-id test and serialises as (object-id &quot;ID&quot; =).">
+  <attribute name="comparator_function" description="C++ OksQuery::Comparator: one of equal_cmp, not_equal_cmp, reg_exp_cmp, less_cmp, less_or_equal_cmp, greater_cmp, greater_or_equal_cmp." type="enum" range="equal_cmp,not_equal_cmp,reg_exp_cmp,less_cmp,less_or_equal_cmp,greater_cmp,greater_or_equal_cmp" init-value="equal_cmp"/>
+  <attribute name="is_object_id_test" description="Derived: true when GetAttribute() is null, i.e. the node compares the object id instead of an attribute." type="bool" init-value="false"/>
+  <relationship name="Base" description="Derives from OksQueryExpression with type comparator_type." class-type="OksQueryExpression" low-cc="one" high-cc="one" is-composite="no" is-exclusive="no" is-dependent="no"/>
+  <relationship name="Attribute" description="GetAttribute(): the attribute under test, or null for an object-id test." class-type="OksAttribute" low-cc="zero" high-cc="one" is-composite="no" is-exclusive="no" is-dependent="no"/>
+  <relationship name="Value" description="GetValue(): the OksData compared against. For '~=' it is held as string_type and lazily compiled into a boost::regex." class-type="OksData" low-cc="one" high-cc="one" is-composite="yes" is-exclusive="yes" is-dependent="yes"/>
+  <method name="constructor" description="Example from oks_utils/examples/comparator.cpp: OksComparator qc(&amp;a, new OksData(&quot;Peter&quot;), OksQuery::equal_cmp).">
+   <method-implementation language="c++" prototype="OksComparator(const OksAttribute * a, OksData * v, OksQuery::Comparator f)" body=""/>
+  </method>
+ </class>
+
+ <class name="OksRelationshipExpression" description="C++ API. A relationship term: follow a named relationship and evaluate the nested expression on the referenced objects. Serialises as (&quot;rel-name&quot; some &lt;expr&gt;) or (&quot;rel-name&quot; all &lt;expr&gt;). The parser types the nested expression against the relationship's target class.">
+  <attribute name="is_check_all_objects" description="C++ bool IsCheckAllObjects(). True is the 'all' quantifier (every referenced object must satisfy the nested expression); false is 'some' (at least one must)." type="bool" init-value="false"/>
+  <relationship name="Base" description="Derives from OksQueryExpression with type relationship_type." class-type="OksQueryExpression" low-cc="one" high-cc="one" is-composite="no" is-exclusive="no" is-dependent="no"/>
+  <relationship name="Relationship" description="GetRelationship(): the link that is followed." class-type="OksRelationship" low-cc="one" high-cc="one" is-composite="no" is-exclusive="no" is-dependent="no"/>
+  <relationship name="NestedExpression" description="get(): the expression evaluated on each referenced object, not on the original one." class-type="OksQueryExpression" low-cc="one" high-cc="one" is-composite="yes" is-exclusive="yes" is-dependent="yes"/>
+  <method name="constructor" description="Example from oks_utils/examples/r_expression.cpp: OksRelationshipExpression rqe(&amp;r, new OksComparator(&amp;a, new OksData(&quot;BMW&quot;), OksQuery::equal_cmp), false).">
+   <method-implementation language="c++" prototype="OksRelationshipExpression(const OksRelationship * r, OksQueryExpression * q, bool check_all_objects = false)" body=""/>
+  </method>
+ </class>
+
+ <class name="OksNotExpression" description="C++ API. Logical negation. Serialises as (not &lt;expr&gt;) and takes exactly one operand; the parser rejects any other count.">
+  <relationship name="Base" description="Derives from OksQueryExpression with type not_type." class-type="OksQueryExpression" low-cc="one" high-cc="one" is-composite="no" is-exclusive="no" is-dependent="no"/>
+  <relationship name="Operand" description="get(): the single negated expression." class-type="OksQueryExpression" low-cc="one" high-cc="one" is-composite="yes" is-exclusive="yes" is-dependent="yes"/>
+  <method name="constructor" description="Example from oks_utils/examples/not_expression.cpp: OksNotExpression ne(new OksComparator(&amp;a, new OksData((unsigned short)25), OksQuery::less_cmp)).">
+   <method-implementation language="c++" prototype="OksNotExpression(OksQueryExpression * q = 0)" body=""/>
+  </method>
+ </class>
+
+ <class name="OksListBaseQueryExpression" description="C++ API. The shared operand list behind the and/or nodes." is-abstract="yes">
+  <relationship name="Operands" description="expressions(): the operand list; add() appends." class-type="OksQueryExpression" low-cc="zero" high-cc="many" is-composite="yes" is-exclusive="yes" is-dependent="yes"/>
+ </class>
+
+ <class name="OksAndExpression" description="C++ API. Logical conjunction, serialised as (and e1 e2 ...). The parser requires two or more operands. Example from oks_utils/examples/and_expression.cpp: a closed interval 60 &lt;= weight &lt;= 90 built from a greater_or_equal_cmp and a less_or_equal_cmp on the same attribute.">
+  <relationship name="Base" description="Derives from OksQueryExpression with type and_type." class-type="OksQueryExpression" low-cc="one" high-cc="one" is-composite="no" is-exclusive="no" is-dependent="no"/>
+  <relationship name="OperandList" description="Derives from OksListBaseQueryExpression." class-type="OksListBaseQueryExpression" low-cc="one" high-cc="one" is-composite="no" is-exclusive="no" is-dependent="no"/>
+ </class>
+
+ <class name="OksOrExpression" description="C++ API. Logical disjunction, serialised as (or e1 e2 ...). The parser requires two or more operands. Example from oks_utils/examples/or_expression.cpp: tall or short, two comparators on the same float attribute.">
+  <relationship name="Base" description="Derives from OksQueryExpression with type or_type." class-type="OksQueryExpression" low-cc="one" high-cc="one" is-composite="no" is-exclusive="no" is-dependent="no"/>
+  <relationship name="OperandList" description="Derives from OksListBaseQueryExpression." class-type="OksListBaseQueryExpression" low-cc="one" high-cc="one" is-composite="no" is-exclusive="no" is-dependent="no"/>
+ </class>
+
+ <class name="QueryPath" description="C++ API (oks::QueryPath, include/oks/query.hpp). A path query: (path-to &quot;id@class&quot; &lt;path-expression&gt;). The destination is written id@class and must resolve to a loaded object; an unparseable path throws oks::bad_query_syntax. Path queries describe topology and are not attribute filters, which is why the IR used by the translator cannot express them today.">
+  <attribute name="destination" description="C++: parsed out of the quoted &quot;object-id@class-name&quot; token; the class is resolved with kernel.find_class() and the object with OksClass::get_object()." type="string" is-not-null="yes"/>
+  <relationship name="GoalObject" description="get_goal_object(): the object the path must reach." class-type="OksObject" low-cc="one" high-cc="one" is-composite="no" is-exclusive="no" is-dependent="no"/>
+  <relationship name="StartExpression" description="get_start_expression(): the first (direct ...) or (nested ...) step." class-type="QueryPathExpression" low-cc="one" high-cc="one" is-composite="yes" is-exclusive="yes" is-dependent="yes"/>
+  <method name="constructor" description="Parse a path query. Example: (path-to &quot;my-id@my-class&quot; (direct &quot;A&quot; &quot;B&quot; (nested &quot;N&quot; (direct &quot;X&quot; &quot;Y&quot; &quot;Z&quot;)))).">
+   <method-implementation language="c++" prototype="QueryPath(const std::string&amp; query, const OksKernel&amp; kernel)" body=""/>
+  </method>
+ </class>
+
+ <class name="QueryPathExpression" description="C++ API. One step of a path query: a traversal mode plus a list of quoted relationship names plus an optional next step. 'direct' follows the named relationships once; 'nested' looks through recursively nested objects. Relationship names must be quoted.">
+  <attribute name="use_nested_lookup" description="C++ bool get_use_nested_lookup(): true for the 'nested' keyword, false for 'direct'." type="bool" init-value="false"/>
+  <attribute name="rel_names" description="C++ std::list&lt;std::string&gt; get_rel_names(): the relationships followed at this step." type="string" is-multi-value="yes"/>
+  <relationship name="Next" description="get_next(): the nested step, which is what makes a path query multi-level." class-type="QueryPathExpression" low-cc="zero" high-cc="one" is-composite="yes" is-exclusive="yes" is-dependent="yes"/>
+ </class>
+
+ <class name="OksException" description="C++ API (include/oks/exceptions.hpp and query.hpp). The failure taxonomy a generated query can hit. Each value maps to a distinct repair action, which is why the error breakdown is reported per category rather than as a single pass/fail number.">
+  <attribute name="kind" description="C++ exception types thrown on the query path." type="enum" range="bad_query_syntax,BadReqExp,QueryFailed,AttributeReadError,FailedLoadFile,FailedSaveFile" init-value="bad_query_syntax"/>
+  <attribute name="oks_dump_exit_code" description="Exit status of the oks_dump validation oracle: 0 success, 1 bad command line, 2 bad OKS file, 3 bad query, 4 no such class, 5 dangling references, 6 exception caught." type="enum" range="0,1,2,3,4,5,6" init-value="0"/>
+  <attribute name="what" description="C++ const char * what()." type="string"/>
+ </class>
+
+</oks-schema>
