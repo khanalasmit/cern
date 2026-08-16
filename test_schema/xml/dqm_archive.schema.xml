@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="ASCII"?>
+
+<!-- oks-schema version 2.0 -->
+
+
+<!DOCTYPE oks-schema [
+  <!ELEMENT oks-schema (info, (include)?, (comments)?, (class)+)>
+  <!ELEMENT info EMPTY>
+  <!ATTLIST info
+      name CDATA #REQUIRED
+      type CDATA #REQUIRED
+      num-of-includes CDATA #REQUIRED
+      num-of-items CDATA #REQUIRED
+      oks-format CDATA #FIXED "schema"
+      oks-version CDATA #REQUIRED
+      created-by CDATA #REQUIRED
+      created-on CDATA #REQUIRED
+      creation-time CDATA #REQUIRED
+      last-modified-by CDATA #REQUIRED
+      last-modified-on CDATA #REQUIRED
+      last-modification-time CDATA #REQUIRED
+  >
+  <!ELEMENT include (file)+>
+  <!ELEMENT file EMPTY>
+  <!ATTLIST file
+      path CDATA #REQUIRED
+  >
+  <!ELEMENT comments (comment)+>
+  <!ELEMENT comment EMPTY>
+  <!ATTLIST comment
+      creation-time CDATA #REQUIRED
+      created-by CDATA #REQUIRED
+      created-on CDATA #REQUIRED
+      author CDATA #REQUIRED
+      text CDATA #REQUIRED
+  >
+  <!ELEMENT class (superclass | attribute | relationship | method)*>
+  <!ATTLIST class
+      name CDATA #REQUIRED
+      description CDATA ""
+      is-abstract (yes|no) "no"
+  >
+  <!ELEMENT superclass EMPTY>
+  <!ATTLIST superclass name CDATA #REQUIRED>
+  <!ELEMENT attribute EMPTY>
+  <!ATTLIST attribute
+      name CDATA #REQUIRED
+      description CDATA ""
+      type (bool|s8|u8|s16|u16|s32|u32|s64|u64|float|double|date|time|string|uid|enum|class) #REQUIRED
+      range CDATA ""
+      format (dec|hex|oct) "dec"
+      is-multi-value (yes|no) "no"
+      multi-value-implementation (list|vector) "list"
+      init-value CDATA ""
+      is-not-null (yes|no) "no"
+  >
+  <!ELEMENT relationship EMPTY>
+  <!ATTLIST relationship
+      name CDATA #REQUIRED
+      description CDATA ""
+      class-type CDATA #REQUIRED
+      low-cc (zero|one) #REQUIRED
+      high-cc (one|many) #REQUIRED
+      is-composite (yes|no) #REQUIRED
+      is-exclusive (yes|no) #REQUIRED
+      is-dependent (yes|no) #REQUIRED
+      multi-value-implementation (list|vector) "list"
+  >
+  <!ELEMENT method (method-implementation*)>
+  <!ATTLIST method
+      name CDATA #REQUIRED
+      description CDATA ""
+  >
+  <!ELEMENT method-implementation EMPTY>
+  <!ATTLIST method-implementation
+      language CDATA #REQUIRED
+      prototype CDATA #REQUIRED
+      body CDATA ""
+  >
+]>
+
+<oks-schema>
+
+<info name="" type="" num-of-includes="2" num-of-items="1" oks-format="schema" oks-version="oks-06-06-07 built &quot;Aug 13 2013&quot;" created-by="salnikov" created-on="lxplus.cern.ch" creation-time="21030930T181224" last-modified-by="salnikov" last-modified-on="lxplus0444.cern.ch" last-modification-time="20131001T043201"/>
+
+<include>
+ <file path="daq/schema/core.schema.xml"/>
+ <file path="daq/schema/coca.schema.xml"/>
+</include>
+
+
+ <class name="DQMAApplication">
+  <superclass name="RunControlApplicationBase"/>
+  <superclass name="ResourceApplication"/>
+  <attribute name="DQMConfig" description="If non-empty then read DQM configuration from given database." type="string" init-value=""/>
+  <attribute name="UpdateInterval" description="Do not store result if update happens within UpdateInterval (in seconds) since last saved result and result status and tags did not change." type="u32" init-value="600"/>
+  <attribute name="ArchiveHist" description="Enable saving of histograms." type="bool" init-value="false"/>
+  <attribute name="AddConfigHist" description="Add histograms from DQParameter configuration to the result when saving histograms, by default only histograms in the result itself are saved." type="bool" init-value="false"/>
+  <attribute name="QueueSize" description="Size of the internal result queue." type="u32" init-value="10000"/>
+  <attribute name="ISWorkerThreads" description="IS receiver worker threads count, 0 means use default value." type="u32" init-value="0"/>
+  <attribute name="ServerName" description="IS server name to read data from." type="string" init-value="DQM"/>
+  <attribute name="StorageDir" description="Directory where archive files will be stored (before sending to CoCa)." type="string" init-value="/tmp"/>
+  <attribute name="CoCaDataset" description="Dataset name in which archives will be stored in CoCa. If dataset name is not defined or empty then archives are not to be sent to CoCa." type="string"/>
+  <attribute name="CoCaPriority" description="Priority for CoCa cache management system" type="s32" init-value="1" is-not-null="yes"/>
+  <attribute name="CoCaDTC" description="Desired Time in Cache (in seconds) for CoCa cache management system" type="u32" init-value="600" is-not-null="yes"/>
+  <attribute name="CoCaPartition" description="Partition in which the CoCa server is running" type="string" init-value="initial" is-not-null="yes"/>
+  <attribute name="CheckpointMinutes" description="Checkpoint interval in minutes to flush TTrees into a file, 0 to disable" type="u32" init-value="20" is-not-null="yes"/>
+  <attribute name="MaxFileTimeIntervalSec" description="Limit on time period stored in one file in seconds, 0 for no limit" type="u32" init-value="0" is-not-null="yes"/>
+  <attribute name="MaxFileResultCount" description="Limit on number of results stored in one file, 0 for no limit" type="u32" init-value="0" is-not-null="yes"/>
+  <attribute name="FinalizeTimeoutSec" description="Timeout on finalization process in seconds, if timeout expires then transition completes but finalization continues in background (but will be killed with application). 0 means infinite timeout." type="u32" init-value="0" is-not-null="yes"/>
+  <attribute name="FileNameTemplate" description="Template for ROOT file names" type="string" init-value="dqm_results-{partition}-{run:10}-{timesec:10}.root" is-not-null="yes"/>
+  <relationship name="CoCaServer" description="CoCa server, optional, if not defined then no archiving to CoCa" class-type="CoCaServer" low-cc="zero" high-cc="one" is-composite="no" is-exclusive="no" is-dependent="no"/>
+  <relationship name="UnixProperties" class-type="UnixProperties" low-cc="one" high-cc="one" is-composite="no" is-exclusive="no" is-dependent="no"/>
+ </class>
+
+</oks-schema>

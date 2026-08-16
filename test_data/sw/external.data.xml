@@ -1,0 +1,1255 @@
+<?xml version="1.0" encoding="ASCII"?>
+
+<!-- oks-data version 2.2 -->
+
+
+<!DOCTYPE oks-data [
+  <!ELEMENT oks-data (info, (include)?, (comments)?, (obj)+)>
+  <!ELEMENT info EMPTY>
+  <!ATTLIST info
+      name CDATA #IMPLIED
+      type CDATA #IMPLIED
+      num-of-items CDATA #REQUIRED
+      oks-format CDATA #FIXED "data"
+      oks-version CDATA #REQUIRED
+      created-by CDATA #IMPLIED
+      created-on CDATA #IMPLIED
+      creation-time CDATA #IMPLIED
+      last-modified-by CDATA #IMPLIED
+      last-modified-on CDATA #IMPLIED
+      last-modification-time CDATA #IMPLIED
+  >
+  <!ELEMENT include (file)*>
+  <!ELEMENT file EMPTY>
+  <!ATTLIST file
+      path CDATA #REQUIRED
+  >
+  <!ELEMENT comments (comment)*>
+  <!ELEMENT comment EMPTY>
+  <!ATTLIST comment
+      creation-time CDATA #REQUIRED
+      created-by CDATA #REQUIRED
+      created-on CDATA #REQUIRED
+      author CDATA #REQUIRED
+      text CDATA #REQUIRED
+  >
+  <!ELEMENT obj (attr | rel)*>
+  <!ATTLIST obj
+      class CDATA #REQUIRED
+      id CDATA #REQUIRED
+  >
+  <!ELEMENT attr (data)*>
+  <!ATTLIST attr
+      name CDATA #REQUIRED
+      type (bool|s8|u8|s16|u16|s32|u32|s64|u64|float|double|date|time|string|uid|enum|class|-) "-"
+      val CDATA ""
+  >
+  <!ELEMENT data EMPTY>
+  <!ATTLIST data
+      val CDATA #REQUIRED
+  >
+  <!ELEMENT rel (ref)*>
+  <!ATTLIST rel
+      name CDATA #REQUIRED
+      class CDATA ""
+      id CDATA ""
+  >
+  <!ELEMENT ref EMPTY>
+  <!ATTLIST ref
+      class CDATA #REQUIRED
+      id CDATA #REQUIRED
+  >
+]>
+
+<oks-data>
+
+<info name="" type="" num-of-items="154" oks-format="data" oks-version="138ccef built &quot;Dec  1 2023&quot;" created-by="root" created-on="pcatdbuild06.cern.ch" creation-time="20231201T162812" last-modified-by="root" last-modified-on="pcatdbuild06.cern.ch" last-modification-time="20231201T162812"/>
+
+<include>
+ <file path="daq/schema/core.schema.xml"/>
+ <file path="daq/sw/tags.data.xml"/>
+</include>
+
+<comments>
+ <comment creation-time="20231201T162812" created-by="root" created-on="pcatdbuild06.cern.ch" author="root" text="python plug-in"/>
+</comments>
+
+
+<obj class="SW_Repository" id="ATTRS">
+ <attr name="Name" type="string" val="ATTRS"/>
+ <attr name="InstallationPath" type="string" val="${LCG_INST_PATH}/LCG_104c/attrs/21.2.0"/>
+ <rel name="Tags">
+  <ref class="Tag" id="x86_64-el9-gcc13-opt"/>
+  <ref class="Tag" id="x86_64-el9-gcc13-dbg"/>
+  <ref class="Tag" id="x86_64-centos7-gcc11-opt"/>
+  <ref class="Tag" id="x86_64-centos7-gcc11-dbg"/>
+  <ref class="Tag" id="aarch64-el9-gcc13-opt"/>
+  <ref class="Tag" id="aarch64-centos7-gcc11-opt"/>
+ </rel>
+</obj>
+
+<obj class="SW_Repository" id="AUTH_GET_SSO_COOKIE">
+ <attr name="Name" type="string" val="AUTH_GET_SSO_COOKIE"/>
+ <attr name="InstallationPath" type="string" val="${LCG_INST_PATH}/LCG_104c/auth_get_sso_cookie/2.4.0-1"/>
+ <rel name="Tags">
+  <ref class="Tag" id="x86_64-el9-gcc13-opt"/>
+  <ref class="Tag" id="x86_64-el9-gcc13-dbg"/>
+  <ref class="Tag" id="x86_64-centos7-gcc11-opt"/>
+  <ref class="Tag" id="x86_64-centos7-gcc11-dbg"/>
+  <ref class="Tag" id="aarch64-el9-gcc13-opt"/>
+  <ref class="Tag" id="aarch64-centos7-gcc11-opt"/>
+ </rel>
+</obj>
+
+<obj class="SW_Repository" id="BEAUTIFULSOUP4">
+ <attr name="Name" type="string" val="BEAUTIFULSOUP4"/>
+ <attr name="InstallationPath" type="string" val="${LCG_INST_PATH}/LCG_104c/beautifulsoup4/4.10.0"/>
+ <rel name="Tags">
+  <ref class="Tag" id="x86_64-el9-gcc13-opt"/>
+  <ref class="Tag" id="x86_64-el9-gcc13-dbg"/>
+  <ref class="Tag" id="x86_64-centos7-gcc11-opt"/>
+  <ref class="Tag" id="x86_64-centos7-gcc11-dbg"/>
+  <ref class="Tag" id="aarch64-el9-gcc13-opt"/>
+  <ref class="Tag" id="aarch64-centos7-gcc11-opt"/>
+ </rel>
+</obj>
+
+<obj class="SW_Repository" id="BLAS">
+ <attr name="Name" type="string" val="BLAS"/>
+ <attr name="InstallationPath" type="string" val="${LCG_INST_PATH}/LCG_104c/blas/0.3.20.openblas"/>
+ <rel name="Tags">
+  <ref class="Tag" id="x86_64-el9-gcc13-opt"/>
+  <ref class="Tag" id="x86_64-el9-gcc13-dbg"/>
+  <ref class="Tag" id="x86_64-centos7-gcc11-opt"/>
+  <ref class="Tag" id="x86_64-centos7-gcc11-dbg"/>
+  <ref class="Tag" id="aarch64-el9-gcc13-opt"/>
+  <ref class="Tag" id="aarch64-centos7-gcc11-opt"/>
+ </rel>
+</obj>
+
+<obj class="SW_Repository" id="CHARDET">
+ <attr name="Name" type="string" val="CHARDET"/>
+ <attr name="InstallationPath" type="string" val="${LCG_INST_PATH}/LCG_104c/chardet/3.0.4"/>
+ <rel name="Tags">
+  <ref class="Tag" id="x86_64-el9-gcc13-opt"/>
+  <ref class="Tag" id="x86_64-el9-gcc13-dbg"/>
+  <ref class="Tag" id="x86_64-centos7-gcc11-opt"/>
+  <ref class="Tag" id="x86_64-centos7-gcc11-dbg"/>
+  <ref class="Tag" id="aarch64-el9-gcc13-opt"/>
+  <ref class="Tag" id="aarch64-centos7-gcc11-opt"/>
+ </rel>
+</obj>
+
+<obj class="SW_Repository" id="CLICK">
+ <attr name="Name" type="string" val="CLICK"/>
+ <attr name="InstallationPath" type="string" val="${LCG_INST_PATH}/LCG_104c/click/8.0.3"/>
+ <rel name="Tags">
+  <ref class="Tag" id="x86_64-el9-gcc13-opt"/>
+  <ref class="Tag" id="x86_64-el9-gcc13-dbg"/>
+  <ref class="Tag" id="x86_64-centos7-gcc11-opt"/>
+  <ref class="Tag" id="x86_64-centos7-gcc11-dbg"/>
+  <ref class="Tag" id="aarch64-el9-gcc13-opt"/>
+  <ref class="Tag" id="aarch64-centos7-gcc11-opt"/>
+ </rel>
+</obj>
+
+<obj class="SW_Repository" id="CRYPTOGRAPHY">
+ <attr name="Name" type="string" val="CRYPTOGRAPHY"/>
+ <attr name="InstallationPath" type="string" val="${LCG_INST_PATH}/LCG_104c/cryptography/3.4.7"/>
+ <rel name="Tags">
+  <ref class="Tag" id="x86_64-el9-gcc13-opt"/>
+  <ref class="Tag" id="x86_64-el9-gcc13-dbg"/>
+  <ref class="Tag" id="x86_64-centos7-gcc11-opt"/>
+  <ref class="Tag" id="x86_64-centos7-gcc11-dbg"/>
+  <ref class="Tag" id="aarch64-el9-gcc13-opt"/>
+  <ref class="Tag" id="aarch64-centos7-gcc11-opt"/>
+ </rel>
+</obj>
+
+<obj class="SW_Repository" id="CX_ORACLE">
+ <attr name="Name" type="string" val="CX_ORACLE"/>
+ <attr name="InstallationPath" type="string" val="${LCG_INST_PATH}/LCG_104c/cx_oracle/8.3.0"/>
+ <rel name="Tags">
+  <ref class="Tag" id="x86_64-el9-gcc13-opt"/>
+  <ref class="Tag" id="x86_64-el9-gcc13-dbg"/>
+  <ref class="Tag" id="x86_64-centos7-gcc11-opt"/>
+  <ref class="Tag" id="x86_64-centos7-gcc11-dbg"/>
+  <ref class="Tag" id="aarch64-el9-gcc13-opt"/>
+  <ref class="Tag" id="aarch64-centos7-gcc11-opt"/>
+ </rel>
+</obj>
+
+<obj class="SW_Repository" id="CYTHON">
+ <attr name="Name" type="string" val="CYTHON"/>
+ <attr name="InstallationPath" type="string" val="${LCG_INST_PATH}/LCG_104c/cython/0.29.33"/>
+ <rel name="Tags">
+  <ref class="Tag" id="x86_64-el9-gcc13-opt"/>
+  <ref class="Tag" id="x86_64-el9-gcc13-dbg"/>
+  <ref class="Tag" id="x86_64-centos7-gcc11-opt"/>
+  <ref class="Tag" id="x86_64-centos7-gcc11-dbg"/>
+  <ref class="Tag" id="aarch64-el9-gcc13-opt"/>
+  <ref class="Tag" id="aarch64-centos7-gcc11-opt"/>
+ </rel>
+</obj>
+
+<obj class="SW_Repository" id="DECORATOR">
+ <attr name="Name" type="string" val="DECORATOR"/>
+ <attr name="InstallationPath" type="string" val="${LCG_INST_PATH}/LCG_104c/decorator/5.0.9"/>
+ <rel name="Tags">
+  <ref class="Tag" id="x86_64-el9-gcc13-opt"/>
+  <ref class="Tag" id="x86_64-el9-gcc13-dbg"/>
+  <ref class="Tag" id="x86_64-centos7-gcc11-opt"/>
+  <ref class="Tag" id="x86_64-centos7-gcc11-dbg"/>
+  <ref class="Tag" id="aarch64-el9-gcc13-opt"/>
+  <ref class="Tag" id="aarch64-centos7-gcc11-opt"/>
+ </rel>
+</obj>
+
+<obj class="SW_Repository" id="DOCOPT">
+ <attr name="Name" type="string" val="DOCOPT"/>
+ <attr name="InstallationPath" type="string" val="${LCG_INST_PATH}/LCG_104c/docopt/0.6.2"/>
+ <rel name="Tags">
+  <ref class="Tag" id="x86_64-el9-gcc13-opt"/>
+  <ref class="Tag" id="x86_64-el9-gcc13-dbg"/>
+  <ref class="Tag" id="x86_64-centos7-gcc11-opt"/>
+  <ref class="Tag" id="x86_64-centos7-gcc11-dbg"/>
+  <ref class="Tag" id="aarch64-el9-gcc13-opt"/>
+  <ref class="Tag" id="aarch64-centos7-gcc11-opt"/>
+ </rel>
+</obj>
+
+<obj class="SW_Repository" id="GIT">
+ <attr name="Name" type="string" val="GIT"/>
+ <attr name="InstallationPath" type="string" val="${LCG_INST_PATH}/LCG_104c/git/2.29.2"/>
+ <rel name="ProcessEnvironment">
+  <ref class="Variable" id="GIT_EXEC_PATH"/>
+ </rel>
+ <rel name="Tags">
+  <ref class="Tag" id="x86_64-el9-gcc13-opt"/>
+  <ref class="Tag" id="x86_64-el9-gcc13-dbg"/>
+  <ref class="Tag" id="x86_64-centos7-gcc11-opt"/>
+  <ref class="Tag" id="x86_64-centos7-gcc11-dbg"/>
+  <ref class="Tag" id="aarch64-el9-gcc13-opt"/>
+  <ref class="Tag" id="aarch64-centos7-gcc11-opt"/>
+ </rel>
+</obj>
+
+<obj class="SW_Repository" id="GSL">
+ <attr name="Name" type="string" val="GSL"/>
+ <attr name="InstallationPath" type="string" val="${LCG_INST_PATH}/LCG_104c/GSL/2.7"/>
+ <rel name="Tags">
+  <ref class="Tag" id="x86_64-el9-gcc13-opt"/>
+  <ref class="Tag" id="x86_64-el9-gcc13-dbg"/>
+  <ref class="Tag" id="x86_64-centos7-gcc11-opt"/>
+  <ref class="Tag" id="x86_64-centos7-gcc11-dbg"/>
+  <ref class="Tag" id="aarch64-el9-gcc13-opt"/>
+  <ref class="Tag" id="aarch64-centos7-gcc11-opt"/>
+ </rel>
+</obj>
+
+<obj class="SW_Repository" id="GSSAPI">
+ <attr name="Name" type="string" val="GSSAPI"/>
+ <attr name="InstallationPath" type="string" val="${LCG_INST_PATH}/LCG_104c/gssapi/1.7.3"/>
+ <rel name="Tags">
+  <ref class="Tag" id="x86_64-el9-gcc13-opt"/>
+  <ref class="Tag" id="x86_64-el9-gcc13-dbg"/>
+  <ref class="Tag" id="x86_64-centos7-gcc11-opt"/>
+  <ref class="Tag" id="x86_64-centos7-gcc11-dbg"/>
+  <ref class="Tag" id="aarch64-el9-gcc13-opt"/>
+  <ref class="Tag" id="aarch64-centos7-gcc11-opt"/>
+ </rel>
+</obj>
+
+<obj class="SW_Repository" id="JAVA">
+ <attr name="Name" type="string" val="JAVA"/>
+ <attr name="InstallationPath" type="string" val="${LCG_INST_PATH}/LCG_104c/java/8u362"/>
+ <rel name="Tags">
+  <ref class="Tag" id="x86_64-el9-gcc13-opt"/>
+  <ref class="Tag" id="x86_64-el9-gcc13-dbg"/>
+  <ref class="Tag" id="x86_64-centos7-gcc11-opt"/>
+  <ref class="Tag" id="x86_64-centos7-gcc11-dbg"/>
+  <ref class="Tag" id="aarch64-el9-gcc13-opt"/>
+  <ref class="Tag" id="aarch64-centos7-gcc11-opt"/>
+ </rel>
+</obj>
+
+<obj class="SW_Repository" id="JINJA2">
+ <attr name="Name" type="string" val="JINJA2"/>
+ <attr name="InstallationPath" type="string" val="${LCG_INST_PATH}/LCG_104c/Jinja2/3.1.2"/>
+ <rel name="Tags">
+  <ref class="Tag" id="x86_64-el9-gcc13-opt"/>
+  <ref class="Tag" id="x86_64-el9-gcc13-dbg"/>
+  <ref class="Tag" id="x86_64-centos7-gcc11-opt"/>
+  <ref class="Tag" id="x86_64-centos7-gcc11-dbg"/>
+  <ref class="Tag" id="aarch64-el9-gcc13-opt"/>
+  <ref class="Tag" id="aarch64-centos7-gcc11-opt"/>
+ </rel>
+</obj>
+
+<obj class="SW_Repository" id="LIBFFI">
+ <attr name="Name" type="string" val="LIBFFI"/>
+ <attr name="InstallationPath" type="string" val="${LCG_INST_PATH}/LCG_104c/libffi/3.4.2"/>
+ <rel name="Tags">
+  <ref class="Tag" id="x86_64-el9-gcc13-opt"/>
+  <ref class="Tag" id="x86_64-el9-gcc13-dbg"/>
+  <ref class="Tag" id="x86_64-centos7-gcc11-opt"/>
+  <ref class="Tag" id="x86_64-centos7-gcc11-dbg"/>
+  <ref class="Tag" id="aarch64-el9-gcc13-opt"/>
+  <ref class="Tag" id="aarch64-centos7-gcc11-opt"/>
+ </rel>
+</obj>
+
+<obj class="SW_Repository" id="LIBSODIUM">
+ <attr name="Name" type="string" val="LIBSODIUM"/>
+ <attr name="InstallationPath" type="string" val="${LCG_INST_PATH}/LCG_104c/libsodium/1.0.18"/>
+ <rel name="Tags">
+  <ref class="Tag" id="x86_64-el9-gcc13-opt"/>
+  <ref class="Tag" id="x86_64-el9-gcc13-dbg"/>
+  <ref class="Tag" id="x86_64-centos7-gcc11-opt"/>
+  <ref class="Tag" id="x86_64-centos7-gcc11-dbg"/>
+  <ref class="Tag" id="aarch64-el9-gcc13-opt"/>
+  <ref class="Tag" id="aarch64-centos7-gcc11-opt"/>
+ </rel>
+</obj>
+
+<obj class="SW_Repository" id="LXML">
+ <attr name="Name" type="string" val="LXML"/>
+ <attr name="InstallationPath" type="string" val="${LCG_INST_PATH}/LCG_104c/lxml/4.6.2"/>
+ <rel name="Tags">
+  <ref class="Tag" id="x86_64-el9-gcc13-opt"/>
+  <ref class="Tag" id="x86_64-el9-gcc13-dbg"/>
+  <ref class="Tag" id="x86_64-centos7-gcc11-opt"/>
+  <ref class="Tag" id="x86_64-centos7-gcc11-dbg"/>
+  <ref class="Tag" id="aarch64-el9-gcc13-opt"/>
+  <ref class="Tag" id="aarch64-centos7-gcc11-opt"/>
+ </rel>
+</obj>
+
+<obj class="SW_Repository" id="LZ4">
+ <attr name="Name" type="string" val="LZ4"/>
+ <attr name="InstallationPath" type="string" val="${LCG_INST_PATH}/LCG_104c/lz4/0.0.0"/>
+ <rel name="Tags">
+  <ref class="Tag" id="x86_64-el9-gcc13-opt"/>
+  <ref class="Tag" id="x86_64-el9-gcc13-dbg"/>
+  <ref class="Tag" id="x86_64-centos7-gcc11-opt"/>
+  <ref class="Tag" id="x86_64-centos7-gcc11-dbg"/>
+  <ref class="Tag" id="aarch64-el9-gcc13-opt"/>
+  <ref class="Tag" id="aarch64-centos7-gcc11-opt"/>
+ </rel>
+</obj>
+
+<obj class="SW_Repository" id="MATPLOTLIB">
+ <attr name="Name" type="string" val="MATPLOTLIB"/>
+ <attr name="InstallationPath" type="string" val="${LCG_INST_PATH}/LCG_104c/matplotlib/3.7.1"/>
+ <rel name="Tags">
+  <ref class="Tag" id="x86_64-el9-gcc13-opt"/>
+  <ref class="Tag" id="x86_64-el9-gcc13-dbg"/>
+  <ref class="Tag" id="x86_64-centos7-gcc11-opt"/>
+  <ref class="Tag" id="x86_64-centos7-gcc11-dbg"/>
+  <ref class="Tag" id="aarch64-el9-gcc13-opt"/>
+  <ref class="Tag" id="aarch64-centos7-gcc11-opt"/>
+ </rel>
+</obj>
+
+<obj class="SW_Repository" id="MYSQL">
+ <attr name="Name" type="string" val="MYSQL"/>
+ <attr name="InstallationPath" type="string" val="${LCG_INST_PATH}/LCG_104c/mysql/10.5.20"/>
+ <rel name="Tags">
+  <ref class="Tag" id="x86_64-el9-gcc13-opt"/>
+  <ref class="Tag" id="x86_64-el9-gcc13-dbg"/>
+  <ref class="Tag" id="x86_64-centos7-gcc11-opt"/>
+  <ref class="Tag" id="x86_64-centos7-gcc11-dbg"/>
+  <ref class="Tag" id="aarch64-el9-gcc13-opt"/>
+  <ref class="Tag" id="aarch64-centos7-gcc11-opt"/>
+ </rel>
+</obj>
+
+<obj class="SW_Repository" id="NUMPY">
+ <attr name="Name" type="string" val="NUMPY"/>
+ <attr name="InstallationPath" type="string" val="${LCG_INST_PATH}/LCG_104c/numpy/1.23.5"/>
+ <rel name="Tags">
+  <ref class="Tag" id="x86_64-el9-gcc13-opt"/>
+  <ref class="Tag" id="x86_64-el9-gcc13-dbg"/>
+  <ref class="Tag" id="x86_64-centos7-gcc11-opt"/>
+  <ref class="Tag" id="x86_64-centos7-gcc11-dbg"/>
+  <ref class="Tag" id="aarch64-el9-gcc13-opt"/>
+  <ref class="Tag" id="aarch64-centos7-gcc11-opt"/>
+ </rel>
+</obj>
+
+<obj class="SW_Repository" id="ORACLE">
+ <attr name="Name" type="string" val="ORACLE"/>
+ <attr name="InstallationPath" type="string" val="${LCG_INST_PATH}/LCG_104c/oracle/19.19.0.0.0"/>
+ <rel name="Tags">
+  <ref class="Tag" id="x86_64-el9-gcc13-opt"/>
+  <ref class="Tag" id="x86_64-el9-gcc13-dbg"/>
+  <ref class="Tag" id="x86_64-centos7-gcc11-opt"/>
+  <ref class="Tag" id="x86_64-centos7-gcc11-dbg"/>
+  <ref class="Tag" id="aarch64-el9-gcc13-opt"/>
+  <ref class="Tag" id="aarch64-centos7-gcc11-opt"/>
+ </rel>
+</obj>
+
+<obj class="SW_Repository" id="PANDAS">
+ <attr name="Name" type="string" val="PANDAS"/>
+ <attr name="InstallationPath" type="string" val="${LCG_INST_PATH}/LCG_104c/pandas/1.5.3"/>
+ <rel name="Tags">
+  <ref class="Tag" id="x86_64-el9-gcc13-opt"/>
+  <ref class="Tag" id="x86_64-el9-gcc13-dbg"/>
+  <ref class="Tag" id="x86_64-centos7-gcc11-opt"/>
+  <ref class="Tag" id="x86_64-centos7-gcc11-dbg"/>
+  <ref class="Tag" id="aarch64-el9-gcc13-opt"/>
+  <ref class="Tag" id="aarch64-centos7-gcc11-opt"/>
+ </rel>
+</obj>
+
+<obj class="SW_Repository" id="PCRE">
+ <attr name="Name" type="string" val="PCRE"/>
+ <attr name="InstallationPath" type="string" val="${LCG_INST_PATH}/LCG_104c/pcre/8.43"/>
+ <rel name="Tags">
+  <ref class="Tag" id="x86_64-el9-gcc13-opt"/>
+  <ref class="Tag" id="x86_64-el9-gcc13-dbg"/>
+  <ref class="Tag" id="x86_64-centos7-gcc11-opt"/>
+  <ref class="Tag" id="x86_64-centos7-gcc11-dbg"/>
+  <ref class="Tag" id="aarch64-el9-gcc13-opt"/>
+  <ref class="Tag" id="aarch64-centos7-gcc11-opt"/>
+ </rel>
+</obj>
+
+<obj class="SW_Repository" id="PNG">
+ <attr name="Name" type="string" val="PNG"/>
+ <attr name="InstallationPath" type="string" val="${LCG_INST_PATH}/LCG_104c/png/1.6.37"/>
+ <rel name="Tags">
+  <ref class="Tag" id="x86_64-el9-gcc13-opt"/>
+  <ref class="Tag" id="x86_64-el9-gcc13-dbg"/>
+  <ref class="Tag" id="x86_64-centos7-gcc11-opt"/>
+  <ref class="Tag" id="x86_64-centos7-gcc11-dbg"/>
+  <ref class="Tag" id="aarch64-el9-gcc13-opt"/>
+  <ref class="Tag" id="aarch64-centos7-gcc11-opt"/>
+ </rel>
+</obj>
+
+<obj class="SW_Repository" id="PROTOBUF">
+ <attr name="Name" type="string" val="PROTOBUF"/>
+ <attr name="InstallationPath" type="string" val="${LCG_INST_PATH}/LCG_104c/protobuf/3.20.3"/>
+ <rel name="Tags">
+  <ref class="Tag" id="x86_64-el9-gcc13-opt"/>
+  <ref class="Tag" id="x86_64-el9-gcc13-dbg"/>
+  <ref class="Tag" id="x86_64-centos7-gcc11-opt"/>
+  <ref class="Tag" id="x86_64-centos7-gcc11-dbg"/>
+  <ref class="Tag" id="aarch64-el9-gcc13-opt"/>
+  <ref class="Tag" id="aarch64-centos7-gcc11-opt"/>
+ </rel>
+</obj>
+
+<obj class="SW_Repository" id="PSUTIL">
+ <attr name="Name" type="string" val="PSUTIL"/>
+ <attr name="InstallationPath" type="string" val="${LCG_INST_PATH}/LCG_104c/psutil/5.8.0"/>
+ <rel name="Tags">
+  <ref class="Tag" id="x86_64-el9-gcc13-opt"/>
+  <ref class="Tag" id="x86_64-el9-gcc13-dbg"/>
+  <ref class="Tag" id="x86_64-centos7-gcc11-opt"/>
+  <ref class="Tag" id="x86_64-centos7-gcc11-dbg"/>
+  <ref class="Tag" id="aarch64-el9-gcc13-opt"/>
+  <ref class="Tag" id="aarch64-centos7-gcc11-opt"/>
+ </rel>
+</obj>
+
+<obj class="SW_Repository" id="PYASN1">
+ <attr name="Name" type="string" val="PYASN1"/>
+ <attr name="InstallationPath" type="string" val="${LCG_INST_PATH}/LCG_104c/pyasn1/0.4.5"/>
+ <rel name="Tags">
+  <ref class="Tag" id="x86_64-el9-gcc13-opt"/>
+  <ref class="Tag" id="x86_64-el9-gcc13-dbg"/>
+  <ref class="Tag" id="x86_64-centos7-gcc11-opt"/>
+  <ref class="Tag" id="x86_64-centos7-gcc11-dbg"/>
+  <ref class="Tag" id="aarch64-el9-gcc13-opt"/>
+  <ref class="Tag" id="aarch64-centos7-gcc11-opt"/>
+ </rel>
+</obj>
+
+<obj class="SW_Repository" id="PYASN1_MODULES">
+ <attr name="Name" type="string" val="PYASN1_MODULES"/>
+ <attr name="InstallationPath" type="string" val="${LCG_INST_PATH}/LCG_104c/pyasn1_modules/0.2.5"/>
+ <rel name="Tags">
+  <ref class="Tag" id="x86_64-el9-gcc13-opt"/>
+  <ref class="Tag" id="x86_64-el9-gcc13-dbg"/>
+  <ref class="Tag" id="x86_64-centos7-gcc11-opt"/>
+  <ref class="Tag" id="x86_64-centos7-gcc11-dbg"/>
+  <ref class="Tag" id="aarch64-el9-gcc13-opt"/>
+  <ref class="Tag" id="aarch64-centos7-gcc11-opt"/>
+ </rel>
+</obj>
+
+<obj class="SW_Repository" id="PYJWT">
+ <attr name="Name" type="string" val="PYJWT"/>
+ <attr name="InstallationPath" type="string" val="${LCG_INST_PATH}/LCG_104c/PyJWT/2.0.1"/>
+ <rel name="Tags">
+  <ref class="Tag" id="x86_64-el9-gcc13-opt"/>
+  <ref class="Tag" id="x86_64-el9-gcc13-dbg"/>
+  <ref class="Tag" id="x86_64-centos7-gcc11-opt"/>
+  <ref class="Tag" id="x86_64-centos7-gcc11-dbg"/>
+  <ref class="Tag" id="aarch64-el9-gcc13-opt"/>
+  <ref class="Tag" id="aarch64-centos7-gcc11-opt"/>
+ </rel>
+</obj>
+
+<obj class="SW_Repository" id="PYQT5">
+ <attr name="Name" type="string" val="PYQT5"/>
+ <attr name="InstallationPath" type="string" val="${LCG_INST_PATH}/LCG_104c/pyqt5/5.12.3"/>
+ <rel name="Tags">
+  <ref class="Tag" id="x86_64-el9-gcc13-opt"/>
+  <ref class="Tag" id="x86_64-el9-gcc13-dbg"/>
+  <ref class="Tag" id="x86_64-centos7-gcc11-opt"/>
+  <ref class="Tag" id="x86_64-centos7-gcc11-dbg"/>
+  <ref class="Tag" id="aarch64-el9-gcc13-opt"/>
+  <ref class="Tag" id="aarch64-centos7-gcc11-opt"/>
+ </rel>
+</obj>
+
+<obj class="SW_Repository" id="PYTHON_DATEUTIL">
+ <attr name="Name" type="string" val="PYTHON_DATEUTIL"/>
+ <attr name="InstallationPath" type="string" val="${LCG_INST_PATH}/LCG_104c/python_dateutil/2.8.2"/>
+ <rel name="Tags">
+  <ref class="Tag" id="x86_64-el9-gcc13-opt"/>
+  <ref class="Tag" id="x86_64-el9-gcc13-dbg"/>
+  <ref class="Tag" id="x86_64-centos7-gcc11-opt"/>
+  <ref class="Tag" id="x86_64-centos7-gcc11-dbg"/>
+  <ref class="Tag" id="aarch64-el9-gcc13-opt"/>
+  <ref class="Tag" id="aarch64-centos7-gcc11-opt"/>
+ </rel>
+</obj>
+
+<obj class="SW_Repository" id="PYTZ">
+ <attr name="Name" type="string" val="PYTZ"/>
+ <attr name="InstallationPath" type="string" val="${LCG_INST_PATH}/LCG_104c/pytz/2022.7.1"/>
+ <rel name="Tags">
+  <ref class="Tag" id="x86_64-el9-gcc13-opt"/>
+  <ref class="Tag" id="x86_64-el9-gcc13-dbg"/>
+  <ref class="Tag" id="x86_64-centos7-gcc11-opt"/>
+  <ref class="Tag" id="x86_64-centos7-gcc11-dbg"/>
+  <ref class="Tag" id="aarch64-el9-gcc13-opt"/>
+  <ref class="Tag" id="aarch64-centos7-gcc11-opt"/>
+ </rel>
+</obj>
+
+<obj class="SW_Repository" id="PYYAML">
+ <attr name="Name" type="string" val="PYYAML"/>
+ <attr name="InstallationPath" type="string" val="${LCG_INST_PATH}/LCG_104c/PyYAML/6.0"/>
+ <rel name="Tags">
+  <ref class="Tag" id="x86_64-el9-gcc13-opt"/>
+  <ref class="Tag" id="x86_64-el9-gcc13-dbg"/>
+  <ref class="Tag" id="x86_64-centos7-gcc11-opt"/>
+  <ref class="Tag" id="x86_64-centos7-gcc11-dbg"/>
+  <ref class="Tag" id="aarch64-el9-gcc13-opt"/>
+  <ref class="Tag" id="aarch64-centos7-gcc11-opt"/>
+ </rel>
+</obj>
+
+<obj class="SW_Repository" id="QT5">
+ <attr name="Name" type="string" val="QT5"/>
+ <attr name="InstallationPath" type="string" val="${LCG_INST_PATH}/LCG_104c/Qt5/5.15.9"/>
+ <rel name="Tags">
+  <ref class="Tag" id="x86_64-el9-gcc13-opt"/>
+  <ref class="Tag" id="x86_64-el9-gcc13-dbg"/>
+  <ref class="Tag" id="x86_64-centos7-gcc11-opt"/>
+  <ref class="Tag" id="x86_64-centos7-gcc11-dbg"/>
+  <ref class="Tag" id="aarch64-el9-gcc13-opt"/>
+  <ref class="Tag" id="aarch64-centos7-gcc11-opt"/>
+ </rel>
+</obj>
+
+<obj class="SW_Repository" id="REQUESTS">
+ <attr name="Name" type="string" val="REQUESTS"/>
+ <attr name="InstallationPath" type="string" val="${LCG_INST_PATH}/LCG_104c/requests/2.27.1"/>
+ <rel name="Tags">
+  <ref class="Tag" id="x86_64-el9-gcc13-opt"/>
+  <ref class="Tag" id="x86_64-el9-gcc13-dbg"/>
+  <ref class="Tag" id="x86_64-centos7-gcc11-opt"/>
+  <ref class="Tag" id="x86_64-centos7-gcc11-dbg"/>
+  <ref class="Tag" id="aarch64-el9-gcc13-opt"/>
+  <ref class="Tag" id="aarch64-centos7-gcc11-opt"/>
+ </rel>
+</obj>
+
+<obj class="SW_Repository" id="SCIPY">
+ <attr name="Name" type="string" val="SCIPY"/>
+ <attr name="InstallationPath" type="string" val="${LCG_INST_PATH}/LCG_104c/scipy/1.10.1"/>
+ <rel name="Tags">
+  <ref class="Tag" id="x86_64-el9-gcc13-opt"/>
+  <ref class="Tag" id="x86_64-el9-gcc13-dbg"/>
+  <ref class="Tag" id="x86_64-centos7-gcc11-opt"/>
+  <ref class="Tag" id="x86_64-centos7-gcc11-dbg"/>
+  <ref class="Tag" id="aarch64-el9-gcc13-opt"/>
+  <ref class="Tag" id="aarch64-centos7-gcc11-opt"/>
+ </rel>
+</obj>
+
+<obj class="SW_Repository" id="SIX">
+ <attr name="Name" type="string" val="SIX"/>
+ <attr name="InstallationPath" type="string" val="${LCG_INST_PATH}/LCG_104c/six/1.16.0"/>
+ <rel name="Tags">
+  <ref class="Tag" id="x86_64-el9-gcc13-opt"/>
+  <ref class="Tag" id="x86_64-el9-gcc13-dbg"/>
+  <ref class="Tag" id="x86_64-centos7-gcc11-opt"/>
+  <ref class="Tag" id="x86_64-centos7-gcc11-dbg"/>
+  <ref class="Tag" id="aarch64-el9-gcc13-opt"/>
+  <ref class="Tag" id="aarch64-centos7-gcc11-opt"/>
+ </rel>
+</obj>
+
+<obj class="SW_Repository" id="SQLITE">
+ <attr name="Name" type="string" val="SQLITE"/>
+ <attr name="InstallationPath" type="string" val="${LCG_INST_PATH}/LCG_104c/sqlite/3320300"/>
+ <rel name="Tags">
+  <ref class="Tag" id="x86_64-el9-gcc13-opt"/>
+  <ref class="Tag" id="x86_64-el9-gcc13-dbg"/>
+  <ref class="Tag" id="x86_64-centos7-gcc11-opt"/>
+  <ref class="Tag" id="x86_64-centos7-gcc11-dbg"/>
+  <ref class="Tag" id="aarch64-el9-gcc13-opt"/>
+  <ref class="Tag" id="aarch64-centos7-gcc11-opt"/>
+ </rel>
+</obj>
+
+<obj class="SW_Repository" id="TBB">
+ <attr name="Name" type="string" val="TBB"/>
+ <attr name="InstallationPath" type="string" val="${LCG_INST_PATH}/LCG_104c/tbb/2020_U2"/>
+ <rel name="Tags">
+  <ref class="Tag" id="x86_64-el9-gcc13-opt"/>
+  <ref class="Tag" id="x86_64-el9-gcc13-dbg"/>
+  <ref class="Tag" id="x86_64-centos7-gcc11-opt"/>
+  <ref class="Tag" id="x86_64-centos7-gcc11-dbg"/>
+  <ref class="Tag" id="aarch64-el9-gcc13-opt"/>
+  <ref class="Tag" id="aarch64-centos7-gcc11-opt"/>
+ </rel>
+</obj>
+
+<obj class="SW_Repository" id="TDAQExternal">
+ <attr name="Name" type="string" val="TDAQExternal"/>
+ <attr name="InstallationPath" type="string" val="/sw/atlas/tdaq/tdaq-11-02-00/installed/external"/>
+ <rel name="Tags">
+  <ref class="Tag" id="x86_64-el9-gcc13-opt"/>
+  <ref class="Tag" id="x86_64-el9-gcc13-dbg"/>
+  <ref class="Tag" id="x86_64-centos7-gcc11-opt"/>
+  <ref class="Tag" id="x86_64-centos7-gcc11-dbg"/>
+  <ref class="Tag" id="aarch64-el9-gcc13-opt"/>
+  <ref class="Tag" id="aarch64-centos7-gcc11-opt"/>
+ </rel>
+</obj>
+
+<obj class="SW_Repository" id="TYPING_EXTENSIONS">
+ <attr name="Name" type="string" val="TYPING_EXTENSIONS"/>
+ <attr name="InstallationPath" type="string" val="${LCG_INST_PATH}/LCG_104c/typing_extensions/4.5.0"/>
+ <rel name="Tags">
+  <ref class="Tag" id="x86_64-el9-gcc13-opt"/>
+  <ref class="Tag" id="x86_64-el9-gcc13-dbg"/>
+  <ref class="Tag" id="x86_64-centos7-gcc11-opt"/>
+  <ref class="Tag" id="x86_64-centos7-gcc11-dbg"/>
+  <ref class="Tag" id="aarch64-el9-gcc13-opt"/>
+  <ref class="Tag" id="aarch64-centos7-gcc11-opt"/>
+ </rel>
+</obj>
+
+<obj class="SW_Repository" id="URLLIB3">
+ <attr name="Name" type="string" val="URLLIB3"/>
+ <attr name="InstallationPath" type="string" val="${LCG_INST_PATH}/LCG_104c/urllib3/1.26.16"/>
+ <rel name="Tags">
+  <ref class="Tag" id="x86_64-el9-gcc13-opt"/>
+  <ref class="Tag" id="x86_64-el9-gcc13-dbg"/>
+  <ref class="Tag" id="x86_64-centos7-gcc11-opt"/>
+  <ref class="Tag" id="x86_64-centos7-gcc11-dbg"/>
+  <ref class="Tag" id="aarch64-el9-gcc13-opt"/>
+  <ref class="Tag" id="aarch64-centos7-gcc11-opt"/>
+ </rel>
+</obj>
+
+<obj class="SW_Repository" id="XERCESC">
+ <attr name="Name" type="string" val="XERCESC"/>
+ <attr name="InstallationPath" type="string" val="${LCG_INST_PATH}/LCG_104c/XercesC/3.2.4"/>
+ <rel name="Tags">
+  <ref class="Tag" id="x86_64-el9-gcc13-opt"/>
+  <ref class="Tag" id="x86_64-el9-gcc13-dbg"/>
+  <ref class="Tag" id="x86_64-centos7-gcc11-opt"/>
+  <ref class="Tag" id="x86_64-centos7-gcc11-dbg"/>
+  <ref class="Tag" id="aarch64-el9-gcc13-opt"/>
+  <ref class="Tag" id="aarch64-centos7-gcc11-opt"/>
+ </rel>
+</obj>
+
+<obj class="SW_Repository" id="ZEROMQ">
+ <attr name="Name" type="string" val="ZEROMQ"/>
+ <attr name="InstallationPath" type="string" val="${LCG_INST_PATH}/LCG_104c/zeromq/4.3.4p1"/>
+ <rel name="Tags">
+  <ref class="Tag" id="x86_64-el9-gcc13-opt"/>
+  <ref class="Tag" id="x86_64-el9-gcc13-dbg"/>
+  <ref class="Tag" id="x86_64-centos7-gcc11-opt"/>
+  <ref class="Tag" id="x86_64-centos7-gcc11-dbg"/>
+  <ref class="Tag" id="aarch64-el9-gcc13-opt"/>
+  <ref class="Tag" id="aarch64-centos7-gcc11-opt"/>
+ </rel>
+</obj>
+
+<obj class="TagMapping" id="GIT_EXEC_PATH-for-aarch64-centos7-gcc11-opt">
+ <attr name="HW_Tag" type="enum" val="aarch64-centos7"/>
+ <attr name="SW_Tag" type="enum" val="gcc11-opt"/>
+ <attr name="Value" type="string" val="${LCG_INST_PATH}/LCG_104c/git/2.29.2/aarch64-centos7-gcc11-opt/libexec/git-core"/>
+</obj>
+
+<obj class="TagMapping" id="GIT_EXEC_PATH-for-aarch64-el9-gcc13-opt">
+ <attr name="HW_Tag" type="enum" val="aarch64-el9"/>
+ <attr name="SW_Tag" type="enum" val="gcc13-opt"/>
+ <attr name="Value" type="string" val="${LCG_INST_PATH}/LCG_104c/git/2.29.2/aarch64-el9-gcc13-opt/libexec/git-core"/>
+</obj>
+
+<obj class="TagMapping" id="GIT_EXEC_PATH-for-x86_64-centos7-gcc11-dbg">
+ <attr name="HW_Tag" type="enum" val="x86_64-centos7"/>
+ <attr name="SW_Tag" type="enum" val="gcc11-dbg"/>
+ <attr name="Value" type="string" val="${LCG_INST_PATH}/LCG_104c/git/2.29.2/x86_64-centos7-gcc11-dbg/libexec/git-core"/>
+</obj>
+
+<obj class="TagMapping" id="GIT_EXEC_PATH-for-x86_64-centos7-gcc11-opt">
+ <attr name="HW_Tag" type="enum" val="x86_64-centos7"/>
+ <attr name="SW_Tag" type="enum" val="gcc11-opt"/>
+ <attr name="Value" type="string" val="${LCG_INST_PATH}/LCG_104c/git/2.29.2/x86_64-centos7-gcc11-opt/libexec/git-core"/>
+</obj>
+
+<obj class="TagMapping" id="GIT_EXEC_PATH-for-x86_64-el9-gcc13-dbg">
+ <attr name="HW_Tag" type="enum" val="x86_64-el9"/>
+ <attr name="SW_Tag" type="enum" val="gcc13-dbg"/>
+ <attr name="Value" type="string" val="${LCG_INST_PATH}/LCG_104c/git/2.29.2/x86_64-el9-gcc13-dbg/libexec/git-core"/>
+</obj>
+
+<obj class="TagMapping" id="GIT_EXEC_PATH-for-x86_64-el9-gcc13-opt">
+ <attr name="HW_Tag" type="enum" val="x86_64-el9"/>
+ <attr name="SW_Tag" type="enum" val="gcc13-opt"/>
+ <attr name="Value" type="string" val="${LCG_INST_PATH}/LCG_104c/git/2.29.2/x86_64-el9-gcc13-opt/libexec/git-core"/>
+</obj>
+
+<obj class="TagMapping" id="TDAQ_JAVA_HOME-for-aarch64-centos7-gcc11-opt">
+ <attr name="HW_Tag" type="enum" val="aarch64-centos7"/>
+ <attr name="SW_Tag" type="enum" val="gcc11-opt"/>
+ <attr name="Value" type="string" val="${LCG_INST_PATH}/LCG_104c/java/8u362/aarch64-centos7-gcc11-opt/jre"/>
+</obj>
+
+<obj class="TagMapping" id="TDAQ_JAVA_HOME-for-aarch64-el9-gcc13-opt">
+ <attr name="HW_Tag" type="enum" val="aarch64-el9"/>
+ <attr name="SW_Tag" type="enum" val="gcc13-opt"/>
+ <attr name="Value" type="string" val="${LCG_INST_PATH}/LCG_104c/java/8u362/aarch64-el9-gcc13-opt/jre"/>
+</obj>
+
+<obj class="TagMapping" id="TDAQ_JAVA_HOME-for-x86_64-centos7-gcc11-dbg">
+ <attr name="HW_Tag" type="enum" val="x86_64-centos7"/>
+ <attr name="SW_Tag" type="enum" val="gcc11-dbg"/>
+ <attr name="Value" type="string" val="${LCG_INST_PATH}/LCG_104c/java/8u362/x86_64-centos7-gcc11-dbg/jre"/>
+</obj>
+
+<obj class="TagMapping" id="TDAQ_JAVA_HOME-for-x86_64-centos7-gcc11-opt">
+ <attr name="HW_Tag" type="enum" val="x86_64-centos7"/>
+ <attr name="SW_Tag" type="enum" val="gcc11-opt"/>
+ <attr name="Value" type="string" val="${LCG_INST_PATH}/LCG_104c/java/8u362/x86_64-centos7-gcc11-opt/jre"/>
+</obj>
+
+<obj class="TagMapping" id="TDAQ_JAVA_HOME-for-x86_64-el9-gcc13-dbg">
+ <attr name="HW_Tag" type="enum" val="x86_64-el9"/>
+ <attr name="SW_Tag" type="enum" val="gcc13-dbg"/>
+ <attr name="Value" type="string" val="${LCG_INST_PATH}/LCG_104c/java/8u362/x86_64-el9-gcc13-dbg/jre"/>
+</obj>
+
+<obj class="TagMapping" id="TDAQ_JAVA_HOME-for-x86_64-el9-gcc13-opt">
+ <attr name="HW_Tag" type="enum" val="x86_64-el9"/>
+ <attr name="SW_Tag" type="enum" val="gcc13-opt"/>
+ <attr name="Value" type="string" val="${LCG_INST_PATH}/LCG_104c/java/8u362/x86_64-el9-gcc13-opt/jre"/>
+</obj>
+
+<obj class="Variable" id="ATTRS_HOME">
+ <attr name="Name" type="string" val="ATTRS_HOME"/>
+ <attr name="Value" type="string" val="${LCG_INST_PATH}/LCG_104c/attrs/21.2.0"/>
+</obj>
+
+<obj class="Variable" id="ATTRS_VERSION">
+ <attr name="Name" type="string" val="ATTRS_VERSION"/>
+ <attr name="Value" type="string" val="21.2.0"/>
+</obj>
+
+<obj class="Variable" id="AUTH_GET_SSO_COOKIE_HOME">
+ <attr name="Name" type="string" val="AUTH_GET_SSO_COOKIE_HOME"/>
+ <attr name="Value" type="string" val="${LCG_INST_PATH}/LCG_104c/auth_get_sso_cookie/2.4.0-1"/>
+</obj>
+
+<obj class="Variable" id="AUTH_GET_SSO_COOKIE_VERSION">
+ <attr name="Name" type="string" val="AUTH_GET_SSO_COOKIE_VERSION"/>
+ <attr name="Value" type="string" val="2.4.0-1"/>
+</obj>
+
+<obj class="Variable" id="BEAUTIFULSOUP4_HOME">
+ <attr name="Name" type="string" val="BEAUTIFULSOUP4_HOME"/>
+ <attr name="Value" type="string" val="${LCG_INST_PATH}/LCG_104c/beautifulsoup4/4.10.0"/>
+</obj>
+
+<obj class="Variable" id="BEAUTIFULSOUP4_VERSION">
+ <attr name="Name" type="string" val="BEAUTIFULSOUP4_VERSION"/>
+ <attr name="Value" type="string" val="4.10.0"/>
+</obj>
+
+<obj class="Variable" id="BLAS_HOME">
+ <attr name="Name" type="string" val="BLAS_HOME"/>
+ <attr name="Value" type="string" val="${LCG_INST_PATH}/LCG_104c/blas/0.3.20.openblas"/>
+</obj>
+
+<obj class="Variable" id="BLAS_VERSION">
+ <attr name="Name" type="string" val="BLAS_VERSION"/>
+ <attr name="Value" type="string" val="0.3.20.openblas"/>
+</obj>
+
+<obj class="Variable" id="CHARDET_HOME">
+ <attr name="Name" type="string" val="CHARDET_HOME"/>
+ <attr name="Value" type="string" val="${LCG_INST_PATH}/LCG_104c/chardet/3.0.4"/>
+</obj>
+
+<obj class="Variable" id="CHARDET_VERSION">
+ <attr name="Name" type="string" val="CHARDET_VERSION"/>
+ <attr name="Value" type="string" val="3.0.4"/>
+</obj>
+
+<obj class="Variable" id="CLICK_HOME">
+ <attr name="Name" type="string" val="CLICK_HOME"/>
+ <attr name="Value" type="string" val="${LCG_INST_PATH}/LCG_104c/click/8.0.3"/>
+</obj>
+
+<obj class="Variable" id="CLICK_VERSION">
+ <attr name="Name" type="string" val="CLICK_VERSION"/>
+ <attr name="Value" type="string" val="8.0.3"/>
+</obj>
+
+<obj class="Variable" id="CRYPTOGRAPHY_HOME">
+ <attr name="Name" type="string" val="CRYPTOGRAPHY_HOME"/>
+ <attr name="Value" type="string" val="${LCG_INST_PATH}/LCG_104c/cryptography/3.4.7"/>
+</obj>
+
+<obj class="Variable" id="CRYPTOGRAPHY_VERSION">
+ <attr name="Name" type="string" val="CRYPTOGRAPHY_VERSION"/>
+ <attr name="Value" type="string" val="3.4.7"/>
+</obj>
+
+<obj class="Variable" id="CX_ORACLE_HOME">
+ <attr name="Name" type="string" val="CX_ORACLE_HOME"/>
+ <attr name="Value" type="string" val="${LCG_INST_PATH}/LCG_104c/cx_oracle/8.3.0"/>
+</obj>
+
+<obj class="Variable" id="CX_ORACLE_VERSION">
+ <attr name="Name" type="string" val="CX_ORACLE_VERSION"/>
+ <attr name="Value" type="string" val="8.3.0"/>
+</obj>
+
+<obj class="Variable" id="CYTHON_HOME">
+ <attr name="Name" type="string" val="CYTHON_HOME"/>
+ <attr name="Value" type="string" val="${LCG_INST_PATH}/LCG_104c/cython/0.29.33"/>
+</obj>
+
+<obj class="Variable" id="CYTHON_VERSION">
+ <attr name="Name" type="string" val="CYTHON_VERSION"/>
+ <attr name="Value" type="string" val="0.29.33"/>
+</obj>
+
+<obj class="Variable" id="DECORATOR_HOME">
+ <attr name="Name" type="string" val="DECORATOR_HOME"/>
+ <attr name="Value" type="string" val="${LCG_INST_PATH}/LCG_104c/decorator/5.0.9"/>
+</obj>
+
+<obj class="Variable" id="DECORATOR_VERSION">
+ <attr name="Name" type="string" val="DECORATOR_VERSION"/>
+ <attr name="Value" type="string" val="5.0.9"/>
+</obj>
+
+<obj class="Variable" id="DOCOPT_HOME">
+ <attr name="Name" type="string" val="DOCOPT_HOME"/>
+ <attr name="Value" type="string" val="${LCG_INST_PATH}/LCG_104c/docopt/0.6.2"/>
+</obj>
+
+<obj class="Variable" id="DOCOPT_VERSION">
+ <attr name="Name" type="string" val="DOCOPT_VERSION"/>
+ <attr name="Value" type="string" val="0.6.2"/>
+</obj>
+
+<obj class="Variable" id="GIT_EXEC_PATH">
+ <attr name="Name" type="string" val="GIT_EXEC_PATH"/>
+ <attr name="Value" type="string" val="${LCG_INST_PATH}/git/2.29.2/x86_64-el9-gcc13-opt/libexec/git-core"/>
+ <rel name="TagValues">
+  <ref class="TagMapping" id="GIT_EXEC_PATH-for-x86_64-centos7-gcc11-opt"/>
+  <ref class="TagMapping" id="GIT_EXEC_PATH-for-x86_64-centos7-gcc11-dbg"/>
+  <ref class="TagMapping" id="GIT_EXEC_PATH-for-x86_64-el9-gcc13-opt"/>
+  <ref class="TagMapping" id="GIT_EXEC_PATH-for-x86_64-el9-gcc13-dbg"/>
+  <ref class="TagMapping" id="GIT_EXEC_PATH-for-aarch64-centos7-gcc11-opt"/>
+  <ref class="TagMapping" id="GIT_EXEC_PATH-for-aarch64-el9-gcc13-opt"/>
+ </rel>
+</obj>
+
+<obj class="Variable" id="GIT_HOME">
+ <attr name="Name" type="string" val="GIT_HOME"/>
+ <attr name="Value" type="string" val="${LCG_INST_PATH}/LCG_104c/git/2.29.2"/>
+</obj>
+
+<obj class="Variable" id="GIT_VERSION">
+ <attr name="Name" type="string" val="GIT_VERSION"/>
+ <attr name="Value" type="string" val="2.29.2"/>
+</obj>
+
+<obj class="Variable" id="GSL_HOME">
+ <attr name="Name" type="string" val="GSL_HOME"/>
+ <attr name="Value" type="string" val="${LCG_INST_PATH}/LCG_104c/GSL/2.7"/>
+</obj>
+
+<obj class="Variable" id="GSL_VERSION">
+ <attr name="Name" type="string" val="GSL_VERSION"/>
+ <attr name="Value" type="string" val="2.7"/>
+</obj>
+
+<obj class="Variable" id="GSSAPI_HOME">
+ <attr name="Name" type="string" val="GSSAPI_HOME"/>
+ <attr name="Value" type="string" val="${LCG_INST_PATH}/LCG_104c/gssapi/1.7.3"/>
+</obj>
+
+<obj class="Variable" id="GSSAPI_VERSION">
+ <attr name="Name" type="string" val="GSSAPI_VERSION"/>
+ <attr name="Value" type="string" val="1.7.3"/>
+</obj>
+
+<obj class="Variable" id="JAVA_HOME">
+ <attr name="Name" type="string" val="JAVA_HOME"/>
+ <attr name="Value" type="string" val="${LCG_INST_PATH}/LCG_104c/java/8u362"/>
+</obj>
+
+<obj class="Variable" id="JAVA_VERSION">
+ <attr name="Name" type="string" val="JAVA_VERSION"/>
+ <attr name="Value" type="string" val="8u362"/>
+</obj>
+
+<obj class="Variable" id="JINJA2_HOME">
+ <attr name="Name" type="string" val="JINJA2_HOME"/>
+ <attr name="Value" type="string" val="${LCG_INST_PATH}/LCG_104c/Jinja2/3.1.2"/>
+</obj>
+
+<obj class="Variable" id="JINJA2_VERSION">
+ <attr name="Name" type="string" val="JINJA2_VERSION"/>
+ <attr name="Value" type="string" val="3.1.2"/>
+</obj>
+
+<obj class="Variable" id="LIBFFI_HOME">
+ <attr name="Name" type="string" val="LIBFFI_HOME"/>
+ <attr name="Value" type="string" val="${LCG_INST_PATH}/LCG_104c/libffi/3.4.2"/>
+</obj>
+
+<obj class="Variable" id="LIBFFI_VERSION">
+ <attr name="Name" type="string" val="LIBFFI_VERSION"/>
+ <attr name="Value" type="string" val="3.4.2"/>
+</obj>
+
+<obj class="Variable" id="LIBSODIUM_HOME">
+ <attr name="Name" type="string" val="LIBSODIUM_HOME"/>
+ <attr name="Value" type="string" val="${LCG_INST_PATH}/LCG_104c/libsodium/1.0.18"/>
+</obj>
+
+<obj class="Variable" id="LIBSODIUM_VERSION">
+ <attr name="Name" type="string" val="LIBSODIUM_VERSION"/>
+ <attr name="Value" type="string" val="1.0.18"/>
+</obj>
+
+<obj class="Variable" id="LXML_HOME">
+ <attr name="Name" type="string" val="LXML_HOME"/>
+ <attr name="Value" type="string" val="${LCG_INST_PATH}/LCG_104c/lxml/4.6.2"/>
+</obj>
+
+<obj class="Variable" id="LXML_VERSION">
+ <attr name="Name" type="string" val="LXML_VERSION"/>
+ <attr name="Value" type="string" val="4.6.2"/>
+</obj>
+
+<obj class="Variable" id="LZ4_HOME">
+ <attr name="Name" type="string" val="LZ4_HOME"/>
+ <attr name="Value" type="string" val="${LCG_INST_PATH}/LCG_104c/lz4/0.0.0"/>
+</obj>
+
+<obj class="Variable" id="LZ4_VERSION">
+ <attr name="Name" type="string" val="LZ4_VERSION"/>
+ <attr name="Value" type="string" val="0.0.0"/>
+</obj>
+
+<obj class="Variable" id="MATPLOTLIB_HOME">
+ <attr name="Name" type="string" val="MATPLOTLIB_HOME"/>
+ <attr name="Value" type="string" val="${LCG_INST_PATH}/LCG_104c/matplotlib/3.7.1"/>
+</obj>
+
+<obj class="Variable" id="MATPLOTLIB_VERSION">
+ <attr name="Name" type="string" val="MATPLOTLIB_VERSION"/>
+ <attr name="Value" type="string" val="3.7.1"/>
+</obj>
+
+<obj class="Variable" id="MYSQL_HOME">
+ <attr name="Name" type="string" val="MYSQL_HOME"/>
+ <attr name="Value" type="string" val="${LCG_INST_PATH}/LCG_104c/mysql/10.5.20"/>
+</obj>
+
+<obj class="Variable" id="MYSQL_VERSION">
+ <attr name="Name" type="string" val="MYSQL_VERSION"/>
+ <attr name="Value" type="string" val="10.5.20"/>
+</obj>
+
+<obj class="Variable" id="NUMPY_HOME">
+ <attr name="Name" type="string" val="NUMPY_HOME"/>
+ <attr name="Value" type="string" val="${LCG_INST_PATH}/LCG_104c/numpy/1.23.5"/>
+</obj>
+
+<obj class="Variable" id="NUMPY_VERSION">
+ <attr name="Name" type="string" val="NUMPY_VERSION"/>
+ <attr name="Value" type="string" val="1.23.5"/>
+</obj>
+
+<obj class="Variable" id="ORACLE_HOME">
+ <attr name="Name" type="string" val="ORACLE_HOME"/>
+ <attr name="Value" type="string" val="${LCG_INST_PATH}/LCG_104c/oracle/19.19.0.0.0"/>
+</obj>
+
+<obj class="Variable" id="ORACLE_VERSION">
+ <attr name="Name" type="string" val="ORACLE_VERSION"/>
+ <attr name="Value" type="string" val="19.19.0.0.0"/>
+</obj>
+
+<obj class="Variable" id="PANDAS_HOME">
+ <attr name="Name" type="string" val="PANDAS_HOME"/>
+ <attr name="Value" type="string" val="${LCG_INST_PATH}/LCG_104c/pandas/1.5.3"/>
+</obj>
+
+<obj class="Variable" id="PANDAS_VERSION">
+ <attr name="Name" type="string" val="PANDAS_VERSION"/>
+ <attr name="Value" type="string" val="1.5.3"/>
+</obj>
+
+<obj class="Variable" id="PCRE_HOME">
+ <attr name="Name" type="string" val="PCRE_HOME"/>
+ <attr name="Value" type="string" val="${LCG_INST_PATH}/LCG_104c/pcre/8.43"/>
+</obj>
+
+<obj class="Variable" id="PCRE_VERSION">
+ <attr name="Name" type="string" val="PCRE_VERSION"/>
+ <attr name="Value" type="string" val="8.43"/>
+</obj>
+
+<obj class="Variable" id="PNG_HOME">
+ <attr name="Name" type="string" val="PNG_HOME"/>
+ <attr name="Value" type="string" val="${LCG_INST_PATH}/LCG_104c/png/1.6.37"/>
+</obj>
+
+<obj class="Variable" id="PNG_VERSION">
+ <attr name="Name" type="string" val="PNG_VERSION"/>
+ <attr name="Value" type="string" val="1.6.37"/>
+</obj>
+
+<obj class="Variable" id="PROTOBUF_HOME">
+ <attr name="Name" type="string" val="PROTOBUF_HOME"/>
+ <attr name="Value" type="string" val="${LCG_INST_PATH}/LCG_104c/protobuf/3.20.3"/>
+</obj>
+
+<obj class="Variable" id="PROTOBUF_VERSION">
+ <attr name="Name" type="string" val="PROTOBUF_VERSION"/>
+ <attr name="Value" type="string" val="3.20.3"/>
+</obj>
+
+<obj class="Variable" id="PSUTIL_HOME">
+ <attr name="Name" type="string" val="PSUTIL_HOME"/>
+ <attr name="Value" type="string" val="${LCG_INST_PATH}/LCG_104c/psutil/5.8.0"/>
+</obj>
+
+<obj class="Variable" id="PSUTIL_VERSION">
+ <attr name="Name" type="string" val="PSUTIL_VERSION"/>
+ <attr name="Value" type="string" val="5.8.0"/>
+</obj>
+
+<obj class="Variable" id="PYASN1_HOME">
+ <attr name="Name" type="string" val="PYASN1_HOME"/>
+ <attr name="Value" type="string" val="${LCG_INST_PATH}/LCG_104c/pyasn1/0.4.5"/>
+</obj>
+
+<obj class="Variable" id="PYASN1_MODULES_HOME">
+ <attr name="Name" type="string" val="PYASN1_MODULES_HOME"/>
+ <attr name="Value" type="string" val="${LCG_INST_PATH}/LCG_104c/pyasn1_modules/0.2.5"/>
+</obj>
+
+<obj class="Variable" id="PYASN1_MODULES_VERSION">
+ <attr name="Name" type="string" val="PYASN1_MODULES_VERSION"/>
+ <attr name="Value" type="string" val="0.2.5"/>
+</obj>
+
+<obj class="Variable" id="PYASN1_VERSION">
+ <attr name="Name" type="string" val="PYASN1_VERSION"/>
+ <attr name="Value" type="string" val="0.4.5"/>
+</obj>
+
+<obj class="Variable" id="PYJWT_HOME">
+ <attr name="Name" type="string" val="PYJWT_HOME"/>
+ <attr name="Value" type="string" val="${LCG_INST_PATH}/LCG_104c/PyJWT/2.0.1"/>
+</obj>
+
+<obj class="Variable" id="PYJWT_VERSION">
+ <attr name="Name" type="string" val="PYJWT_VERSION"/>
+ <attr name="Value" type="string" val="2.0.1"/>
+</obj>
+
+<obj class="Variable" id="PYQT5_HOME">
+ <attr name="Name" type="string" val="PYQT5_HOME"/>
+ <attr name="Value" type="string" val="${LCG_INST_PATH}/LCG_104c/pyqt5/5.12.3"/>
+</obj>
+
+<obj class="Variable" id="PYQT5_VERSION">
+ <attr name="Name" type="string" val="PYQT5_VERSION"/>
+ <attr name="Value" type="string" val="5.12.3"/>
+</obj>
+
+<obj class="Variable" id="PYTHON_DATEUTIL_HOME">
+ <attr name="Name" type="string" val="PYTHON_DATEUTIL_HOME"/>
+ <attr name="Value" type="string" val="${LCG_INST_PATH}/LCG_104c/python_dateutil/2.8.2"/>
+</obj>
+
+<obj class="Variable" id="PYTHON_DATEUTIL_VERSION">
+ <attr name="Name" type="string" val="PYTHON_DATEUTIL_VERSION"/>
+ <attr name="Value" type="string" val="2.8.2"/>
+</obj>
+
+<obj class="Variable" id="PYTZ_HOME">
+ <attr name="Name" type="string" val="PYTZ_HOME"/>
+ <attr name="Value" type="string" val="${LCG_INST_PATH}/LCG_104c/pytz/2022.7.1"/>
+</obj>
+
+<obj class="Variable" id="PYTZ_VERSION">
+ <attr name="Name" type="string" val="PYTZ_VERSION"/>
+ <attr name="Value" type="string" val="2022.7.1"/>
+</obj>
+
+<obj class="Variable" id="PYYAML_HOME">
+ <attr name="Name" type="string" val="PYYAML_HOME"/>
+ <attr name="Value" type="string" val="${LCG_INST_PATH}/LCG_104c/PyYAML/6.0"/>
+</obj>
+
+<obj class="Variable" id="PYYAML_VERSION">
+ <attr name="Name" type="string" val="PYYAML_VERSION"/>
+ <attr name="Value" type="string" val="6.0"/>
+</obj>
+
+<obj class="Variable" id="QT5_HOME">
+ <attr name="Name" type="string" val="QT5_HOME"/>
+ <attr name="Value" type="string" val="${LCG_INST_PATH}/LCG_104c/Qt5/5.15.9"/>
+</obj>
+
+<obj class="Variable" id="QT5_VERSION">
+ <attr name="Name" type="string" val="QT5_VERSION"/>
+ <attr name="Value" type="string" val="5.15.9"/>
+</obj>
+
+<obj class="Variable" id="REQUESTS_HOME">
+ <attr name="Name" type="string" val="REQUESTS_HOME"/>
+ <attr name="Value" type="string" val="${LCG_INST_PATH}/LCG_104c/requests/2.27.1"/>
+</obj>
+
+<obj class="Variable" id="REQUESTS_VERSION">
+ <attr name="Name" type="string" val="REQUESTS_VERSION"/>
+ <attr name="Value" type="string" val="2.27.1"/>
+</obj>
+
+<obj class="Variable" id="SCIPY_HOME">
+ <attr name="Name" type="string" val="SCIPY_HOME"/>
+ <attr name="Value" type="string" val="${LCG_INST_PATH}/LCG_104c/scipy/1.10.1"/>
+</obj>
+
+<obj class="Variable" id="SCIPY_VERSION">
+ <attr name="Name" type="string" val="SCIPY_VERSION"/>
+ <attr name="Value" type="string" val="1.10.1"/>
+</obj>
+
+<obj class="Variable" id="SIX_HOME">
+ <attr name="Name" type="string" val="SIX_HOME"/>
+ <attr name="Value" type="string" val="${LCG_INST_PATH}/LCG_104c/six/1.16.0"/>
+</obj>
+
+<obj class="Variable" id="SIX_VERSION">
+ <attr name="Name" type="string" val="SIX_VERSION"/>
+ <attr name="Value" type="string" val="1.16.0"/>
+</obj>
+
+<obj class="Variable" id="SQLITE_HOME">
+ <attr name="Name" type="string" val="SQLITE_HOME"/>
+ <attr name="Value" type="string" val="${LCG_INST_PATH}/LCG_104c/sqlite/3320300"/>
+</obj>
+
+<obj class="Variable" id="SQLITE_VERSION">
+ <attr name="Name" type="string" val="SQLITE_VERSION"/>
+ <attr name="Value" type="string" val="3320300"/>
+</obj>
+
+<obj class="Variable" id="TBB_HOME">
+ <attr name="Name" type="string" val="TBB_HOME"/>
+ <attr name="Value" type="string" val="${LCG_INST_PATH}/LCG_104c/tbb/2020_U2"/>
+</obj>
+
+<obj class="Variable" id="TBB_VERSION">
+ <attr name="Name" type="string" val="TBB_VERSION"/>
+ <attr name="Value" type="string" val="2020_U2"/>
+</obj>
+
+<obj class="Variable" id="TDAQ_JAVA_HOME">
+ <attr name="Name" type="string" val="TDAQ_JAVA_HOME"/>
+ <attr name="Value" type="string" val="${LCG_INST_PATH}/LCG_104c/java/8u362"/>
+ <rel name="TagValues">
+  <ref class="TagMapping" id="TDAQ_JAVA_HOME-for-x86_64-centos7-gcc11-opt"/>
+  <ref class="TagMapping" id="TDAQ_JAVA_HOME-for-x86_64-centos7-gcc11-dbg"/>
+  <ref class="TagMapping" id="TDAQ_JAVA_HOME-for-x86_64-el9-gcc13-opt"/>
+  <ref class="TagMapping" id="TDAQ_JAVA_HOME-for-x86_64-el9-gcc13-dbg"/>
+  <ref class="TagMapping" id="TDAQ_JAVA_HOME-for-aarch64-centos7-gcc11-opt"/>
+  <ref class="TagMapping" id="TDAQ_JAVA_HOME-for-aarch64-el9-gcc13-opt"/>
+ </rel>
+</obj>
+
+<obj class="Variable" id="TDAQ_VERSION">
+ <attr name="Name" type="string" val="TDAQ_VERSION"/>
+ <attr name="Value" type="string" val="tdaq-11-02-00"/>
+</obj>
+
+<obj class="Variable" id="TYPING_EXTENSIONS_HOME">
+ <attr name="Name" type="string" val="TYPING_EXTENSIONS_HOME"/>
+ <attr name="Value" type="string" val="${LCG_INST_PATH}/LCG_104c/typing_extensions/4.5.0"/>
+</obj>
+
+<obj class="Variable" id="TYPING_EXTENSIONS_VERSION">
+ <attr name="Name" type="string" val="TYPING_EXTENSIONS_VERSION"/>
+ <attr name="Value" type="string" val="4.5.0"/>
+</obj>
+
+<obj class="Variable" id="URLLIB3_HOME">
+ <attr name="Name" type="string" val="URLLIB3_HOME"/>
+ <attr name="Value" type="string" val="${LCG_INST_PATH}/LCG_104c/urllib3/1.26.16"/>
+</obj>
+
+<obj class="Variable" id="URLLIB3_VERSION">
+ <attr name="Name" type="string" val="URLLIB3_VERSION"/>
+ <attr name="Value" type="string" val="1.26.16"/>
+</obj>
+
+<obj class="Variable" id="XERCESC_HOME">
+ <attr name="Name" type="string" val="XERCESC_HOME"/>
+ <attr name="Value" type="string" val="${LCG_INST_PATH}/LCG_104c/XercesC/3.2.4"/>
+</obj>
+
+<obj class="Variable" id="XERCESC_VERSION">
+ <attr name="Name" type="string" val="XERCESC_VERSION"/>
+ <attr name="Value" type="string" val="3.2.4"/>
+</obj>
+
+<obj class="Variable" id="ZEROMQ_HOME">
+ <attr name="Name" type="string" val="ZEROMQ_HOME"/>
+ <attr name="Value" type="string" val="${LCG_INST_PATH}/LCG_104c/zeromq/4.3.4p1"/>
+</obj>
+
+<obj class="Variable" id="ZEROMQ_VERSION">
+ <attr name="Name" type="string" val="ZEROMQ_VERSION"/>
+ <attr name="Value" type="string" val="4.3.4p1"/>
+</obj>
+
+</oks-data>

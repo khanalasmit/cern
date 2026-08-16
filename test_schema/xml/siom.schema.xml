@@ -1,0 +1,215 @@
+<?xml version="1.0" encoding="ASCII"?>
+
+<!-- oks-schema version 2.0 -->
+
+
+<!DOCTYPE oks-schema [
+  <!ELEMENT oks-schema (info, (include)?, (comments)?, (class)+)>
+  <!ELEMENT info EMPTY>
+  <!ATTLIST info
+      name CDATA #REQUIRED
+      type CDATA #REQUIRED
+      num-of-items CDATA #REQUIRED
+      oks-format CDATA #FIXED "schema"
+      oks-version CDATA #REQUIRED
+      created-by CDATA #REQUIRED
+      created-on CDATA #REQUIRED
+      creation-time CDATA #REQUIRED
+      last-modified-by CDATA #REQUIRED
+      last-modified-on CDATA #REQUIRED
+      last-modification-time CDATA #REQUIRED
+  >
+  <!ELEMENT include (file)+>
+  <!ELEMENT file EMPTY>
+  <!ATTLIST file
+      path CDATA #REQUIRED
+  >
+  <!ELEMENT comments (comment)+>
+  <!ELEMENT comment EMPTY>
+  <!ATTLIST comment
+      creation-time CDATA #REQUIRED
+      created-by CDATA #REQUIRED
+      created-on CDATA #REQUIRED
+      author CDATA #REQUIRED
+      text CDATA #REQUIRED
+  >
+  <!ELEMENT class (superclass | attribute | relationship | method)*>
+  <!ATTLIST class
+      name CDATA #REQUIRED
+      description CDATA ""
+      is-abstract (yes|no) "no"
+  >
+  <!ELEMENT superclass EMPTY>
+  <!ATTLIST superclass name CDATA #REQUIRED>
+  <!ELEMENT attribute EMPTY>
+  <!ATTLIST attribute
+      name CDATA #REQUIRED
+      description CDATA ""
+      type (bool|s8|u8|s16|u16|s32|u32|s64|u64|float|double|date|time|string|uid|enum|class) #REQUIRED
+      range CDATA ""
+      format (dec|hex|oct) "dec"
+      is-multi-value (yes|no) "no"
+      init-value CDATA ""
+      is-not-null (yes|no) "no"
+  >
+  <!ELEMENT relationship EMPTY>
+  <!ATTLIST relationship
+      name CDATA #REQUIRED
+      description CDATA ""
+      class-type CDATA #REQUIRED
+      low-cc (zero|one) #REQUIRED
+      high-cc (one|many) #REQUIRED
+      is-composite (yes|no) #REQUIRED
+      is-exclusive (yes|no) #REQUIRED
+      is-dependent (yes|no) #REQUIRED
+  >
+  <!ELEMENT method (method-implementation*)>
+  <!ATTLIST method
+      name CDATA #REQUIRED
+      description CDATA ""
+  >
+  <!ELEMENT method-implementation EMPTY>
+  <!ATTLIST method-implementation
+      language CDATA #REQUIRED
+      prototype CDATA #REQUIRED
+      body CDATA ""
+  >
+]>
+
+<oks-schema>
+
+<info name="" type="" num-of-items="20" oks-format="schema" oks-version="oks-07-00-08 built &quot;Mar 26 2020&quot;" created-by="enrico" created-on="eppc" creation-time="20061124T093404" last-modified-by="enrico" last-modified-on="localhost.localdomain" last-modification-time="20200407T212119"/>
+
+<include>
+ <file path="daq/schema/df.schema.xml"/>
+ <file path="daq/schema/emon.schema.xml"/>
+</include>
+
+
+ <class name="SIOMApplication" description="Simplified IOM application.">
+  <superclass name="SIOMApplicationBase"/>
+  <superclass name="Application"/>
+  <superclass name="ResourceBase"/>
+ </class>
+
+ <class name="SIOMApplicationBase" description="Simplified IOM application." is-abstract="yes">
+  <superclass name="RunControlApplicationBase"/>
+  <attribute name="ISServerName" description="IS server to publish application and plug-in information." type="string" init-value="siom"/>
+  <relationship name="Input" description="The input plug-in for Simplified IOM application.&#xA;Data are received from all the sources." class-type="SIOMInput" low-cc="one" high-cc="many" is-composite="no" is-exclusive="no" is-dependent="no"/>
+  <relationship name="Output" description="Output plug-in for Simplified IOM.&#xA;" class-type="SIOMOutput" low-cc="one" high-cc="many" is-composite="no" is-exclusive="no" is-dependent="no"/>
+  <relationship name="Processors" description="Simplified IOM data processing plug-in." class-type="SIOMProcessor" low-cc="zero" high-cc="many" is-composite="no" is-exclusive="no" is-dependent="no"/>
+ </class>
+
+ <class name="SIOMCircInput" description="Circular buffer reader plugin for Simplified IOM.">
+  <superclass name="SIOMInput"/>
+  <attribute name="Port" description="TCP port for the server." type="u16" init-value="9876"/>
+  <attribute name="PollRateFactor" description="Multiplies the inverse input rate to determine&#xA;the poll rate on the internal event buffer." type="u32" init-value="5"/>
+  <attribute name="PackEvents" description="Allow to pack events internally in larger buffers for optimisation." type="bool" init-value="false"/>
+ </class>
+
+ <class name="SIOMCircOutput" description="Circular buffer writer plugin for Simplified IOM.">
+  <superclass name="SIOMOutput"/>
+  <attribute name="Port" description="Circ server port." type="u16" init-value="0"/>
+  <relationship name="CircBuffer" description="Defines the prototype of the buffers to connect to." class-type="CircBuffer" low-cc="one" high-cc="one" is-composite="no" is-exclusive="no" is-dependent="no"/>
+ </class>
+
+ <class name="SIOMDummyInput" description="Dummy input plugin for Simplified IOM.">
+  <superclass name="SIOMInput"/>
+ </class>
+
+ <class name="SIOMDummyOutput" description="Dummy output plugin for Simplified IOM.">
+  <superclass name="SIOMOutput"/>
+ </class>
+
+ <class name="SIOMDummyProcessor" description="Dummy processor.">
+  <superclass name="SIOMProcessor"/>
+ </class>
+
+ <class name="SIOMEmonInput" description="Monitoring application client plugin for Simplified IOM.">
+  <superclass name="SIOMInput"/>
+  <relationship name="SamplingParameters" class-type="SamplingParameters" low-cc="one" high-cc="one" is-composite="no" is-exclusive="no" is-dependent="no"/>
+ </class>
+
+ <class name="SIOMFileInput" description="Input file plugin for Simplified IOM.">
+  <superclass name="SIOMInput"/>
+  <attribute name="FileList" description="A list of input files." type="string" is-multi-value="yes" is-not-null="yes"/>
+  <attribute name="PackEvents" description="Allow to pack events internally in larger buffers for optimisation." type="bool" init-value="false"/>
+ </class>
+
+ <class name="SIOMFileOutput" description="File output plugin for Simplified IOM.">
+  <superclass name="SIOMOutput"/>
+  <attribute name="OutputActivationFlag" description="Activation flag for data output.&#xA;IS allows to control the output activation&#xA;from the Atlas IGUI through IS variable value." type="enum" range="Always,Never,IS" init-value="Never" is-not-null="yes"/>
+  <attribute name="FileLocation" description="Directory containing the output files." type="string" init-value="." is-not-null="yes"/>
+  <attribute name="FileBaseName" description="Base name to build output file name." type="string"/>
+  <attribute name="MaxSize" description="Maximum size of output file (in bytes)." type="u32" init-value="536870912" is-not-null="yes"/>
+ </class>
+
+ <class name="SIOMInput" description="Base class for SimplifiedIOM input plug-in." is-abstract="yes">
+  <superclass name="SIOMPlugin"/>
+  <attribute name="MaxThreads" description="Maximum number of input threads" type="u32" init-value="1"/>
+  <attribute name="OutputFlags" description="Flags added to the input events." type="u64" format="hex" init-value="0"/>
+  <relationship name="MemoryPools" description="Internal buffers." class-type="MemoryPool" low-cc="one" high-cc="many" is-composite="no" is-exclusive="no" is-dependent="no"/>
+ </class>
+
+ <class name="SIOMOutput" description="Base class for Simplified IOM output plug-in." is-abstract="yes">
+  <superclass name="SIOMPlugin"/>
+  <attribute name="MinBufElem" description="Minimum elements in the input buffer to be &#xA;kept during the run." type="u32" init-value="0"/>
+  <attribute name="PollRateFactor" description="Multiplies the inverse input rate to determine&#xA;the poll rate on the internal event buffer." type="u32" init-value="3"/>
+  <attribute name="RequiredFlags" description="Required event flags. Can be used to select only events&#xA;processed by other plug-in(s). 0 means all the events." type="u64" format="hex" init-value="0"/>
+  <relationship name="MemoryPools" description="Internal buffers." class-type="MemoryPool" low-cc="one" high-cc="many" is-composite="no" is-exclusive="no" is-dependent="no"/>
+ </class>
+
+ <class name="SIOMPlugin" description="Base class for SimplifiedIOM plug-in." is-abstract="yes">
+ </class>
+
+ <class name="SIOMProcessor" description="Base class for Simplified IOM data processors." is-abstract="yes">
+  <superclass name="SIOMPlugin"/>
+  <attribute name="ThreadNumber" description="Number or processing threads." type="u32" init-value="1" is-not-null="yes"/>
+  <attribute name="MinBufElem" description="Minimum elements in the input buffer to be &#xA;kept during the run." type="u32" init-value="0"/>
+  <attribute name="PollRateFactor" description="Multiplies the inverse input rate to determine&#xA;the poll rate on the internal event buffer." type="u32" init-value="3"/>
+  <attribute name="RequiredFlags" description="Required event flags. Can be used to select only events&#xA;processed by other plug-in(s). 0 means all the events.&#xA;" type="u64" format="hex" init-value="0"/>
+  <attribute name="OutputFlags" description="Flags added to the input mask for the &#xA;output events." type="u64" format="hex" init-value="0"/>
+  <relationship name="InputMemoryPools" description="Input internal buffers." class-type="MemoryPool" low-cc="one" high-cc="many" is-composite="no" is-exclusive="no" is-dependent="no"/>
+  <relationship name="OutputMemoryPools" description="Output internal buffers." class-type="MemoryPool" low-cc="zero" high-cc="many" is-composite="no" is-exclusive="no" is-dependent="no"/>
+ </class>
+
+ <class name="SIOMSamplingProcessor" description="Sampling processor.">
+  <superclass name="SIOMProcessor"/>
+  <attribute name="SamplerType" description="First part of the sampler address." type="string" init-value="siom"/>
+  <attribute name="SamplerName" description="Second part of the sampler address." type="string" init-value="processor"/>
+  <attribute name="AddHeader" description="Add a header to sampled data." type="bool" init-value="false"/>
+  <attribute name="PacketHeader" description="Header to be added to sampled data." type="u32" format="hex" init-value="ee1234ee"/>
+  <attribute name="MaxChannels" description="Max sampling event channels." type="u32" init-value="10"/>
+  <attribute name="MaxSamplingRate" description="Minimum inverse sampling rate (i.e. maximum sampling rate)." type="u32" init-value="1" is-not-null="yes"/>
+ </class>
+
+ <class name="SIOMTCPInput" description="TCP Server plugin for Simplified IOM.">
+  <superclass name="SIOMInput"/>
+  <attribute name="Port" description="Port number for TCP server." type="u32" init-value="3333" is-not-null="yes"/>
+  <attribute name="PackEvents" description="Allow to pack events internally in larger buffers for optimisation." type="bool" init-value="false"/>
+ </class>
+
+ <class name="SIOMTCPOutput" description="TCP data sender plugin for Simplified&#xA;IOM.">
+  <superclass name="SIOMOutput"/>
+  <attribute name="ServerNode" description="Remote node name or address." type="string" is-not-null="yes"/>
+  <attribute name="Port" description="Server port number." type="u32" init-value="3333"/>
+ </class>
+
+ <class name="SIOMTemplateApplication" description="Simplified IOM application.">
+  <superclass name="SIOMApplicationBase"/>
+  <superclass name="TemplateApplication"/>
+ </class>
+
+ <class name="SIOMUDPInput" description="UDP Server plugin for Simplified IOM.">
+  <superclass name="SIOMInput"/>
+  <attribute name="Port" description="Port number for UDP server" type="u32" init-value="3334"/>
+  <attribute name="PackEvents" description="Allow to pack events internally in larger buffers for optimisation." type="bool" init-value="false"/>
+ </class>
+
+ <class name="SIOMUDPOutput" description="UDP data sender plugin for Simplified&#xA;IOM.">
+  <superclass name="SIOMOutput"/>
+  <attribute name="ServerNode" description="Remote node name or address." type="string"/>
+  <attribute name="Port" description="Server port number." type="u32" init-value="3334"/>
+ </class>
+
+</oks-schema>

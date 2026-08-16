@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="ASCII"?>
+
+<!-- oks-schema version 2.0 -->
+
+
+<!DOCTYPE oks-schema [
+  <!ELEMENT oks-schema (info, (include)?, (comments)?, (class)+)>
+  <!ELEMENT info EMPTY>
+  <!ATTLIST info
+      name CDATA #REQUIRED
+      type CDATA #REQUIRED
+      num-of-items CDATA #REQUIRED
+      oks-format CDATA #FIXED "schema"
+      oks-version CDATA #REQUIRED
+      created-by CDATA #REQUIRED
+      created-on CDATA #REQUIRED
+      creation-time CDATA #REQUIRED
+      last-modified-by CDATA #REQUIRED
+      last-modified-on CDATA #REQUIRED
+      last-modification-time CDATA #REQUIRED
+  >
+  <!ELEMENT include (file)+>
+  <!ELEMENT file EMPTY>
+  <!ATTLIST file
+      path CDATA #REQUIRED
+  >
+  <!ELEMENT comments (comment)+>
+  <!ELEMENT comment EMPTY>
+  <!ATTLIST comment
+      creation-time CDATA #REQUIRED
+      created-by CDATA #REQUIRED
+      created-on CDATA #REQUIRED
+      author CDATA #REQUIRED
+      text CDATA #REQUIRED
+  >
+  <!ELEMENT class (superclass | attribute | relationship | method)*>
+  <!ATTLIST class
+      name CDATA #REQUIRED
+      description CDATA ""
+      is-abstract (yes|no) "no"
+  >
+  <!ELEMENT superclass EMPTY>
+  <!ATTLIST superclass name CDATA #REQUIRED>
+  <!ELEMENT attribute EMPTY>
+  <!ATTLIST attribute
+      name CDATA #REQUIRED
+      description CDATA ""
+      type (bool|s8|u8|s16|u16|s32|u32|s64|u64|float|double|date|time|string|uid|enum|class) #REQUIRED
+      range CDATA ""
+      format (dec|hex|oct) "dec"
+      is-multi-value (yes|no) "no"
+      init-value CDATA ""
+      is-not-null (yes|no) "no"
+  >
+  <!ELEMENT relationship EMPTY>
+  <!ATTLIST relationship
+      name CDATA #REQUIRED
+      description CDATA ""
+      class-type CDATA #REQUIRED
+      low-cc (zero|one) #REQUIRED
+      high-cc (one|many) #REQUIRED
+      is-composite (yes|no) #REQUIRED
+      is-exclusive (yes|no) #REQUIRED
+      is-dependent (yes|no) #REQUIRED
+  >
+  <!ELEMENT method (method-implementation*)>
+  <!ATTLIST method
+      name CDATA #REQUIRED
+      description CDATA ""
+  >
+  <!ELEMENT method-implementation EMPTY>
+  <!ATTLIST method-implementation
+      language CDATA #REQUIRED
+      prototype CDATA #REQUIRED
+      body CDATA ""
+  >
+]>
+
+<oks-schema>
+
+<info name="" type="" num-of-items="3" oks-format="schema" oks-version="oks-06-10-01 built &quot;Mar 16 2016&quot;" created-by="pedro" created-on="lxplus073" creation-time="20040303T105404" last-modified-by="pauly" last-modified-on="pcphate20.cern.ch" last-modification-time="20160510T124956"/>
+
+<include>
+ <file path="daq/schema/df.schema.xml"/>
+</include>
+
+
+ <class name="BusyChannel" description="Busy channel with a relationship to a ResourceBase.&#xA;Id corresponds to a busy channel number (0-15 for RODBusyModule; 0-2 for LTP, 0-4 for CTPOUT, etc): the channel number where the busy cable is plugged into.&#xA;The ResourceBase should be the corresponding Resource where the busy is formed. Depending on the Resource, the BusyChannel can be taken into account or ignored.&#xA;Examples:&#xA;- ROD for a RODBusy channel&#xA;- RODBusyModule for a RODBusyModule (the busy that goes out of the RODBusy comes from itself, from the internal OR of its busy channels)&#xA;- RCDLTPModule for RCDLTPModule (similar to RODBusyModule)&#xA;- if no resource is available in the database, an ad-hoc Resource can be created. By putting it into the Resources relationship of a segment, one can enable/disable it conveniently.&#xA;">
+  <superclass name="Resource"/>
+  <attribute name="Id" description="Id of busy channel: can have different meaning, &#xA;typically the channel number of the module where &#xA;this BusyChannel is plugged into." type="u32" init-value="0"/>
+  <attribute name="BusyTimeout" description="Number of seconds this busy channel is allowed to stay busy at 100%, before its ResourceBase gets automatically disabled.&#xA;The special case of &quot;0&quot; means that no timeout is used." type="u32" init-value="0"/>
+  <attribute name="RecoveryTimeout" description="Number of seconds this busy channel is allowed to stay busy before a recovery attempt is performed.&#xA;The special case of &quot;0&quot; means that no timeout is used." type="u32" init-value="0"/>
+  <relationship name="BusySource" description="Relationship to the ResourceBase, which provides the busy signal." class-type="ResourceBase" low-cc="one" high-cc="one" is-composite="no" is-exclusive="no" is-dependent="no"/>
+ </class>
+
+ <class name="BusyTimeoutAction" description="Base class for the action to be performed in caso of a busy timeout or recovery timeout." is-abstract="yes">
+ </class>
+
+ <class name="RODBusyModule" description="Plugin for ReadoutApplication for the RODBusy VME board. Each busy channel (class BusyChannel) can be linked to the relationship Contains.">
+  <superclass name="ReadoutModule"/>
+  <superclass name="ResourceSet"/>
+  <superclass name="BusyChannel"/>
+  <attribute name="TimeoutFraction" description="Timeout busy fraction threshold: if the busy fraction stays above this threshold, the timeout&#xA;watchdog will count it as being above threshold." type="double" init-value="1.0"/>
+  <attribute name="useConfiguration" description="Configure the RODBusy according to the oks database" type="bool" init-value="true" is-not-null="yes"/>
+  <attribute name="MonitoringLevel" description="Sets the level of monitoring to be performed on a RODBusy module." type="enum" range="None,Basic,Detailed" init-value="None" is-not-null="yes"/>
+  <attribute name="IS_ServerName" description="IS server name used for RODBusy Monitoring" type="string" init-value="Monitoring"/>
+  <attribute name="IS_UpdatePeriod" description="Period (in seconds) of regular updates for basic and detailed monitoring" type="u16" range="1..30" init-value="5" is-not-null="yes"/>
+  <attribute name="ServiceRequest_Limit" description="Maximum number of counts of the limit counter (100ns intervals of busy, LIMREG register) within the reset period (attribute ServiceRequest_ResetPeriod), at which point a service request is generated." type="u16" range="0..65535" init-value="65535" is-not-null="yes"/>
+  <attribute name="ServiceRequest_ResetPeriod" description="Number of 10MHz clock ticks (100ns, IVALREG register) which resets the limit counter." type="u16" range="0..65535" init-value="0" is-not-null="yes"/>
+  <attribute name="EmulateVME" description="For debugging only. If true(=1), all vme access is skipped and the IS entries are filled with mock data. *** NOT YET IMPLEMENTED ***" type="bool" init-value="false"/>
+  <relationship name="BusyRecoveryAction" description="Link to a BusyTimeoutAction plugin which performs&#xA;user-defined actions when a recovery is requested." class-type="BusyTimeoutAction" low-cc="zero" high-cc="one" is-composite="no" is-exclusive="no" is-dependent="no"/>
+  <relationship name="BusyTimeoutAction" description="Link to a BusyTimeoutAction to be performed when&#xA;a busy channel has to be removed having hit the&#xA;large busy timeout." class-type="BusyTimeoutAction" low-cc="zero" high-cc="one" is-composite="no" is-exclusive="no" is-dependent="no"/>
+ </class>
+
+</oks-schema>

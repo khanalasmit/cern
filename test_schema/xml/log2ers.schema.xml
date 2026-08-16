@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="ASCII"?>
+
+<!-- oks-schema version 2.2 -->
+
+
+<!DOCTYPE oks-schema [
+  <!ELEMENT oks-schema (info, (include)?, (comments)?, (class)+)>
+  <!ELEMENT info EMPTY>
+  <!ATTLIST info
+      name CDATA #IMPLIED
+      type CDATA #IMPLIED
+      num-of-items CDATA #REQUIRED
+      oks-format CDATA #FIXED "schema"
+      oks-version CDATA #REQUIRED
+      created-by CDATA #IMPLIED
+      created-on CDATA #IMPLIED
+      creation-time CDATA #IMPLIED
+      last-modified-by CDATA #IMPLIED
+      last-modified-on CDATA #IMPLIED
+      last-modification-time CDATA #IMPLIED
+  >
+  <!ELEMENT include (file)+>
+  <!ELEMENT file EMPTY>
+  <!ATTLIST file
+      path CDATA #REQUIRED
+  >
+  <!ELEMENT comments (comment)+>
+  <!ELEMENT comment EMPTY>
+  <!ATTLIST comment
+      creation-time CDATA #REQUIRED
+      created-by CDATA #REQUIRED
+      created-on CDATA #REQUIRED
+      author CDATA #REQUIRED
+      text CDATA #REQUIRED
+  >
+  <!ELEMENT class (superclass | attribute | relationship | method)*>
+  <!ATTLIST class
+      name CDATA #REQUIRED
+      description CDATA ""
+      is-abstract (yes|no) "no"
+  >
+  <!ELEMENT superclass EMPTY>
+  <!ATTLIST superclass name CDATA #REQUIRED>
+  <!ELEMENT attribute EMPTY>
+  <!ATTLIST attribute
+      name CDATA #REQUIRED
+      description CDATA ""
+      type (bool|s8|u8|s16|u16|s32|u32|s64|u64|float|double|date|time|string|uid|enum|class) #REQUIRED
+      range CDATA ""
+      format (dec|hex|oct) "dec"
+      is-multi-value (yes|no) "no"
+      init-value CDATA ""
+      is-not-null (yes|no) "no"
+      ordered (yes|no) "no"
+  >
+  <!ELEMENT relationship EMPTY>
+  <!ATTLIST relationship
+      name CDATA #REQUIRED
+      description CDATA ""
+      class-type CDATA #REQUIRED
+      low-cc (zero|one) #REQUIRED
+      high-cc (one|many) #REQUIRED
+      is-composite (yes|no) #REQUIRED
+      is-exclusive (yes|no) #REQUIRED
+      is-dependent (yes|no) #REQUIRED
+      ordered (yes|no) "no"
+  >
+  <!ELEMENT method (method-implementation*)>
+  <!ATTLIST method
+      name CDATA #REQUIRED
+      description CDATA ""
+  >
+  <!ELEMENT method-implementation EMPTY>
+  <!ATTLIST method-implementation
+      language CDATA #REQUIRED
+      prototype CDATA #REQUIRED
+      body CDATA ""
+  >
+]>
+
+<oks-schema>
+
+<info name="" type="" num-of-items="2" oks-format="schema" oks-version="oks-08-03-02-14-g572fc09 built &quot;Mar 11 2021&quot;" created-by="salnikov" created-on="atlas-mda-dev.cern.ch" creation-time="20161128T000000" last-modified-by="isolov" last-modified-on="pcatd79.cern.ch" last-modification-time="20210312T111826"/>
+
+ <class name="Log2ERSConfig">
+  <relationship name="StdoutParsers" class-type="Log2ERSLineParse" low-cc="zero" high-cc="many" is-composite="no" is-exclusive="no" is-dependent="no"/>
+  <relationship name="StderrParsers" class-type="Log2ERSLineParse" low-cc="zero" high-cc="many" is-composite="no" is-exclusive="no" is-dependent="no"/>
+ </class>
+
+ <class name="Log2ERSLineParse">
+  <attribute name="Regexp" description="Regular expression to match a line, case sensitive." type="string" is-not-null="yes"/>
+  <attribute name="Severity" description="ERS severity level for the matched message." type="enum" range="DEBUG,LOG,INFO,WARNING,ERROR,FATAL" is-not-null="yes"/>
+  <attribute name="Message" description="Substitution string to extract message from a line, following ECMAScript convention. Use $&amp; to use whole line as a message." type="string" init-value="$&amp;" is-not-null="yes"/>
+  <attribute name="Package" description="Substitution string to extract package name from a line, following ECMAScript convention." type="string"/>
+  <attribute name="FileName" description="Substitution string to extract file name from a line, following ECMAScript convention." type="string"/>
+  <attribute name="FunctionName" description="Substitution string to extract function name from a line, following ECMAScript convention." type="string"/>
+  <attribute name="LineNumber" description="Substitution string to extract source line number from a line, following ECMAScript convention." type="string"/>
+ </class>
+
+</oks-schema>

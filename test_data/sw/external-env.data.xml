@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="ASCII"?>
+
+<!-- oks-data version 2.2 -->
+
+
+<!DOCTYPE oks-data [
+  <!ELEMENT oks-data (info, (include)?, (comments)?, (obj)+)>
+  <!ELEMENT info EMPTY>
+  <!ATTLIST info
+      name CDATA #IMPLIED
+      type CDATA #IMPLIED
+      num-of-items CDATA #REQUIRED
+      oks-format CDATA #FIXED "data"
+      oks-version CDATA #REQUIRED
+      created-by CDATA #IMPLIED
+      created-on CDATA #IMPLIED
+      creation-time CDATA #IMPLIED
+      last-modified-by CDATA #IMPLIED
+      last-modified-on CDATA #IMPLIED
+      last-modification-time CDATA #IMPLIED
+  >
+  <!ELEMENT include (file)*>
+  <!ELEMENT file EMPTY>
+  <!ATTLIST file
+      path CDATA #REQUIRED
+  >
+  <!ELEMENT comments (comment)*>
+  <!ELEMENT comment EMPTY>
+  <!ATTLIST comment
+      creation-time CDATA #REQUIRED
+      created-by CDATA #REQUIRED
+      created-on CDATA #REQUIRED
+      author CDATA #REQUIRED
+      text CDATA #REQUIRED
+  >
+  <!ELEMENT obj (attr | rel)*>
+  <!ATTLIST obj
+      class CDATA #REQUIRED
+      id CDATA #REQUIRED
+  >
+  <!ELEMENT attr (data)*>
+  <!ATTLIST attr
+      name CDATA #REQUIRED
+      type (bool|s8|u8|s16|u16|s32|u32|s64|u64|float|double|date|time|string|uid|enum|class|-) "-"
+      val CDATA ""
+  >
+  <!ELEMENT data EMPTY>
+  <!ATTLIST data
+      val CDATA #REQUIRED
+  >
+  <!ELEMENT rel (ref)*>
+  <!ATTLIST rel
+      name CDATA #REQUIRED
+      class CDATA ""
+      id CDATA ""
+  >
+  <!ELEMENT ref EMPTY>
+  <!ATTLIST ref
+      class CDATA #REQUIRED
+      id CDATA #REQUIRED
+  >
+]>
+
+<oks-data>
+
+<info name="" type="" num-of-items="2" oks-format="data" oks-version="572fc09 built &quot;Mar 12 2021&quot;" created-by="akazarov" created-on="pcatd12.cern.ch" creation-time="20050519T160044" last-modified-by="rhauser" last-modified-on="mini" last-modification-time="20210312T123602"/>
+
+<include>
+ <file path="daq/schema/core.schema.xml"/>
+ <file path="daq/sw/external.data.xml"/>
+ <file path="daq/sw/tdaq-common-external-repository.data.xml"/>
+</include>
+
+<comments>
+ <comment creation-time="20080404T085306" created-by="akazarov" created-on="pcatd124.cern.ch" author="Andrei Kazarov" text="added ZLIB variables and missing include"/>
+ <comment creation-time="20081110T095131" created-by="atdsoft" created-on="pcatd124.cern.ch" author="Andrei" text="deSEALed"/>
+ <comment creation-time="20090330T170401" created-by="atdsoft" created-on="pcatd124.cern.ch" author="Andrei" text="SQLITE added to the set"/>
+ <comment creation-time="20121211T102424" created-by="atdsoft" created-on="pcatdbuild06.cern.ch" author="Andrei" text="removed obsolete variables&#xA;"/>
+ <comment creation-time="20130708T082549" created-by="atdsoft" created-on="pcatdbuild07.cern.ch" author="Andrei" text="removed UUID variables&#xA;"/>
+ <comment creation-time="20161111T161324" created-by="akazarov" created-on="pc-tbed-pub-13.cern.ch" author="Unknown" text="removed GCC_VERSION"/>
+ <comment creation-time="20201129T085435" created-by="rhauser" created-on="rhauser-inspiron" author="Reiner Hauser" text="New format"/>
+</comments>
+
+
+<obj class="VariableSet" id="External-environment">
+ <attr name="Description" type="string" val="a set of environment that to be passed to Applicaitons which need access to external packages like COOL, ROOT, CORAL"/>
+ <rel name="Contains">
+  <ref class="Variable" id="ROOTSYS"/>
+ </rel>
+</obj>
+
+<obj class="VariableSet" id="External-parameters">
+ <attr name="Description" type="string" val="these parameters are used to define values for other objects (e.g. Environment), and should be associated with Partition or Segment objects"/>
+ <rel name="Contains">
+  <ref class="Variable" id="BOOST_HOME"/>
+  <ref class="Variable" id="BOOST_VERSION"/>
+  <ref class="Variable" id="MYSQL_HOME"/>
+  <ref class="Variable" id="ORACLE_HOME"/>
+  <ref class="Variable" id="ROOT_HOME"/>
+  <ref class="Variable" id="XERCESC_HOME"/>
+  <ref class="Variable" id="MYSQL_VERSION"/>
+  <ref class="Variable" id="ORACLE_VERSION"/>
+  <ref class="Variable" id="XERCESC_VERSION"/>
+  <ref class="Variable" id="ROOT_VERSION"/>
+  <ref class="Variable" id="BOOST_VERSION"/>
+  <ref class="Variable" id="BOOST_HOME"/>
+  <ref class="Variable" id="PYTHON_VERSION"/>
+  <ref class="Variable" id="PYTHON_HOME"/>
+  <ref class="Variable" id="LCG_INST_PATH"/>
+  <ref class="Variable" id="SQLITE_HOME"/>
+  <ref class="Variable" id="SQLITE_VERSION"/>
+  <ref class="Variable" id="TBB_HOME"/>
+  <ref class="Variable" id="TBB_VERSION"/>
+  <ref class="Variable" id="GCC_HOME"/>
+  <ref class="Variable" id="PROTOBUF_HOME"/>
+  <ref class="Variable" id="PROTOBUF_VERSION"/>
+  <ref class="Variable" id="ZLIB_HOME"/>
+  <ref class="Variable" id="ZLIB_VERSION"/>
+  <ref class="Variable" id="ZEROMQ_HOME"/>
+  <ref class="Variable" id="ZEROMQ_VERSION"/>
+  <ref class="Variable" id="GSL_HOME"/>
+  <ref class="Variable" id="GSL_VERSION"/>
+  <ref class="Variable" id="VDT_HOME"/>
+  <ref class="Variable" id="VDT_VERSION"/>
+  <ref class="Variable" id="LZ4_HOME"/>
+  <ref class="Variable" id="LZ4_VERSION"/>
+  <ref class="Variable" id="LIBSODIUM_HOME"/>
+  <ref class="Variable" id="LIBSODIUM_VERSION"/>
+  <ref class="Variable" id="PNG_HOME"/>
+  <ref class="Variable" id="PNG_VERSION"/>
+ </rel>
+</obj>
+
+</oks-data>

@@ -1,0 +1,228 @@
+<?xml version="1.0" encoding="ASCII"?>
+
+<!-- oks-data version 2.2 -->
+
+
+<!DOCTYPE oks-data [
+  <!ELEMENT oks-data (info, (include)?, (comments)?, (obj)+)>
+  <!ELEMENT info EMPTY>
+  <!ATTLIST info
+      name CDATA #IMPLIED
+      type CDATA #IMPLIED
+      num-of-items CDATA #REQUIRED
+      oks-format CDATA #FIXED "data"
+      oks-version CDATA #REQUIRED
+      created-by CDATA #IMPLIED
+      created-on CDATA #IMPLIED
+      creation-time CDATA #IMPLIED
+      last-modified-by CDATA #IMPLIED
+      last-modified-on CDATA #IMPLIED
+      last-modification-time CDATA #IMPLIED
+  >
+  <!ELEMENT include (file)*>
+  <!ELEMENT file EMPTY>
+  <!ATTLIST file
+      path CDATA #REQUIRED
+  >
+  <!ELEMENT comments (comment)*>
+  <!ELEMENT comment EMPTY>
+  <!ATTLIST comment
+      creation-time CDATA #REQUIRED
+      created-by CDATA #REQUIRED
+      created-on CDATA #REQUIRED
+      author CDATA #REQUIRED
+      text CDATA #REQUIRED
+  >
+  <!ELEMENT obj (attr | rel)*>
+  <!ATTLIST obj
+      class CDATA #REQUIRED
+      id CDATA #REQUIRED
+  >
+  <!ELEMENT attr (data)*>
+  <!ATTLIST attr
+      name CDATA #REQUIRED
+      type (bool|s8|u8|s16|u16|s32|u32|s64|u64|float|double|date|time|string|uid|enum|class|-) "-"
+      val CDATA ""
+  >
+  <!ELEMENT data EMPTY>
+  <!ATTLIST data
+      val CDATA #REQUIRED
+  >
+  <!ELEMENT rel (ref)*>
+  <!ATTLIST rel
+      name CDATA #REQUIRED
+      class CDATA ""
+      id CDATA ""
+  >
+  <!ELEMENT ref EMPTY>
+  <!ATTLIST ref
+      class CDATA #REQUIRED
+      id CDATA #REQUIRED
+  >
+]>
+
+<oks-data>
+
+<info name="" type="" num-of-items="17" oks-format="data" oks-version="138ccef built &quot;Dec  1 2023&quot;" created-by="dliko" created-on="pcatd84" creation-time="20030414T160243" last-modified-by="kolos" last-modified-on="pc-tbed-swrod-01.cern.ch" last-modification-time="20231201T100549"/>
+
+<include>
+ <file path="daq/schema/swrod.schema.xml"/>
+ <file path="daq/sw/tags.data.xml"/>
+</include>
+
+
+<obj class="MemoryPool" id="SwRodMemoryPool">
+ <attr name="Type" type="enum" val="MALLOC"/>
+ <attr name="NumberOfPages" type="u32" val="100000"/>
+ <attr name="PageSize" type="u32" val="4096"/>
+</obj>
+
+<obj class="MemoryPool" id="SwRodStub">
+ <attr name="Type" type="enum" val="MALLOC"/>
+ <attr name="NumberOfPages" type="u32" val="100000"/>
+ <attr name="PageSize" type="u32" val="4096"/>
+</obj>
+
+<obj class="SW_Repository" id="swrod-felix-repository">
+ <attr name="Name" type="string" val="swrod-felix-repository"/>
+ <attr name="InstallationPath" type="string" val="/det/tdaq/felix/felix-04-02-10-rm4-stand-alone"/>
+ <rel name="Tags">
+  <ref class="Tag" id="x86_64-el9-gcc13-opt"/>
+ </rel>
+</obj>
+
+<obj class="SwRodCustomProcessor" id="CustomProcessor">
+ <attr name="FlushBufferAtStop" type="bool" val="1"/>
+ <attr name="QueueSize" type="u32" val="100000"/>
+ <attr name="WorkersNumber" type="u32" val="1"/>
+ <attr name="Type" type="string" val="ROBFragmentProcessor"/>
+ <attr name="DeferProcessing" type="bool" val="0"/>
+ <attr name="ProfileExecution" type="bool" val="0"/>
+</obj>
+
+<obj class="SwRodDefaultL1AHandler" id="L1AHandler">
+ <attr name="Type" type="string" val="L1AInputHandler"/>
+ <attr name="Link" type="u64" val="0x8033b0000"/>
+ <attr name="ResynchTimeout" type="u32" val="1000"/>
+ <rel name="InputMethod" class="SwRodFelixInput" id="FelixInput"/>
+</obj>
+
+<obj class="SwRodEventSampler" id="EventSampler">
+ <attr name="FlushBufferAtStop" type="bool" val="1"/>
+ <attr name="QueueSize" type="u32" val="100"/>
+ <attr name="WorkersNumber" type="u32" val="1"/>
+ <attr name="Type" type="string" val="EventSampler"/>
+ <attr name="MaximumChannels" type="u32" val="1"/>
+ <attr name="EventBufferSize" type="u32" val="100"/>
+ <attr name="SampleAll" type="bool" val="0"/>
+ <attr name="SamplingRatio" type="u32" val="100"/>
+</obj>
+
+<obj class="SwRodFelixInput" id="FelixInput">
+ <attr name="Type" type="string" val="FelixInput"/>
+ <attr name="DataNetwork" type="string" val="vlan109"/>
+ <attr name="FelixBusDirectory" type="string" val="/det/tdaq/felix-operation/bus"/>
+ <attr name="FelixBusGroupName" type="string" val="FELIX"/>
+ <attr name="FelixBusInterface" type="string" val="ZSYS_INTERFACE"/>
+ <attr name="FelixBusTimeout" type="u32" val="1000"/>
+</obj>
+
+<obj class="SwRodFullModeBuilder" id="FullFragmentBuilder">
+ <attr name="BuildersNumber" type="u32" val="1"/>
+ <attr name="DropCorruptedPackets" type="bool" val="0"/>
+ <attr name="UnsubscribeDisabledLinks" type="bool" val="1"/>
+ <attr name="FlushBufferAtStop" type="bool" val="1"/>
+ <attr name="L1AWaitTimeout" type="u32" val="5"/>
+ <attr name="ReadyQueueSize" type="u32" val="100000"/>
+ <attr name="ResynchTimeout" type="u32" val="4000"/>
+ <attr name="PacketDumpPath" type="string" val="/tmp"/>
+ <attr name="LinkLoggingLimit" type="u32" val="1000"/>
+ <attr name="AssemblyBufferSize" type="u32" val="100000"/>
+ <attr name="Type" type="string" val="FullModeBuilder"/>
+ <attr name="AddPacketHeader" type="bool" val="0"/>
+ <attr name="RODHeaderPresent" type="bool" val="0"/>
+ <attr name="MaxMessageSize" type="u32" val="100"/>
+</obj>
+
+<obj class="SwRodGBTModeBuilder" id="GBTFragmentBuilder">
+ <attr name="BuildersNumber" type="u32" val="1"/>
+ <attr name="DropCorruptedPackets" type="bool" val="0"/>
+ <attr name="UnsubscribeDisabledLinks" type="bool" val="1"/>
+ <attr name="FlushBufferAtStop" type="bool" val="1"/>
+ <attr name="L1AWaitTimeout" type="u32" val="5"/>
+ <attr name="ReadyQueueSize" type="u32" val="100000"/>
+ <attr name="ResynchTimeout" type="u32" val="4000"/>
+ <attr name="PacketDumpPath" type="string" val="/tmp"/>
+ <attr name="LinkLoggingLimit" type="u32" val="1000"/>
+ <attr name="AssemblyBufferSize" type="u32" val="100000"/>
+ <attr name="AddPacketHeader" type="bool" val="1"/>
+ <attr name="Type" type="string" val="GBTModeBuilder"/>
+ <attr name="BufferSize" type="u32" val="100000"/>
+ <attr name="MinimumBufferSize" type="u32" val="64"/>
+ <attr name="RecoveryDepth" type="u32" val="10"/>
+ <attr name="DataReceivingTimeout" type="u32" val="20"/>
+ <attr name="L1AInitiatesTimeout" type="bool" val="1"/>
+ <attr name="MaxMessageSize" type="u32" val="100"/>
+</obj>
+
+<obj class="SwRodHLTRequestHandler" id="HLTHandler">
+ <attr name="FlushBufferAtStop" type="bool" val="1"/>
+ <attr name="QueueSize" type="u32" val="100000"/>
+ <attr name="WorkersNumber" type="u32" val="1"/>
+ <attr name="Type" type="string" val="HLTRequestHandler"/>
+ <attr name="DataServerThreads" type="u32" val="6"/>
+ <attr name="IOServices" type="u32" val="2"/>
+ <attr name="DataRequestTimeout" type="u32" val="50"/>
+ <attr name="ClearTimeout" type="u32" val="2000"/>
+ <attr name="IgnoreClearXId" type="bool" val="0"/>
+ <attr name="MaxIndex" type="u32" val="200000"/>
+ <attr name="MaxReorder" type="u32" val="100"/>
+ <attr name="MaxClearAge" type="u32" val="600"/>
+</obj>
+
+<obj class="SwRodInternalDataGenerator" id="InternalData">
+ <attr name="Type" type="string" val="InternalData"/>
+ <attr name="PacketSize" type="u32" val="40"/>
+ <attr name="Pileup" type="u32" val="1"/>
+ <attr name="EcrInterval" type="u32" val="50000"/>
+ <attr name="SyncInterval" type="u32" val="10000"/>
+ <attr name="TTCQueueSize" type="u32" val="100000"/>
+ <attr name="L1idBitMask" type="u32" val="0xffffffff"/>
+ <attr name="IsFullMode" type="bool" val="0"/>
+ <attr name="IsSingleton" type="bool" val="1"/>
+</obj>
+
+<obj class="SwRodInternalDataGenerator" id="InternalL1A">
+ <attr name="Type" type="string" val="InternalL1A"/>
+ <attr name="Pileup" type="u32" val="1"/>
+ <attr name="EcrInterval" type="u32" val="500000"/>
+ <attr name="SyncInterval" type="u32" val="10000"/>
+ <attr name="TTCQueueSize" type="u32" val="100000"/>
+ <attr name="L1idBitMask" type="u32" val="0xffffffff"/>
+ <attr name="IsFullMode" type="bool" val="1"/>
+ <attr name="IsSingleton" type="bool" val="1"/>
+</obj>
+
+<obj class="SwRodPluginLib" id="DefaultCoreImplementation">
+ <attr name="LibraryName" type="string" val="libswrod_core_impl.so"/>
+</obj>
+
+<obj class="SwRodPluginLib" id="FelixEmulatorImplementation">
+ <attr name="LibraryName" type="string" val="libswrod_felix_emulator.so"/>
+</obj>
+
+<obj class="SwRodPluginLib" id="TestCoreImplementation">
+ <attr name="LibraryName" type="string" val="libswrod_core_test.so"/>
+</obj>
+
+<obj class="Variable" id="FI_VERBS_RX_SIZE">
+ <attr name="Name" type="string" val="FI_VERBS_RX_SIZE"/>
+ <attr name="Value" type="string" val="1024"/>
+</obj>
+
+<obj class="Variable" id="FI_VERBS_TX_SIZE">
+ <attr name="Name" type="string" val="FI_VERBS_TX_SIZE"/>
+ <attr name="Value" type="string" val="1024"/>
+</obj>
+
+</oks-data>

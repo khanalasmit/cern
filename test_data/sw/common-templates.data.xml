@@ -1,0 +1,543 @@
+<?xml version="1.0" encoding="ASCII"?>
+
+<!-- oks-data version 2.2 -->
+
+
+<!DOCTYPE oks-data [
+  <!ELEMENT oks-data (info, (include)?, (comments)?, (obj)+)>
+  <!ELEMENT info EMPTY>
+  <!ATTLIST info
+      name CDATA #IMPLIED
+      type CDATA #IMPLIED
+      num-of-items CDATA #REQUIRED
+      oks-format CDATA #FIXED "data"
+      oks-version CDATA #REQUIRED
+      created-by CDATA #IMPLIED
+      created-on CDATA #IMPLIED
+      creation-time CDATA #IMPLIED
+      last-modified-by CDATA #IMPLIED
+      last-modified-on CDATA #IMPLIED
+      last-modification-time CDATA #IMPLIED
+  >
+  <!ELEMENT include (file)*>
+  <!ELEMENT file EMPTY>
+  <!ATTLIST file
+      path CDATA #REQUIRED
+  >
+  <!ELEMENT comments (comment)*>
+  <!ELEMENT comment EMPTY>
+  <!ATTLIST comment
+      creation-time CDATA #REQUIRED
+      created-by CDATA #REQUIRED
+      created-on CDATA #REQUIRED
+      author CDATA #REQUIRED
+      text CDATA #REQUIRED
+  >
+  <!ELEMENT obj (attr | rel)*>
+  <!ATTLIST obj
+      class CDATA #REQUIRED
+      id CDATA #REQUIRED
+  >
+  <!ELEMENT attr (data)*>
+  <!ATTLIST attr
+      name CDATA #REQUIRED
+      type (bool|s8|u8|s16|u16|s32|u32|s64|u64|float|double|date|time|string|uid|enum|class|-) "-"
+      val CDATA ""
+  >
+  <!ELEMENT data EMPTY>
+  <!ATTLIST data
+      val CDATA #REQUIRED
+  >
+  <!ELEMENT rel (ref)*>
+  <!ATTLIST rel
+      name CDATA #REQUIRED
+      class CDATA ""
+      id CDATA ""
+  >
+  <!ELEMENT ref EMPTY>
+  <!ATTLIST ref
+      class CDATA #REQUIRED
+      id CDATA #REQUIRED
+  >
+]>
+
+<oks-data>
+
+<info name="" type="" num-of-items="30" oks-format="data" oks-version="572fc09 built &quot;Mar 12 2021&quot;" created-by="glehmann" created-on="pc-tdq-onl-22.cern.ch" creation-time="20080506T153622" last-modified-by="rhauser" last-modified-on="mini" last-modification-time="20210312T123602"/>
+
+<include>
+ <file path="daq/schema/core.schema.xml"/>
+ <file path="daq/schema/MonInfoGatherer.schema.xml"/>
+ <file path="daq/sw/repository.data.xml"/>
+ <file path="daq/schema/log2ers.schema.xml"/>
+</include>
+
+<comments>
+ <comment creation-time="20120227T131637" created-by="glehmann" created-on="pc-atlas-cr-35.cern.ch" author="glehmann" text="set one pool RDB to setup segment so that any partition works somehow."/>
+ <comment creation-time="20120227T133200" created-by="glehmann" created-on="pc-atlas-cr-35.cern.ch" author="glehmann" text="moved pool1 to setup segment"/>
+ <comment creation-time="20120423T074611" created-by="avolio" created-on="pc-atlas-cr-27.cern.ch" author="Giuseppe" text="Changed timeouts for RDB servers"/>
+ <comment creation-time="20120514T091017" created-by="vandelli" created-on="pc-tdq-dc-12.cern.ch" author="Unknown" text="Mon template timeout increased 45 sec"/>
+ <comment creation-time="20120514T122016" created-by="vandelli" created-on="pc-tdq-dc-12.cern.ch" author="Unknown" text="Mon template action timeout set to 120"/>
+ <comment creation-time="20130702T094855" created-by="avolio" created-on="pc-tbed-pub-02.cern.ch" author="Avolio" text="Using the new RC binaries"/>
+ <comment creation-time="20131102T211157" created-by="rhauser" created-on="msu-pc7.cern.ch" author="rhauser" text="C++ oksconfig plug-in user: &apos;rhauser&apos;, host: &apos;msu-pc7.cern.ch&apos;, log message: &apos;python plug-in&apos;"/>
+ <comment creation-time="20131102T211235" created-by="rhauser" created-on="msu-pc7.cern.ch" author="rhauser" text="C++ oksconfig plug-in user: &apos;rhauser&apos;, host: &apos;msu-pc7.cern.ch&apos;, log message: &apos;python plug-in&apos;"/>
+ <comment creation-time="20131103T172941" created-by="rhauser" created-on="msu-pc7.cern.ch" author="rhauser" text="C++ oksconfig plug-in user: &apos;rhauser&apos;, host: &apos;msu-pc7.cern.ch&apos;, log message: &apos;python plug-in&apos;"/>
+ <comment creation-time="20131103T173009" created-by="rhauser" created-on="msu-pc7.cern.ch" author="rhauser" text="C++ oksconfig plug-in user: &apos;rhauser&apos;, host: &apos;msu-pc7.cern.ch&apos;, log message: &apos;python plug-in&apos;"/>
+ <comment creation-time="20131127T093053" created-by="glehmann" created-on="pc-tbed-pub-02.cern.ch" author="glehmann" text="C++ oksconfig plug-in user: &apos;glehmann&apos;, host: &apos;pc-tbed-pub-02.cern.ch&apos;, log message: &apos;the Interface name had disappeared in template controllers...&apos;"/>
+ <comment creation-time="20131127T093157" created-by="glehmann" created-on="pc-tbed-pub-02.cern.ch" author="glehmann" text="C++ oksconfig plug-in user: &apos;glehmann&apos;, host: &apos;pc-tbed-pub-02.cern.ch&apos;, log message: &apos;  &apos;"/>
+ <comment creation-time="20131127T100109" created-by="glehmann" created-on="pc-tbed-pub-02.cern.ch" author="glehmann" text="C++ oksconfig plug-in user: &apos;glehmann&apos;, host: &apos;pc-tbed-pub-02.cern.ch&apos;, log message: &apos;vv&apos;"/>
+ <comment creation-time="20131210T095437" created-by="glehmann" created-on="pc-tbed-pub-01.cern.ch" author="glehmann" text="added rc/commander interface to DF apps"/>
+ <comment creation-time="20131219T065023" created-by="glehmann" created-on="pc-tbed-pub-09.cern.ch" author="glehmann" text="removed links to explicit tbed hosts"/>
+ <comment creation-time="20141008T124048" created-by="glehmann" created-on="pc-tbed-pub-02.cern.ch" author="glehmann" text="C++ oksconfig plug-in user: &apos;glehmann&apos;, host: &apos;pc-tbed-pub-02.cern.ch&apos;, log message: &apos;fixed gathrer config for IS&apos;"/>
+ <comment creation-time="20141031T200819" created-by="kama" created-on="dellSMU.cern.ch" author="Unknown" text="Updated MIG Configuration to new schema"/>
+ <comment creation-time="20201129T085330" created-by="rhauser" created-on="rhauser-inspiron" author="Reiner Hauser" text="New format"/>
+</comments>
+
+
+<obj class="CustomLifetimeTemplateApplication" id="HLT_DB_Gen">
+ <attr name="Lifetime" type="enum" val="Boot_Shutdown"/>
+ <attr name="AllowSpontaneousExit" type="bool" val="1"/>
+ <attr name="Logging" type="bool" val="1"/>
+ <attr name="InitTimeout" type="u32" val="60"/>
+ <attr name="ExitTimeout" type="u32" val="5"/>
+ <attr name="RestartableDuringRun" type="bool" val="1"/>
+ <attr name="IfExitsUnexpectedly" type="enum" val="Error"/>
+ <attr name="IfFailsToStart" type="enum" val="Error"/>
+ <attr name="Instances" type="u16" val="1"/>
+ <attr name="RunsOn" type="enum" val="AllButFirstHost"/>
+ <rel name="Program" class="Binary" id="dal_create_db_connection_files"/>
+ <rel name="ProcessEnvironment">
+  <ref class="Variable" id="DEFAULT_HLT_CORAL_DBLOOKUP_PATH"/>
+  <ref class="Variable" id="DEFAULT_HLT_CORAL_AUTH_PATH"/>
+ </rel>
+</obj>
+
+<obj class="CustomLifetimeTemplateApplication" id="NodeCoralProxy">
+ <attr name="Lifetime" type="enum" val="Boot_Shutdown"/>
+ <attr name="AllowSpontaneousExit" type="bool" val="0"/>
+ <attr name="Parameters" type="string" val="-v -m -p 3320 -s [${P1_CORAL_SERVER_PROG}.#${TDAQ_PARTITION}-3] env(TDAQ_CORAL_PROXY_HOST)"/>
+ <attr name="RestartParameters" type="string" val="-v -m -p 3320 -s [${P1_CORAL_SERVER_PROG}.#${TDAQ_PARTITION}-3] env(TDAQ_CORAL_PROXY_HOST)"/>
+ <attr name="Logging" type="bool" val="1"/>
+ <attr name="ExitTimeout" type="u32" val="5"/>
+ <attr name="RestartableDuringRun" type="bool" val="1"/>
+ <attr name="IfExitsUnexpectedly" type="enum" val="Error"/>
+ <attr name="IfFailsToStart" type="enum" val="Error"/>
+ <attr name="Instances" type="u16" val="1"/>
+ <attr name="RunsOn" type="enum" val="AllButFirstHost"/>
+ <rel name="Program" class="Binary" id="coralServerProxy"/>
+ <rel name="ProcessEnvironment">
+  <ref class="Variable" id="LOG2ERS_LD_PRELOAD"/>
+  <ref class="Variable" id="LOG2ERS_CONFIG_CORALSERVER"/>
+ </rel>
+</obj>
+
+<obj class="IPCServiceApplication" id="DF">
+ <attr name="InterfaceName" type="string" val="is/repository"/>
+ <attr name="Parameters" type="string" val="-b ${TDAQ_BACKUP_PATH}/env(TDAQ_APPLICATION_NAME).backup -t 30"/>
+ <attr name="RestartParameters" type="string" val="-r ${TDAQ_BACKUP_PATH}/env(TDAQ_APPLICATION_NAME).backup -b ${TDAQ_BACKUP_PATH}/env(TDAQ_APPLICATION_NAME).backup -t 30"/>
+ <attr name="Logging" type="bool" val="1"/>
+ <attr name="InitTimeout" type="u32" val="30"/>
+ <attr name="ExitTimeout" type="u32" val="5"/>
+ <attr name="RestartableDuringRun" type="bool" val="1"/>
+ <attr name="IfExitsUnexpectedly" type="enum" val="Error"/>
+ <attr name="IfFailsToStart" type="enum" val="Error"/>
+ <attr name="SegmentProcEnvVarName" type="string" val="TDAQ_IS_SERVER"/>
+ <rel name="Program" class="Binary" id="is_server"/>
+</obj>
+
+<obj class="IPCServiceApplication" id="Histogramming">
+ <attr name="InterfaceName" type="string" val="is/repository"/>
+ <attr name="Parameters" type="string" val="-b ${TDAQ_BACKUP_PATH}/env(TDAQ_APPLICATION_NAME).backup -t 30"/>
+ <attr name="RestartParameters" type="string" val="-r ${TDAQ_BACKUP_PATH}/env(TDAQ_APPLICATION_NAME).backup -b ${TDAQ_BACKUP_PATH}/env(TDAQ_APPLICATION_NAME).backup -t 30"/>
+ <attr name="Logging" type="bool" val="1"/>
+ <attr name="InitTimeout" type="u32" val="30"/>
+ <attr name="ExitTimeout" type="u32" val="5"/>
+ <attr name="RestartableDuringRun" type="bool" val="1"/>
+ <attr name="IfExitsUnexpectedly" type="enum" val="Error"/>
+ <attr name="IfFailsToStart" type="enum" val="Error"/>
+ <attr name="SegmentProcEnvVarName" type="string" val="TDAQ_OH_SERVER"/>
+ <rel name="Program" class="Binary" id="is_server"/>
+</obj>
+
+<obj class="IPCServiceTemplateApplication" id="DF_Histogramming">
+ <attr name="InterfaceName" type="string" val="is/repository"/>
+ <attr name="Parameters" type="string" val="-s -p env(TDAQ_PARTITION) -n env(TDAQ_APPLICATION_NAME)"/>
+ <attr name="RestartParameters" type="string" val="-s -p env(TDAQ_PARTITION) -n env(TDAQ_APPLICATION_NAME)"/>
+ <attr name="Logging" type="bool" val="1"/>
+ <attr name="InitTimeout" type="u32" val="60"/>
+ <attr name="ExitTimeout" type="u32" val="5"/>
+ <attr name="RestartableDuringRun" type="bool" val="1"/>
+ <attr name="IfExitsUnexpectedly" type="enum" val="Error"/>
+ <attr name="IfFailsToStart" type="enum" val="Error"/>
+ <attr name="Instances" type="u16" val="1"/>
+ <attr name="RunsOn" type="enum" val="FirstHost"/>
+ <attr name="SegmentProcEnvVarName" type="string" val="TDAQ_OH_SERVER"/>
+ <attr name="SegmentProcEnvVarParentName" type="string" val="PARENT_OH_SERVER"/>
+ <rel name="Program" class="Binary" id="is_server"/>
+ <rel name="ProcessEnvironment">
+  <ref class="Variable" id="DF_IS_SERVER_MAX_QUEUE_SIZE"/>
+ </rel>
+</obj>
+
+<obj class="IPCServiceTemplateApplication" id="DF_IS">
+ <attr name="InterfaceName" type="string" val="is/repository"/>
+ <attr name="Parameters" type="string" val="-s -p env(TDAQ_PARTITION) -n env(TDAQ_APPLICATION_NAME)"/>
+ <attr name="RestartParameters" type="string" val="-s -p env(TDAQ_PARTITION) -n env(TDAQ_APPLICATION_NAME)"/>
+ <attr name="Logging" type="bool" val="1"/>
+ <attr name="InitTimeout" type="u32" val="60"/>
+ <attr name="ExitTimeout" type="u32" val="5"/>
+ <attr name="RestartableDuringRun" type="bool" val="1"/>
+ <attr name="IfExitsUnexpectedly" type="enum" val="Error"/>
+ <attr name="IfFailsToStart" type="enum" val="Error"/>
+ <attr name="Instances" type="u16" val="1"/>
+ <attr name="RunsOn" type="enum" val="FirstHost"/>
+ <attr name="SegmentProcEnvVarName" type="string" val="TDAQ_IS_SERVER"/>
+ <attr name="SegmentProcEnvVarParentName" type="string" val="PARENT_IS_SERVER"/>
+ <rel name="Program" class="Binary" id="is_server"/>
+</obj>
+
+<obj class="IPCServiceTemplateApplication" id="DefRDB">
+ <attr name="InterfaceName" type="string" val="rdb/cursor"/>
+ <attr name="Parameters" type="string" val="-s -o RDB -b ${TDAQ_BACKUP_PATH}/env(TDAQ_APPLICATION_NAME).backup  ${TDAQ_RDB_THREADING}"/>
+ <attr name="RestartParameters" type="string" val="-s -o RDB -b ${TDAQ_BACKUP_PATH}/env(TDAQ_APPLICATION_NAME).backup -r ${TDAQ_BACKUP_PATH}/env(TDAQ_APPLICATION_NAME).backup  ${TDAQ_RDB_THREADING}"/>
+ <attr name="Logging" type="bool" val="1"/>
+ <attr name="InitTimeout" type="u32" val="60"/>
+ <attr name="ExitTimeout" type="u32" val="5"/>
+ <attr name="RestartableDuringRun" type="bool" val="1"/>
+ <attr name="IfExitsUnexpectedly" type="enum" val="Error"/>
+ <attr name="IfFailsToStart" type="enum" val="Error"/>
+ <attr name="Instances" type="u16" val="1"/>
+ <attr name="RunsOn" type="enum" val="FirstHost"/>
+ <attr name="SegmentProcEnvVarName" type="string" val="TDAQ_DB_NAME"/>
+ <attr name="SegmentProcEnvVarParentName" type="string" val="TDAQ_DB_PARENT_NAME"/>
+ <rel name="Program" class="Binary" id="rdb_server"/>
+ <rel name="ProcessEnvironment">
+  <ref class="Variable" id="TEMPLATE_RDB_IPC_TIMEOUT"/>
+ </rel>
+</obj>
+
+<obj class="InfrastructureTemplateApplication" id="RackCoralProxy">
+ <attr name="Parameters" type="string" val="-v -P -p [${P1_CORAL_SERVER_PROG}.#${TDAQ_PARTITION}-3] -s [${P1_CORAL_SERVER_PROG}.#${TDAQ_PARTITION}-2] -X /var/tmp env(TDAQ_CORAL_PROXY_PARENT)"/>
+ <attr name="RestartParameters" type="string" val="-v -P -p [${P1_CORAL_SERVER_PROG}.#${TDAQ_PARTITION}-3] -s [${P1_CORAL_SERVER_PROG}.#${TDAQ_PARTITION}-2] -X /var/tmp env(TDAQ_CORAL_PROXY_PARENT)"/>
+ <attr name="Logging" type="bool" val="1"/>
+ <attr name="ExitTimeout" type="u32" val="5"/>
+ <attr name="RestartableDuringRun" type="bool" val="1"/>
+ <attr name="IfExitsUnexpectedly" type="enum" val="Error"/>
+ <attr name="IfFailsToStart" type="enum" val="Error"/>
+ <attr name="Instances" type="u16" val="1"/>
+ <attr name="RunsOn" type="enum" val="FirstHost"/>
+ <attr name="SegmentProcEnvVarName" type="string" val="TDAQ_CORAL_PROXY_HOST"/>
+ <attr name="SegmentProcEnvVarParentName" type="string" val="TDAQ_CORAL_PROXY_PARENT"/>
+ <attr name="SegmentProcEnvVarValue" type="enum" val="runsOn"/>
+ <rel name="Program" class="Binary" id="coralServerProxy"/>
+ <rel name="ProcessEnvironment">
+  <ref class="Variable" id="LOG2ERS_LD_PRELOAD"/>
+  <ref class="Variable" id="LOG2ERS_CONFIG_CORALSERVER"/>
+ </rel>
+</obj>
+
+<obj class="InfrastructureTemplateApplication" id="TopCoralProxy">
+ <attr name="Parameters" type="string" val="-v -P -p [${P1_CORAL_SERVER_PROG}.#${TDAQ_PARTITION}-2] -s [${P1_CORAL_SERVER_PROG}.#${TDAQ_PARTITION}-1] -X /var/tmp ${P1_CORAL_SERVER_HOST}"/>
+ <attr name="RestartParameters" type="string" val="-v -P -p [${P1_CORAL_SERVER_PROG}.#${TDAQ_PARTITION}-2] -s [${P1_CORAL_SERVER_PROG}.#${TDAQ_PARTITION}-1] -X /var/tmp ${P1_CORAL_SERVER_HOST}"/>
+ <attr name="Logging" type="bool" val="1"/>
+ <attr name="ExitTimeout" type="u32" val="5"/>
+ <attr name="RestartableDuringRun" type="bool" val="1"/>
+ <attr name="IfExitsUnexpectedly" type="enum" val="Error"/>
+ <attr name="IfFailsToStart" type="enum" val="Error"/>
+ <attr name="Instances" type="u16" val="1"/>
+ <attr name="RunsOn" type="enum" val="FirstHost"/>
+ <attr name="SegmentProcEnvVarName" type="string" val="TDAQ_CORAL_PROXY_HOST"/>
+ <attr name="SegmentProcEnvVarParentName" type="string" val="TDAQ_CORAL_PROXY_PARENT"/>
+ <attr name="SegmentProcEnvVarValue" type="enum" val="runsOn"/>
+ <rel name="Program" class="Binary" id="coralServerProxy"/>
+ <rel name="ProcessEnvironment">
+  <ref class="Variable" id="LOG2ERS_LD_PRELOAD"/>
+  <ref class="Variable" id="LOG2ERS_CONFIG_CORALSERVER"/>
+ </rel>
+</obj>
+
+<obj class="Log2ERSConfig" id="Log2ERS_CoralServer">
+ <rel name="StdoutParsers">
+  <ref class="Log2ERSLineParse" id="Log2ERSLineParse_CoralServer"/>
+ </rel>
+ <rel name="StderrParsers">
+  <ref class="Log2ERSLineParse" id="Log2ERSLineParse_CoralServer"/>
+ </rel>
+</obj>
+
+<obj class="Log2ERSLineParse" id="Log2ERSLineParse_CoralServer">
+ <attr name="Regexp" type="string" val="(\d{4}-\d\d-\d\d [0-9:.]+) \[ERR\] (.*)"/>
+ <attr name="Severity" type="enum" val="ERROR"/>
+ <attr name="Message" type="string" val="$2 (original timestamp: $1)"/>
+ <attr name="Package" type="string" val="CoralServer"/>
+ <attr name="FileName" type="string" val="coral_server_internals.cxx"/>
+ <attr name="FunctionName" type="string" val="FUNC()"/>
+ <attr name="LineNumber" type="string" val="0"/>
+</obj>
+
+<obj class="MIGApplication" id="DefMIG-IS">
+ <attr name="InterfaceName" type="string" val="rc/commander"/>
+ <attr name="ActionTimeout" type="s32" val="10"/>
+ <attr name="ProbeInterval" type="s32" val="25"/>
+ <attr name="FullStatisticsInterval" type="s32" val="63"/>
+ <attr name="IfError" type="enum" val="Ignore"/>
+ <attr name="ControlsTTCPartitions" type="bool" val="0"/>
+ <attr name="Logging" type="bool" val="1"/>
+ <attr name="InitTimeout" type="u32" val="60"/>
+ <attr name="ExitTimeout" type="u32" val="5"/>
+ <attr name="RestartableDuringRun" type="bool" val="1"/>
+ <attr name="IfExitsUnexpectedly" type="enum" val="Error"/>
+ <attr name="IfFailsToStart" type="enum" val="Error"/>
+ <attr name="Instances" type="u16" val="1"/>
+ <attr name="RunsOn" type="enum" val="FirstHost"/>
+ <attr name="LibraryPaths" type="string">
+  <data val="libMIGContainers.so"/>
+ </attr>
+ <rel name="Program" class="Binary" id="MonInfoGatherer"/>
+ <rel name="ProcessEnvironment">
+  <ref class="Variable" id="GATHERER_NO_IPC_PROXY"/>
+ </rel>
+ <rel name="Configurations">
+  <ref class="MIGConfiguration" id="TDAQ_IS_Conf"/>
+ </rel>
+</obj>
+
+<obj class="MIGApplication" id="DefMIG-OH">
+ <attr name="InterfaceName" type="string" val="rc/commander"/>
+ <attr name="ActionTimeout" type="s32" val="10"/>
+ <attr name="ProbeInterval" type="s32" val="25"/>
+ <attr name="FullStatisticsInterval" type="s32" val="63"/>
+ <attr name="IfError" type="enum" val="Ignore"/>
+ <attr name="ControlsTTCPartitions" type="bool" val="0"/>
+ <attr name="Logging" type="bool" val="1"/>
+ <attr name="InitTimeout" type="u32" val="60"/>
+ <attr name="ExitTimeout" type="u32" val="5"/>
+ <attr name="RestartableDuringRun" type="bool" val="1"/>
+ <attr name="IfExitsUnexpectedly" type="enum" val="Error"/>
+ <attr name="IfFailsToStart" type="enum" val="Error"/>
+ <attr name="Instances" type="u16" val="1"/>
+ <attr name="RunsOn" type="enum" val="FirstHost"/>
+ <attr name="LibraryPaths" type="string">
+  <data val="libMIGContainers.so"/>
+ </attr>
+ <rel name="Program" class="Binary" id="MonInfoGatherer"/>
+ <rel name="ProcessEnvironment">
+  <ref class="Variable" id="GATHERER_NO_IPC_PROXY"/>
+ </rel>
+ <rel name="Configurations">
+  <ref class="MIGConfiguration" id="TDAQ_OH_Conf"/>
+ </rel>
+</obj>
+
+<obj class="MIGApplication" id="TopMIG-IS">
+ <attr name="InterfaceName" type="string" val="rc/commander"/>
+ <attr name="ActionTimeout" type="s32" val="10"/>
+ <attr name="ProbeInterval" type="s32" val="25"/>
+ <attr name="FullStatisticsInterval" type="s32" val="63"/>
+ <attr name="IfError" type="enum" val="Ignore"/>
+ <attr name="ControlsTTCPartitions" type="bool" val="0"/>
+ <attr name="Logging" type="bool" val="1"/>
+ <attr name="InitTimeout" type="u32" val="60"/>
+ <attr name="ExitTimeout" type="u32" val="5"/>
+ <attr name="RestartableDuringRun" type="bool" val="1"/>
+ <attr name="IfExitsUnexpectedly" type="enum" val="Error"/>
+ <attr name="IfFailsToStart" type="enum" val="Error"/>
+ <attr name="Instances" type="u16" val="1"/>
+ <attr name="RunsOn" type="enum" val="FirstHost"/>
+ <attr name="LibraryPaths" type="string">
+  <data val="libMIGContainers.so"/>
+ </attr>
+ <rel name="Program" class="Binary" id="MonInfoGatherer"/>
+ <rel name="ProcessEnvironment">
+  <ref class="Variable" id="GATHERER_NO_IPC_PROXY"/>
+ </rel>
+ <rel name="Configurations">
+  <ref class="MIGConfiguration" id="Top_TDAQ_IS_Conf"/>
+ </rel>
+</obj>
+
+<obj class="MIGApplication" id="TopMIG-OH">
+ <attr name="InterfaceName" type="string" val="rc/commander"/>
+ <attr name="ActionTimeout" type="s32" val="10"/>
+ <attr name="ProbeInterval" type="s32" val="25"/>
+ <attr name="FullStatisticsInterval" type="s32" val="63"/>
+ <attr name="IfError" type="enum" val="Ignore"/>
+ <attr name="ControlsTTCPartitions" type="bool" val="0"/>
+ <attr name="Logging" type="bool" val="1"/>
+ <attr name="InitTimeout" type="u32" val="60"/>
+ <attr name="ExitTimeout" type="u32" val="5"/>
+ <attr name="RestartableDuringRun" type="bool" val="1"/>
+ <attr name="IfExitsUnexpectedly" type="enum" val="Error"/>
+ <attr name="IfFailsToStart" type="enum" val="Error"/>
+ <attr name="Instances" type="u16" val="1"/>
+ <attr name="RunsOn" type="enum" val="FirstHost"/>
+ <attr name="LibraryPaths" type="string">
+  <data val="libMIGContainers.so"/>
+ </attr>
+ <rel name="Program" class="Binary" id="MonInfoGatherer"/>
+ <rel name="ProcessEnvironment">
+  <ref class="Variable" id="GATHERER_NO_IPC_PROXY"/>
+ </rel>
+ <rel name="Configurations">
+  <ref class="MIGConfiguration" id="Top_TDAQ_OH_Conf"/>
+ </rel>
+</obj>
+
+<obj class="MIGConfiguration" id="TDAQ_IS_Conf">
+ <attr name="ProviderRegExp" type="string" val=".*"/>
+ <attr name="ObjectRegExp" type="string" val=".*"/>
+ <rel name="SourceServers">
+  <ref class="IPCServiceTemplateApplication" id="DF_IS"/>
+ </rel>
+ <rel name="DestinationServers">
+  <ref class="IPCServiceTemplateApplication" id="DF_IS"/>
+ </rel>
+ <rel name="MatchHandlers">
+  <ref class="MIGMatchHandler" id="MIGDefaultHandler"/>
+ </rel>
+</obj>
+
+<obj class="MIGConfiguration" id="TDAQ_OH_Conf">
+ <attr name="ProviderRegExp" type="string" val=".*"/>
+ <attr name="ObjectRegExp" type="string" val=".*"/>
+ <rel name="SourceServers">
+  <ref class="IPCServiceTemplateApplication" id="DF_Histogramming"/>
+ </rel>
+ <rel name="DestinationServers">
+  <ref class="IPCServiceTemplateApplication" id="DF_Histogramming"/>
+ </rel>
+ <rel name="MatchHandlers">
+  <ref class="MIGMatchHandler" id="MIGDefaultHandler"/>
+ </rel>
+</obj>
+
+<obj class="MIGConfiguration" id="Top_TDAQ_IS_Conf">
+ <attr name="ProviderRegExp" type="string" val=".*"/>
+ <attr name="ObjectRegExp" type="string" val=".*"/>
+ <rel name="SourceServers">
+  <ref class="IPCServiceTemplateApplication" id="DF_IS"/>
+ </rel>
+ <rel name="DestinationServers">
+  <ref class="IPCServiceApplication" id="DF"/>
+ </rel>
+ <rel name="MatchHandlers">
+  <ref class="MIGMatchHandler" id="MIGDefaultHandler"/>
+ </rel>
+</obj>
+
+<obj class="MIGConfiguration" id="Top_TDAQ_OH_Conf">
+ <attr name="ProviderRegExp" type="string" val=".*"/>
+ <attr name="ObjectRegExp" type="string" val=".*"/>
+ <rel name="SourceServers">
+  <ref class="IPCServiceTemplateApplication" id="DF_Histogramming"/>
+ </rel>
+ <rel name="DestinationServers">
+  <ref class="IPCServiceApplication" id="Histogramming"/>
+ </rel>
+ <rel name="MatchHandlers">
+  <ref class="MIGMatchHandler" id="MIGDefaultHandler"/>
+ </rel>
+</obj>
+
+<obj class="MIGMatchHandler" id="MIGDefaultHandler">
+ <attr name="ObjectRegExp" type="string" val=".*"/>
+ <attr name="Name" type="string" val="Default"/>
+</obj>
+
+<obj class="RunControlTemplateApplication" id="DefRC">
+ <attr name="InterfaceName" type="string" val="rc/commander"/>
+ <attr name="ActionTimeout" type="s32" val="20"/>
+ <attr name="ProbeInterval" type="s32" val="10"/>
+ <attr name="FullStatisticsInterval" type="s32" val="0"/>
+ <attr name="ControlsTTCPartitions" type="bool" val="0"/>
+ <attr name="Logging" type="bool" val="1"/>
+ <attr name="InitTimeout" type="u32" val="60"/>
+ <attr name="ExitTimeout" type="u32" val="60"/>
+ <attr name="RestartableDuringRun" type="bool" val="1"/>
+ <attr name="IfExitsUnexpectedly" type="enum" val="Error"/>
+ <attr name="IfFailsToStart" type="enum" val="Error"/>
+ <attr name="Instances" type="u16" val="1"/>
+ <attr name="RunsOn" type="enum" val="FirstHost"/>
+ <rel name="Program" class="Binary" id="rc_controller"/>
+</obj>
+
+<obj class="RunControlTemplateApplication" id="DefRC-NoRestart">
+ <attr name="InterfaceName" type="string" val="rc/commander"/>
+ <attr name="ActionTimeout" type="s32" val="30"/>
+ <attr name="ProbeInterval" type="s32" val="60"/>
+ <attr name="FullStatisticsInterval" type="s32" val="0"/>
+ <attr name="ControlsTTCPartitions" type="bool" val="0"/>
+ <attr name="Logging" type="bool" val="1"/>
+ <attr name="InitTimeout" type="u32" val="60"/>
+ <attr name="ExitTimeout" type="u32" val="5"/>
+ <attr name="RestartableDuringRun" type="bool" val="0"/>
+ <attr name="IfExitsUnexpectedly" type="enum" val="Error"/>
+ <attr name="IfFailsToStart" type="enum" val="Error"/>
+ <attr name="Instances" type="u16" val="1"/>
+ <attr name="RunsOn" type="enum" val="FirstHost"/>
+ <rel name="Program" class="Binary" id="rc_controller"/>
+</obj>
+
+<obj class="RunControlTemplateApplication" id="DefRC-TTC">
+ <attr name="InterfaceName" type="string" val="rc/commander"/>
+ <attr name="ActionTimeout" type="s32" val="30"/>
+ <attr name="ProbeInterval" type="s32" val="60"/>
+ <attr name="FullStatisticsInterval" type="s32" val="0"/>
+ <attr name="ControlsTTCPartitions" type="bool" val="1"/>
+ <attr name="Logging" type="bool" val="1"/>
+ <attr name="InitTimeout" type="u32" val="60"/>
+ <attr name="ExitTimeout" type="u32" val="5"/>
+ <attr name="RestartableDuringRun" type="bool" val="1"/>
+ <attr name="IfExitsUnexpectedly" type="enum" val="Error"/>
+ <attr name="IfFailsToStart" type="enum" val="Error"/>
+ <attr name="Instances" type="u16" val="1"/>
+ <attr name="RunsOn" type="enum" val="FirstHost"/>
+ <rel name="Program" class="Binary" id="rc_controller"/>
+</obj>
+
+<obj class="Variable" id="DEFAULT_HLT_CORAL_AUTH_PATH">
+ <attr name="Name" type="string" val="CORAL_AUTH_PATH"/>
+</obj>
+
+<obj class="Variable" id="DEFAULT_HLT_CORAL_DBLOOKUP_PATH">
+ <attr name="Name" type="string" val="CORAL_DBLOOKUP_PATH"/>
+ <attr name="Value" type="string" val="/tmp/coral-proxy/${TDAQ_PARTITION}"/>
+</obj>
+
+<obj class="Variable" id="GATHERER_NO_IPC_PROXY">
+ <attr name="Description" type="string" val="Define IPC interceptors for Gatherer that exclude ipc_proxy"/>
+ <attr name="Name" type="string" val="TDAQ_IPC_CLIENT_INTERCEPTORS"/>
+ <attr name="Value" type="string" val="ipcclicp"/>
+</obj>
+
+<obj class="Variable" id="LOG2ERS_CONFIG_CORALSERVER">
+ <attr name="Description" type="string" val="Defines name of the LOG2ERS configuration object to be used with CoralServer/Proxy"/>
+ <attr name="Name" type="string" val="LOG2ERS_CONFIG_NAME"/>
+ <attr name="Value" type="string" val="Log2ERS_CoralServer"/>
+</obj>
+
+<obj class="Variable" id="LOG2ERS_LD_PRELOAD">
+ <attr name="Description" type="string" val="LOG2ERS shared library to preload, to be used with CoralServer/Proxy but may be used by other apps as well"/>
+ <attr name="Name" type="string" val="LD_PRELOAD"/>
+ <attr name="Value" type="string" val="liblog2ers_preload.so"/>
+</obj>
+
+<obj class="Variable" id="POOL_RDB_IPC_TIMEOUT">
+ <attr name="Description" type="string" val="IPC communication timeout for segment RDB server"/>
+ <attr name="Name" type="string" val="TDAQ_IPC_TIMEOUT"/>
+ <attr name="Value" type="string" val="13000"/>
+</obj>
+
+<obj class="Variable" id="TEMPLATE_RDB_IPC_TIMEOUT">
+ <attr name="Description" type="string" val="IPC communication timeout for segment RDB server"/>
+ <attr name="Name" type="string" val="TDAQ_IPC_TIMEOUT"/>
+ <attr name="Value" type="string" val="12000"/>
+</obj>
+
+<obj class="Variable" id="DF_IS_SERVER_MAX_QUEUE_SIZE">
+ <attr name="Description" type="string" val="Limit on the queue size in is_server"/>
+ <attr name="Name" type="string" val="IS_SERVER_MAX_QUEUE_SIZE"/>
+ <attr name="Value" type="string" val="500000"/>
+</obj>
+
+</oks-data>

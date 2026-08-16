@@ -1,0 +1,287 @@
+<?xml version="1.0" encoding="ASCII"?>
+
+<!-- oks-schema version 2.2 -->
+
+
+<!DOCTYPE oks-schema [
+  <!ELEMENT oks-schema (info, (include)?, (comments)?, (class)+)>
+  <!ELEMENT info EMPTY>
+  <!ATTLIST info
+      name CDATA #IMPLIED
+      type CDATA #IMPLIED
+      num-of-items CDATA #REQUIRED
+      oks-format CDATA #FIXED "schema"
+      oks-version CDATA #REQUIRED
+      created-by CDATA #IMPLIED
+      created-on CDATA #IMPLIED
+      creation-time CDATA #IMPLIED
+      last-modified-by CDATA #IMPLIED
+      last-modified-on CDATA #IMPLIED
+      last-modification-time CDATA #IMPLIED
+  >
+  <!ELEMENT include (file)+>
+  <!ELEMENT file EMPTY>
+  <!ATTLIST file
+      path CDATA #REQUIRED
+  >
+  <!ELEMENT comments (comment)+>
+  <!ELEMENT comment EMPTY>
+  <!ATTLIST comment
+      creation-time CDATA #REQUIRED
+      created-by CDATA #REQUIRED
+      created-on CDATA #REQUIRED
+      author CDATA #REQUIRED
+      text CDATA #REQUIRED
+  >
+  <!ELEMENT class (superclass | attribute | relationship | method)*>
+  <!ATTLIST class
+      name CDATA #REQUIRED
+      description CDATA ""
+      is-abstract (yes|no) "no"
+  >
+  <!ELEMENT superclass EMPTY>
+  <!ATTLIST superclass name CDATA #REQUIRED>
+  <!ELEMENT attribute EMPTY>
+  <!ATTLIST attribute
+      name CDATA #REQUIRED
+      description CDATA ""
+      type (bool|s8|u8|s16|u16|s32|u32|s64|u64|float|double|date|time|string|uid|enum|class) #REQUIRED
+      range CDATA ""
+      format (dec|hex|oct) "dec"
+      is-multi-value (yes|no) "no"
+      init-value CDATA ""
+      is-not-null (yes|no) "no"
+      ordered (yes|no) "no"
+  >
+  <!ELEMENT relationship EMPTY>
+  <!ATTLIST relationship
+      name CDATA #REQUIRED
+      description CDATA ""
+      class-type CDATA #REQUIRED
+      low-cc (zero|one) #REQUIRED
+      high-cc (one|many) #REQUIRED
+      is-composite (yes|no) #REQUIRED
+      is-exclusive (yes|no) #REQUIRED
+      is-dependent (yes|no) #REQUIRED
+      ordered (yes|no) "no"
+  >
+  <!ELEMENT method (method-implementation*)>
+  <!ATTLIST method
+      name CDATA #REQUIRED
+      description CDATA ""
+  >
+  <!ELEMENT method-implementation EMPTY>
+  <!ATTLIST method-implementation
+      language CDATA #REQUIRED
+      prototype CDATA #REQUIRED
+      body CDATA ""
+  >
+]>
+
+<oks-schema>
+
+<info name="" type="" num-of-items="26" oks-format="schema" oks-version="oks-08-03-04-1-gf920aa4 built &quot;May 12 2022&quot;" created-by="kolos" created-on="pcatd88.cern.ch" creation-time="20091027T171136" last-modified-by="kolos" last-modified-on="pc-tbed-swrod-01.cern.ch" last-modification-time="20221129T103212"/>
+
+<include>
+ <file path="daq/schema/core.schema.xml"/>
+ <file path="daq/schema/df.schema.xml"/>
+</include>
+
+
+ <class name="FelixLink">
+  <superclass name="Resource"/>
+  <attribute name="FelixId" description="Identifier of the input channel. Unique across the system." type="u64" format="hex"/>
+  <attribute name="DetectorResourceId" description="ID of detector element" type="u32" format="hex"/>
+  <attribute name="DetectorResourceName" description="Name of detector element" type="string"/>
+ </class>
+
+ <class name="SwRodApplication" description="Defines configuration for a SW ROD aplication">
+  <superclass name="ROS"/>
+  <attribute name="CPU" description="Affinity of the application&apos;s threads will be set to the given CPU cores. The numbers are separated by commas and may include ranges. For example: 0,5,7,9-11" type="string"/>
+ </class>
+
+ <class name="SwRodConfiguration">
+  <superclass name="ReadoutConfigurationBase"/>
+  <attribute name="ISServerName" description="Name of IS server for publishing statistics" type="string" init-value="DF" is-not-null="yes"/>
+  <relationship name="Plugins" description="List of plugin libraries" class-type="SwRodPluginLib" low-cc="one" high-cc="many" is-composite="no" is-exclusive="no" is-dependent="no"/>
+  <relationship name="L1AHandler" description="A handler of L1Accept packets" class-type="SwRodL1AInputHandler" low-cc="zero" high-cc="one" is-composite="no" is-exclusive="yes" is-dependent="no"/>
+  <relationship name="Consumers" description="List of ROBFragment consumers" class-type="SwRodFragmentConsumer" low-cc="zero" high-cc="many" is-composite="no" is-exclusive="no" is-dependent="no"/>
+  <relationship name="InputMethod" class-type="SwRodInputMethod" low-cc="one" high-cc="one" is-composite="no" is-exclusive="no" is-dependent="no"/>
+ </class>
+
+ <class name="SwRodCustomProcessingLib">
+  <attribute name="LibraryName" description="Name of the cutom processing library (excluding lib prefix and .so suffix)" type="string"/>
+  <attribute name="TrigInfoExtractor" description="Name of the function to extract L1 ID etc. from incoming data" type="string" is-not-null="yes"/>
+  <attribute name="DataIntegrityChecker" description="Name of the function to check integrity of incoming data" type="string"/>
+  <attribute name="ProcessorFactory" description="Name of the custom processor factory function" type="string"/>
+ </class>
+
+ <class name="SwRodCustomProcessor" description="Implements framework for custom prosessing of fully assembled ROB fragments">
+  <superclass name="SwRodFragmentConsumer"/>
+  <attribute name="Type" description="Class name of consumer" type="string" init-value="ROBFragmentProcessor"/>
+  <attribute name="DeferProcessing" description="If the value is &apos;true&apos; the processing will be applied only when fragments are requested to be serialized." type="bool" init-value="false"/>
+  <attribute name="ProfileExecution" description="If the value is &apos;true&apos; the time of the processing execution will be recorded." type="bool" init-value="false"/>
+ </class>
+
+ <class name="SwRodDataChannel" description="Definition of a ROB granularity SW ROD input">
+  <superclass name="HW_InputChannel"/>
+  <superclass name="ResourceSetAND"/>
+  <attribute name="TTCControllerName" description="Name of the closest TTC segment controller. Used to detect when TTC Restart operation is ongoing." type="string" init-value="RootController"/>
+  <attribute name="UpdateECRCounter" description="Defines whether SW ROD sets ECR counters in FELIX to the last known ECR value during TTC Restart, Stopless recovery and Resynchronise procedures" type="bool" init-value="true"/>
+  <relationship name="CustomLib" description="This library provides trigger information extraction and custom processing procedures" class-type="SwRodCustomProcessingLib" low-cc="one" high-cc="one" is-composite="no" is-exclusive="no" is-dependent="no"/>
+ </class>
+
+ <class name="SwRodDebugStream" description="ROBFragmentConsumer to hold and share ROB fragments with errors">
+  <superclass name="SwRodFragmentConsumer"/>
+  <attribute name="Type" description="Class name of consumer" type="string" init-value="DebugStream"/>
+  <attribute name="EventBufferSize" description="Size of the internal event buffer (in number of events)" type="u32" init-value="100" is-not-null="yes"/>
+ </class>
+
+ <class name="SwRodDefaultL1AHandler" description="Level 1 accept input handler configuration">
+  <superclass name="SwRodL1AInputHandler"/>
+  <attribute name="Type" description="Type of input handler" type="string" init-value="L1AInputHandler"/>
+  <attribute name="Link" type="u64" format="hex"/>
+  <attribute name="ResynchTimeout" description="Timeout in milliseconds for arrival of the last known L1 Accept packet" type="u32" init-value="1000"/>
+ </class>
+
+ <class name="SwRodEventSampler" description="ROBFragmentConsumer to sample fragments for online monitoring">
+  <superclass name="SwRodFragmentConsumer"/>
+  <attribute name="Type" description="Class name of consumer" type="string" init-value="EventSampler"/>
+  <attribute name="MaximumChannels" description="Maximum number of sampling channels, i.e. monitors connected with different selection criteria" type="u32" init-value="1" is-not-null="yes"/>
+  <attribute name="EventBufferSize" description="Size of the internal event buffer (in number of events)" type="u32" init-value="100" is-not-null="yes"/>
+  <attribute name="SampleAll" description="If the value is &apos;true&apos; sends all matched avents to every monitoring task attached. Shall be used with care as it may create backpressure in the data-flow path." type="bool" init-value="false"/>
+  <attribute name="SamplingRatio" description="Sampler will consider every Nth event where N is the value of this attribute" type="u32" range="1..1000000000" init-value="10" is-not-null="yes"/>
+ </class>
+
+ <class name="SwRodFelixInput">
+  <superclass name="SwRodInputMethod"/>
+  <attribute name="Type" type="string" init-value="FelixInput"/>
+  <attribute name="DataNetwork" description="Defines network interface to be used for receiving data" type="string" is-not-null="yes"/>
+  <attribute name="FelixBusDirectory" description="Directory to be used for storing felixbus information" type="string"/>
+  <attribute name="FelixBusGroupName" type="string" init-value="FELIX"/>
+  <attribute name="FelixBusInterface" description="Network interface that is used for communication with the FELIX bus service" type="string" init-value="ZSYS_INTERFACE"/>
+  <attribute name="FelixBusTimeout" description="Timeout for E-Link ID resolution in milliseconds" type="u32" init-value="1000"/>
+ </class>
+
+ <class name="SwRodFileWriter" description="ROBFragmentConsumer to write fragments to file">
+  <superclass name="SwRodFragmentConsumer"/>
+  <attribute name="Type" description="Class name of consumer" type="string" init-value="FileWriter"/>
+  <attribute name="QueueSize" description="Size limit on internal data queue" type="u32" init-value="1024"/>
+  <attribute name="IgnoreRecordingEnable" description="Ignore the recording enable flag set in the RunParams IS from the IGUI. Always write to file." type="bool" init-value="false"/>
+  <relationship name="EventStorage" description="Event stirage configuration" class-type="EventStorage" low-cc="one" high-cc="one" is-composite="no" is-exclusive="no" is-dependent="no"/>
+ </class>
+
+ <class name="SwRodFragmentBuilder" description="Defines event builder algorithm to be used" is-abstract="yes">
+  <attribute name="Type" description="Type of event builder (GBT, Full, etc.)" type="string"/>
+  <attribute name="BuildersNumber" description="Number of threads that implement the final phase of event building - create ROB fragments and pass them to consumers" type="u32" range="0..128" init-value="1"/>
+  <attribute name="DropCorruptedPackets" description="If this value is set to 1 then corrupted data packets will be dropped" type="bool" init-value="false"/>
+  <attribute name="UnsubscribeDisabledLinks" description="If this value is set to 1 then SW ROD will unsubscribe from the stoplessly removed input links, otherwise just mark them as disabled and discard all data received from them." type="bool" init-value="true"/>
+  <attribute name="FlushBufferAtStop" description="If set to true flushes input buffers when Stop-of-Run command received and immediatley stops data processing. Otherwise keeps working until buffers get empty." type="bool" init-value="true"/>
+  <attribute name="L1AWaitTimeout" description="Timeout in milliseconds to wait for a specific L1 Accept packet to arrive" type="u32" init-value="20"/>
+  <attribute name="MaxMessageSize" description="The maximum size of a data packet. Packets of larger size will be either discarded or truncated depending on the specific algorithm implementation." type="u32" init-value="4096"/>
+  <attribute name="ReadyQueueSize" description="Output queue size (in fragments number)" type="u32" init-value="100000"/>
+  <attribute name="ResynchTimeout" description="Timeout in milliseconds for the fragment with the last known L1 ID been built" type="u32" init-value="4000"/>
+  <attribute name="PacketDumpPath" description="Directory to store files with dumps of corrupted packets" type="string" init-value="/tmp"/>
+  <attribute name="PacketDumpLimit" description="Maximum number of packets to dump per E-Link" type="u32" init-value="0"/>
+  <attribute name="LinkLoggingLimit" description="Maximum number of issues reported per E-Link" type="u32" init-value="1000"/>
+  <attribute name="AssemblyBufferSize" description="Maximum number of ROB fagments with either L1 Accept or data packets been missed that can be simultaneusly kept in memory." type="u32" init-value="100000" is-not-null="yes"/>
+  <attribute name="AddPacketHeader" description="If set to true, each data packet in the fragment payload will be preceeded by 8-bytes header that cntains the packet size, error status and detector specific E-Link ID." type="bool" init-value="true"/>
+  <attribute name="LinkSubscriptionMask" description="This mask is applied to E-Link IDs and the resulting value is used to group &#xA;E-Links to the data receiving threads if the number of the groups is equal &#xA;to the number of these threads as defined by the SwRodModule::WorkersNumber&#xA;parameter. &#xA;Otherwise the mask will be ignored and the E-Links will be equally split&#xA;between the data receiving threads based on the order of their appearence&#xA;in the SwRodDataChannel::Contains relationship." type="u64" format="hex" init-value="0"/>
+ </class>
+
+ <class name="SwRodFragmentConsumer" description="Consumer of ROBFragments" is-abstract="yes">
+  <attribute name="Type" description="Class name of this consumer" type="string"/>
+  <attribute name="FlushBufferAtStop" description="If set to true flushes input buffers when Stop-of-Run command received and immediatley stops data processing. Otherwise keeps working until buffers get empty." type="bool" init-value="true"/>
+  <attribute name="QueueSize" description="Input queue size (in fragments number) for this consumer" type="u32" init-value="100000"/>
+  <attribute name="WorkersNumber" description="Number of worker threads" type="u32" range="0..128" init-value="1"/>
+  <attribute name="CPU" description="Affinity of the worker threads will be set to the given CPU cores. The numbers are separated by commas and may include ranges. For example: 0,5,7,9-11" type="string"/>
+ </class>
+
+ <class name="SwRodFullModeBuilder" description="Parameters for Full Mode event builder algorithm">
+  <superclass name="SwRodFragmentBuilder"/>
+  <attribute name="Type" type="string" init-value="FullModeBuilder"/>
+  <attribute name="AddPacketHeader" type="bool" init-value="false"/>
+  <attribute name="RODHeaderPresent" description="Defines if input packets already contain ROD headers" type="bool" init-value="false"/>
+  <attribute name="MaxMessageSize" description="The maximum size of a data packet. Packets of larger size will be truncated." type="u32" init-value="4096"/>
+ </class>
+
+ <class name="SwRodGBTModeBuilder" description="Parameters for GBT event builder algorithm">
+  <superclass name="SwRodFragmentBuilder"/>
+  <attribute name="Type" type="string" init-value="GBTModeBuilder"/>
+  <attribute name="BufferSize" description="Maximum size (# of ROB fragments) of the buffer for aggregating data chunks from differnt E-Links. This value defines a maximum number of ROB fragments that can be built concurrently." type="u32" init-value="10000" is-not-null="yes"/>
+  <attribute name="MinimumBufferSize" description="Minimum size (# of ROB fragments) of the data aggregation buffer." type="u32" init-value="64" is-not-null="yes"/>
+  <attribute name="RecoveryDepth" description="Maximum number of L1A packets to be checked if the latest data and L1A packets don&apos;t matcheach other. If no matchis is found the algorithm behavior will depend on the value of the DropCorruptedPackets parameter" type="u32" init-value="10"/>
+  <attribute name="DataReceivingTimeout" description="Timeout in milliseconds for all data packets with a given L1 ID to arrive. Zero means waiting until the main buffer gets full. The size of the buffer is set via the BufferSize property of the same object." type="u32" init-value="0"/>
+  <attribute name="L1AInitiatesTimeout" description="If this value is set to 1 then data receiving timeout will be activated when the corresponding L1A packet is received. Otherwise the timeout is applied to the interval between receving the first and the last data packets with the given L1ID." type="bool" init-value="true"/>
+  <attribute name="MaxMessageSize" description="The maximum size of a data packet. Packets of larger size will be discarded." type="u32" init-value="4096"/>
+ </class>
+
+ <class name="SwRodHLTRequestHandler" description="ROBFragmentConsumer to serve fragments to HLT">
+  <superclass name="SwRodFragmentConsumer"/>
+  <attribute name="Type" description="Class name of consumer" type="string" init-value="HLTRequestHandler"/>
+  <attribute name="DataServerThreads" description="Number of threads to allocate to the boost::asio::io_server in the DataServer" type="u32" range="0..128" init-value="1"/>
+  <attribute name="IOServices" description="Number of io_services to allocate to the boost::asio::io_server in the DataServer" type="u32" range="0..128" init-value="2"/>
+  <attribute name="DataRequestTimeout" description="Data request timeout in milliseconds" type="u32" init-value="500"/>
+  <attribute name="ClearTimeout" description="Clear request timeout in milliseconds" type="u32" init-value="1000"/>
+  <attribute name="IgnoreClearXId" description="Ignore the transaction ID in Clear messages. This is used when running with multiple sources of Clear messages (e.g. ROSTesters), when running with the HLTSV the transaction IDs will be sequential and should be checked for sequence errors." type="bool" init-value="false"/>
+  <attribute name="MaxIndex" description="Maximum events to store in index" type="u32" init-value="1000000"/>
+  <attribute name="MaxReorder" description="Maximum size of latest L1 derandomising map" type="u32" init-value="100"/>
+  <attribute name="MaxClearAge" description="Maximum age in seconds that a failed clear will be considered valid" type="u32" init-value="600"/>
+ </class>
+
+ <class name="SwRodInputLink">
+  <superclass name="FelixLink"/>
+ </class>
+
+ <class name="SwRodInputMethod" description="Defines input data protocol" is-abstract="yes">
+  <attribute name="Type" description="Type of input (netio, internal etc.)" type="string"/>
+ </class>
+
+ <class name="SwRodInternalDataGenerator">
+  <superclass name="SwRodInputMethod"/>
+  <attribute name="Type" type="string" init-value="InternalData"/>
+  <attribute name="PacketSize" type="u32"/>
+  <attribute name="Pileup" type="u32" init-value="1"/>
+  <attribute name="EcrInterval" type="u32" init-value="50000"/>
+  <attribute name="SyncInterval" type="u32" init-value="10000"/>
+  <attribute name="TTCQueueSize" type="u32" init-value="100000"/>
+  <attribute name="L1idBitMask" type="u32" format="hex" init-value="0xffffffff"/>
+  <attribute name="TotalFullModeLinks" description="Total number of FULL mode links" type="u32" init-value="0"/>
+  <attribute name="IsFullMode" description="In FULL mode each generated data packet has a distinct L1 ID." type="bool" init-value="true"/>
+  <attribute name="IsSingleton" description="If this value is set to 1 then the same instance of L1A internal generator is always used." type="bool" init-value="true"/>
+ </class>
+
+ <class name="SwRodL1AInputHandler" description="Level 1 accept input handler configuration" is-abstract="yes">
+  <attribute name="Type" description="Type of input handler" type="string"/>
+  <attribute name="CPU" description="Affinity of the input handler thread will be set to the given CPU cores. The numbers are separated by commas and may include ranges. For example: 0,5,7,9-11" type="string"/>
+  <relationship name="InputMethod" class-type="SwRodInputMethod" low-cc="zero" high-cc="one" is-composite="no" is-exclusive="no" is-dependent="no"/>
+ </class>
+
+ <class name="SwRodModule">
+  <superclass name="ReadoutModule"/>
+  <superclass name="ResourceSetAND"/>
+  <attribute name="WorkersNumber" description="Number of data receiving threads" type="u32" range="0..128" init-value="1"/>
+  <attribute name="CPU" description="Affinity of the input threads will be set to the given CPU cores. The numbers are separated by commas and may include ranges. For example: 0,5,7,9-11" type="string"/>
+  <relationship name="L1AHandler" description="A handler of L1Accept packets" class-type="SwRodL1AInputHandler" low-cc="zero" high-cc="one" is-composite="no" is-exclusive="yes" is-dependent="no"/>
+  <relationship name="InputMethod" description="This input method overrides the one defined in the SwRodConfiguration object. The input object will be shared by all SwRodRob objects belonging to this module." class-type="SwRodInputMethod" low-cc="zero" high-cc="one" is-composite="no" is-exclusive="no" is-dependent="no"/>
+ </class>
+
+ <class name="SwRodMonitoringApplication" description="Defines configuration for a non-data-flow SW ROD aplication">
+  <superclass name="ReadoutApplication"/>
+  <attribute name="CPU" description="Affinity of the application&apos;s threads will be set to the given CPU cores. The numbers are separated by commas and may include ranges. For example: 0,5,7,9-11" type="string"/>
+ </class>
+
+ <class name="SwRodPluginLib">
+  <attribute name="LibraryName" description="Name of a shared library that implements SW ROD data handling interfaces" type="string" init-value="libswrod_core_impl.so" is-not-null="yes"/>
+ </class>
+
+ <class name="SwRodRob" description="Definition of a ROB granularity SW ROD input">
+  <superclass name="HW_InputChannel"/>
+  <superclass name="ResourceSetAND"/>
+  <attribute name="Id" description="Identifier of the ROB. Unique across ATLAS." type="u32" format="hex" init-value="0" is-not-null="yes"/>
+  <attribute name="CPU" description="Affinity of the fragment building threads will be set to the given CPU cores. The numbers are separated by commas and may include ranges. For example: 0,5,7,9-11" type="string"/>
+  <relationship name="FragmentBuilder" class-type="SwRodFragmentBuilder" low-cc="one" high-cc="one" is-composite="no" is-exclusive="no" is-dependent="no"/>
+  <relationship name="Consumers" description="List of ROB fragment consumers local to this ROB" class-type="SwRodFragmentConsumer" low-cc="zero" high-cc="many" is-composite="no" is-exclusive="no" is-dependent="no"/>
+ </class>
+
+</oks-schema>

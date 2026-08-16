@@ -1,0 +1,172 @@
+<?xml version="1.0" encoding="ASCII"?>
+
+<!-- oks-schema version 2.0 -->
+
+
+<!DOCTYPE oks-schema [
+  <!ELEMENT oks-schema (info, (include)?, (comments)?, (class)+)>
+  <!ELEMENT info EMPTY>
+  <!ATTLIST info
+      name CDATA #REQUIRED
+      type CDATA #REQUIRED
+      num-of-items CDATA #REQUIRED
+      oks-format CDATA #FIXED "schema"
+      oks-version CDATA #REQUIRED
+      created-by CDATA #REQUIRED
+      created-on CDATA #REQUIRED
+      creation-time CDATA #REQUIRED
+      last-modified-by CDATA #REQUIRED
+      last-modified-on CDATA #REQUIRED
+      last-modification-time CDATA #REQUIRED
+  >
+  <!ELEMENT include (file)+>
+  <!ELEMENT file EMPTY>
+  <!ATTLIST file
+      path CDATA #REQUIRED
+  >
+  <!ELEMENT comments (comment)+>
+  <!ELEMENT comment EMPTY>
+  <!ATTLIST comment
+      creation-time CDATA #REQUIRED
+      created-by CDATA #REQUIRED
+      created-on CDATA #REQUIRED
+      author CDATA #REQUIRED
+      text CDATA #REQUIRED
+  >
+  <!ELEMENT class (superclass | attribute | relationship | method)*>
+  <!ATTLIST class
+      name CDATA #REQUIRED
+      description CDATA ""
+      is-abstract (yes|no) "no"
+  >
+  <!ELEMENT superclass EMPTY>
+  <!ATTLIST superclass name CDATA #REQUIRED>
+  <!ELEMENT attribute EMPTY>
+  <!ATTLIST attribute
+      name CDATA #REQUIRED
+      description CDATA ""
+      type (bool|s8|u8|s16|u16|s32|u32|s64|u64|float|double|date|time|string|uid|enum|class) #REQUIRED
+      range CDATA ""
+      format (dec|hex|oct) "dec"
+      is-multi-value (yes|no) "no"
+      init-value CDATA ""
+      is-not-null (yes|no) "no"
+  >
+  <!ELEMENT relationship EMPTY>
+  <!ATTLIST relationship
+      name CDATA #REQUIRED
+      description CDATA ""
+      class-type CDATA #REQUIRED
+      low-cc (zero|one) #REQUIRED
+      high-cc (one|many) #REQUIRED
+      is-composite (yes|no) #REQUIRED
+      is-exclusive (yes|no) #REQUIRED
+      is-dependent (yes|no) #REQUIRED
+  >
+  <!ELEMENT method (method-implementation*)>
+  <!ATTLIST method
+      name CDATA #REQUIRED
+      description CDATA ""
+  >
+  <!ELEMENT method-implementation EMPTY>
+  <!ATTLIST method-implementation
+      language CDATA #REQUIRED
+      prototype CDATA #REQUIRED
+      body CDATA ""
+  >
+]>
+
+<oks-schema>
+
+<info name="" type="" num-of-items="17" oks-format="schema" oks-version="oks-06-10-14 built &quot;Nov 21 2018&quot;" created-by="akazarov" created-on="pcatdbuild07.cern.ch" creation-time="20120705T154825" last-modified-by="akazarov" last-modified-on="pcatdbuild01.cern.ch" last-modification-time="20181121T105451"/>
+
+ <class name="CHIPAction">
+  <superclass name="SAWriter"/>
+  <attribute name="command" description="a command to be set to CHIP, in the expected range of values" type="string"/>
+ </class>
+
+ <class name="SAConfig">
+  <relationship name="initialstatements" description="Order in which initial statement are loading" class-type="SAInitialStatementBase" low-cc="zero" high-cc="many" is-composite="no" is-exclusive="no" is-dependent="no"/>
+  <relationship name="directives" description="Order in which directives are loading" class-type="SADirectiveBase" low-cc="zero" high-cc="many" is-composite="no" is-exclusive="no" is-dependent="no"/>
+ </class>
+
+ <class name="SADb">
+  <superclass name="SAWriter"/>
+  <attribute name="format" description="format of file in database" type="string" init-value="XML"/>
+ </class>
+
+ <class name="SADirective" description="A &apos;rule&apos; in AAL">
+  <superclass name="SADirectiveBase"/>
+  <relationship name="epl" description="EPL code of the directive" class-type="SADirectiveStatement" low-cc="one" high-cc="one" is-composite="yes" is-exclusive="yes" is-dependent="yes"/>
+  <relationship name="initialstatements" description="Initial Statements associated to the directive" class-type="SAInitialStatement" low-cc="zero" high-cc="many" is-composite="yes" is-exclusive="yes" is-dependent="yes"/>
+  <relationship name="listeners" description="What to do with selected events" class-type="SAListener" low-cc="one" high-cc="many" is-composite="yes" is-exclusive="yes" is-dependent="yes"/>
+ </class>
+
+ <class name="SADirectiveBase" is-abstract="yes">
+  <attribute name="description" type="string"/>
+ </class>
+
+ <class name="SADirectiveSet">
+  <superclass name="SADirectiveBase"/>
+  <relationship name="Contains" class-type="SADirectiveBase" low-cc="zero" high-cc="many" is-composite="no" is-exclusive="no" is-dependent="no"/>
+ </class>
+
+ <class name="SADirectiveStatement" description="Event Processing Language statement">
+  <superclass name="SAStatementBase"/>
+  <relationship name="parameters" description="Parameters that can parametrize EPL code in the form ${parameter_id}, substituted by its value" class-type="SAParameter" low-cc="zero" high-cc="many" is-composite="no" is-exclusive="no" is-dependent="no"/>
+ </class>
+
+ <class name="SAEmail">
+  <superclass name="SAWriter"/>
+  <attribute name="addresses" description="List of email addresses." type="string" is-multi-value="yes" is-not-null="yes"/>
+  <attribute name="severity" description="If the severity should be different from the listener&apos;s one." type="string"/>
+ </class>
+
+ <class name="SAErs">
+  <superclass name="SAWriter"/>
+  <attribute name="qualifiers" description="List of qualifiers." type="string" is-multi-value="yes" is-not-null="yes"/>
+  <attribute name="severity" description="If the severity should be different from the listener&apos;s one." type="string"/>
+ </class>
+
+ <class name="SAFile">
+  <superclass name="SAWriter"/>
+  <attribute name="append" description="boolean flag, append or not" type="bool" init-value="0"/>
+  <attribute name="partition" description="PRESENT IN OLD DIRECTIVES" type="string"/>
+  <attribute name="severity" description="PRESENT IN OLD DIRECTIVES" type="string"/>
+ </class>
+
+ <class name="SAInitialStatement" description="Event Processing Language INITIAL statement">
+  <superclass name="SAInitialStatementBase"/>
+  <superclass name="SAStatementBase"/>
+ </class>
+
+ <class name="SAInitialStatementBase" description="Event Processing Language INITIAL statement" is-abstract="yes">
+  <attribute name="description" type="string"/>
+ </class>
+
+ <class name="SAInitialStatementSet" description="Event Processing Language INITIAL statement">
+  <superclass name="SAInitialStatementBase"/>
+  <relationship name="Contains" class-type="SAInitialStatementBase" low-cc="one" high-cc="many" is-composite="no" is-exclusive="no" is-dependent="no"/>
+ </class>
+
+ <class name="SAListener">
+  <attribute name="severity" description="Severity, which is used to present alert to the user." type="string" init-value="INFORMATION" is-not-null="yes"/>
+  <attribute name="domain" description="Domain of the listener." type="string" init-value="AAL" is-not-null="yes"/>
+  <attribute name="message" description="A meaningful message for user." type="string" init-value="This is the message." is-not-null="yes"/>
+  <attribute name="action" description="What to do." type="string" init-value="This is the action." is-not-null="yes"/>
+  <attribute name="eventDetails" description="Add event details to the output (true = append, false = not append)" type="bool" init-value="0"/>
+  <relationship name="writers" class-type="SAWriter" low-cc="one" high-cc="many" is-composite="no" is-exclusive="no" is-dependent="no"/>
+ </class>
+
+ <class name="SAParameter" description="Object ID of a Parameter can be used in EPL as ${Parameter_ID} and it is substituted by its value.">
+  <attribute name="value" description="Value of a parameter ${parameter_id}" type="string" is-not-null="yes"/>
+ </class>
+
+ <class name="SAStatementBase" is-abstract="yes">
+  <attribute name="code" type="string" is-not-null="yes"/>
+ </class>
+
+ <class name="SAWriter" is-abstract="yes">
+ </class>
+
+</oks-schema>
