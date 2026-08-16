@@ -1,9 +1,10 @@
 import xml.etree.ElementTree as ET
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Set
 from rank_bm25 import BM25Okapi
 from sentence_transformers import SentenceTransformer
 import numpy as np
 import faiss
+import networkx as nx
 
 class SchemaChunk:
     def __init__(self, id: str, content: str, metadata: Dict[str, Any]):
@@ -17,13 +18,16 @@ class HybridIndexer:
         self.bm25: BM25Okapi = None
         self.encoder = SentenceTransformer('all-MiniLM-L6-v2')
         self.faiss_index = None
+        self.graph = nx.DiGraph()
 
     def ingest_xml(self, xml_path: str):
-        """Parses the oks_schema_examples.xml and builds the chunks."""
+        """Parses the oks_schema_examples.xml and builds the chunks with inheritance resolution."""
         tree = ET.parse(xml_path)
         root = tree.getroot()
         
-        # Simple extraction logic tailored to the example XML
+        class_definitions = {}
+
+        # Pass 1: Extract all raw class definitions
         for example in root.findall('.//example'):
             for schema_file in example.findall('.//schema-file'):
                 schema_xml_str = schema_file.text
@@ -33,24 +37,73 @@ class HybridIndexer:
                     schema_tree = ET.fromstring(schema_xml_str.strip())
                     for cls in schema_tree.findall('.//class'):
                         class_name = cls.get('name')
-                        desc = cls.get('description', '')
-                        
-                        # Build a textual representation
-                        content = f"Class: {class_name}\nDescription: {desc}\n"
-                        for attr in cls.findall('.//attribute'):
-                            content += f"Attribute: {attr.get('name')} (type: {attr.get('type')})\n"
-                        for rel in cls.findall('.//relationship'):
-                            content += f"Relationship: {rel.get('name')} (target: {rel.get('class-type')})\n"
+                        if class_name in class_definitions:
+                            continue
                             
-                        chunk = SchemaChunk(
-                            id=class_name,
-                            content=content,
-                            metadata={"type": "class", "name": class_name}
-                        )
-                        self.chunks.append(chunk)
+                        desc = cls.get('description', '')
+                        superclasses = [sc.get('name') for sc in cls.findall('.//superclass')]
+                        attributes = [(a.get('name'), a.get('type')) for a in cls.findall('.//attribute')]
+                        relationships = [(r.get('name'), r.get('class-type')) for r in cls.findall('.//relationship')]
+                        
+                        class_definitions[class_name] = {
+                            "name": class_name,
+                            "description": desc,
+                            "superclasses": superclasses,
+                            "attributes": attributes,
+                            "relationships": relationships
+                        }
                 except ET.ParseError:
                     pass
-        
+
+        # Helper to recursively get all superclasses
+        def get_all_superclasses(cls_name: str, visited: Set[str]) -> List[str]:
+            if cls_name not in class_definitions or cls_name in visited:
+                return []
+            visited.add(cls_name)
+            parents = class_definitions[cls_name]["superclasses"]
+            all_parents = list(parents)
+            for parent in parents:
+                all_parents.extend(get_all_superclasses(parent, visited))
+            return all_parents
+
+        # Pass 2: Resolve inheritance, build graph, and create chunks
+        for class_name, def_dict in class_definitions.items():
+            self.graph.add_node(class_name, **def_dict)
+            
+            all_superclasses = get_all_superclasses(class_name, set())
+            
+            # Combine attributes and relationships
+            all_attrs = list(def_dict["attributes"])
+            all_rels = list(def_dict["relationships"])
+            
+            for parent_name in all_superclasses:
+                if parent_name in class_definitions:
+                    parent_def = class_definitions[parent_name]
+                    all_attrs.extend(parent_def["attributes"])
+                    all_rels.extend(parent_def["relationships"])
+                    self.graph.add_edge(class_name, parent_name, type="subclass_of")
+
+            # Add relationship edges
+            for rel_name, rel_target in all_rels:
+                if rel_target:
+                    self.graph.add_edge(class_name, rel_target, type="relationship", name=rel_name)
+
+            # Build closed schema slice textual representation
+            content = f"Class: {class_name}\nDescription: {def_dict['description']}\n"
+            if all_superclasses:
+                content += f"Inherits from: {', '.join(set(all_superclasses))}\n"
+            for attr_name, attr_type in all_attrs:
+                content += f"Attribute: {attr_name} (type: {attr_type})\n"
+            for rel_name, rel_target in all_rels:
+                content += f"Relationship: {rel_name} (target: {rel_target})\n"
+                
+            chunk = SchemaChunk(
+                id=class_name,
+                content=content,
+                metadata={"type": "class", "name": class_name}
+            )
+            self.chunks.append(chunk)
+
         self._build_indices()
 
     def _build_indices(self):
