@@ -89,12 +89,13 @@ Your task is to translate natural language into a strictly formatted JSON Interm
 {few_shot_context}
 
 IMPORTANT RULES:
-- Return ONLY valid JSON matching the QueryIR schema above.
-- Do NOT include markdown formatting (no ```json blocks), code fences, or explanatory text outside the JSON.
+- The few-shot examples above show OKS query syntax as context. YOUR output must be ONLY valid JSON matching the QueryIR schema above.
+- Return ONLY valid JSON. Do NOT include markdown formatting (no ```json blocks), code fences, or explanatory text outside the JSON.
 - All attribute/relationship names, object IDs, and values MUST come from the supplied schema context.
 - Do NOT invent any class, attribute, relationship, or object ID.
 - Include an "explanation" field with a brief breakdown of each query component.
 - Use scope "all" unless the user explicitly says "this class only".
+- SCOPE PLACEMENT: "all"/"this" appears ONLY as the top-level scope of the query, NEVER inside and/or/not expressions.
 """
 
         messages = [
@@ -220,8 +221,8 @@ if __name__ == "__main__":
 
     # Simple test run
     translator = OksTranslator(
-        os.path.join(repo_root, "oks_scraped", "oks_schema_examples.xml"),
-        os.path.join(repo_root, "oks_scraped", "gold_pairs.jsonl"),
+        os.path.join(repo_root, "combined_data", "oks_schema_corpus.xml"),
+        os.path.join(repo_root, "combined_data", "all_few_shot.jsonl"),
         llm_api_key=env.get("LLM_API_KEY"),
         llm_base_url=env.get("LLM_BASE_URL"),
         llm_model=env.get("LLM_MODEL")

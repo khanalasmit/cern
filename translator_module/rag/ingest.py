@@ -42,7 +42,16 @@ class HybridIndexer:
                             
                         desc = cls.get('description', '')
                         superclasses = [sc.get('name') for sc in cls.findall('.//superclass')]
-                        attributes = [(a.get('name'), a.get('type')) for a in cls.findall('.//attribute')]
+                        attributes = []
+                        for a in cls.findall('.//attribute'):
+                            attr_info = {
+                                'name': a.get('name'),
+                                'type': a.get('type'),
+                                'range': a.get('range', ''),
+                                'init_value': a.get('init-value', ''),
+                                'is_multi_value': a.get('is-multi-value', 'no'),
+                            }
+                            attributes.append(attr_info)
                         relationships = [(r.get('name'), r.get('class-type')) for r in cls.findall('.//relationship')]
                         
                         class_definitions[class_name] = {
@@ -92,8 +101,16 @@ class HybridIndexer:
             content = f"Class: {class_name}\nDescription: {def_dict['description']}\n"
             if all_superclasses:
                 content += f"Inherits from: {', '.join(set(all_superclasses))}\n"
-            for attr_name, attr_type in all_attrs:
-                content += f"Attribute: {attr_name} (type: {attr_type})\n"
+            for attr in all_attrs:
+                attr_line = f"Attribute: {attr['name']} (type: {attr['type']}"
+                if attr['range']:
+                    attr_line += f", range: {attr['range']}"
+                if attr['init_value']:
+                    attr_line += f", init-value: {attr['init_value']}"
+                if attr['is_multi_value'] == 'yes':
+                    attr_line += ", multi-value: yes"
+                attr_line += ")"
+                content += attr_line + "\n"
             for rel_name, rel_target in all_rels:
                 content += f"Relationship: {rel_name} (target: {rel_target})\n"
                 

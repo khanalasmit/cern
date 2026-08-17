@@ -49,8 +49,8 @@ def main():
     repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     try:
         translator = OksTranslator(
-            os.path.join(repo_root, "oks_scraped", "oks_schema_examples.xml"),
-            os.path.join(repo_root, "oks_scraped", "gold_pairs.jsonl"),
+            os.path.join(repo_root, "combined_data", "oks_schema_corpus.xml"),
+            os.path.join(repo_root, "combined_data", "all_few_shot.jsonl"),
             llm_api_key=llm_api_key,
             llm_base_url=llm_base_url,
             llm_model=llm_model
