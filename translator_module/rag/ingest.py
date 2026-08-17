@@ -1,5 +1,5 @@
 import xml.etree.ElementTree as ET
-from typing import List, Dict, Any, Set
+from typing import List, Dict, Any, Set, Optional
 from rank_bm25 import BM25Okapi
 from sentence_transformers import SentenceTransformer
 import numpy as np
@@ -19,6 +19,7 @@ class HybridIndexer:
         self.encoder = SentenceTransformer('all-MiniLM-L6-v2')
         self.faiss_index = None
         self.graph = nx.DiGraph()
+        self.resolved_classes: Dict[str, Dict[str, Any]] = {}
 
     def ingest_xml(self, xml_path: str):
         """Parses the oks_schema_examples.xml and builds the chunks with inheritance resolution."""
@@ -114,6 +115,17 @@ class HybridIndexer:
             for rel_name, rel_target in all_rels:
                 content += f"Relationship: {rel_name} (target: {rel_target})\n"
                 
+            # Store structured resolved metadata for semantic validation
+            resolved_attrs = {attr['name']: attr for attr in all_attrs}
+            resolved_rels = {rel_name: rel_target for rel_name, rel_target in all_rels if rel_name}
+            self.resolved_classes[class_name] = {
+                "name": class_name,
+                "description": def_dict['description'],
+                "superclasses": set(all_superclasses),
+                "attributes": resolved_attrs,
+                "relationships": resolved_rels,
+            }
+
             chunk = SchemaChunk(
                 id=class_name,
                 content=content,
@@ -122,6 +134,10 @@ class HybridIndexer:
             self.chunks.append(chunk)
 
         self._build_indices()
+
+    def get_class(self, class_name: str) -> Optional[Dict[str, Any]]:
+        """Lookup resolved class definition (attributes, relationships, superclasses)."""
+        return self.resolved_classes.get(class_name)
 
     def _build_indices(self):
         if not self.chunks:

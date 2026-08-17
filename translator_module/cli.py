@@ -75,6 +75,9 @@ def main():
 
             print("\n" + "=" * 60)
             if result.get("status") == "success":
+                target_cls = result.get("target_class")
+                if target_cls:
+                    print(f"  Target Class: {target_cls}")
                 print("  OKS Query (copy-paste ready):")
                 print(f"  {result.get('oks_query')}")
                 print("-" * 60)
