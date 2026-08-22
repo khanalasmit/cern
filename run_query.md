@@ -338,6 +338,335 @@ returns OksObject::List*         → the query answer
 
 ---
 
+# OKS C++ Query — Complete Setup Guide
+
+Build a C++ program that queries the ATLAS TDAQ OKS configuration database,
+using CMake. Covers: create C++ → create CMake → create build script → run.
+
+---
+
+## Prerequisites
+
+SSH into CERN and source the TDAQ release (**once per terminal session**):
+
+```bash
+ssh <your_username>@lxplus.cern.ch
+cd ~/private/my_tdaq_project          # or your project folder
+source /cvmfs/atlas.cern.ch/repo/sw/tdaq/tdaq/tdaq-14-00-00/installed/setup.sh
+```
+
+Verify CMake is available:
+```bash
+cmake --version
+```
+
+---
+
+## Step 1 — Create the C++ source (`query_oks.cpp`)
+
+```bash
+nano query_oks.cpp
+```
+
+Paste this:
+
+```cpp
+#include <iostream>
+#include <string>
+#include "oks/kernel.h"
+#include "oks/class.h"
+#include "oks/query.h"
+#include "oks/object.h"
+#include "oks/file.h"
+
+int main() {
+    // 1. Initialize the OKS kernel (ATLAS TDAQ uses OksKernel)
+    OksKernel kernel;
+
+    try {
+        std::string db_file = "siom/hw/computers.data.xml";
+
+        // 2. Load the data file (repository-relative path)
+        OksFile* fh = kernel.load_file(db_file.c_str());
+        if (!fh) {
+            std::cerr << "Failed to load file: " << db_file << "\n";
+            return 1;
+        }
+        std::cout << "Successfully loaded: " << db_file << "\n\n";
+    }
+    catch (const oks::exception& e) {
+        std::cerr << "OKS Exception: " << e.what() << std::endl;
+        return 1;
+    }
+    catch (const std::exception& e) {
+        std::cerr << "Exception: " << e.what() << std::endl;
+        return 1;
+    }
+
+    // 3. Find the target class
+    OksClass* computer_class = kernel.find_class("Computer");
+    if (!computer_class) {
+        std::cerr << "Error: Class 'Computer' not found.\n";
+        return 1;
+    }
+
+    // 4. Define the OKS query (S-expression syntax)
+    std::string query_str = "(all (\"Memory\" \"1024\" >=))";
+    OksQuery query(computer_class, query_str.c_str());
+
+    if (!query.good()) {
+        std::cerr << "Error: Invalid query syntax: " << query_str << std::endl;
+        return 1;
+    }
+
+    // 5. Execute the query
+    OksObject::List* results = computer_class->execute_query(&query);
+
+    // 6. Print the results
+    if (results && !results->empty()) {
+        std::cout << "Found " << results->size() << " matching computers:\n";
+        for (auto it = results->begin(); it != results->end(); ++it) {
+            OksObject* obj = *it;
+            std::cout << " -> Object ID: " << obj->GetId() << "\n";
+        }
+    } else {
+        std::cout << "Query ran, but found 0 matching objects.\n";
+    }
+
+    if (results) delete results;
+    return 0;
+}
+```
+
+Save & exit: `Ctrl+O`, `Enter`, `Ctrl+X`.
+
+---
+
+## Step 2 — Create `CMakeLists.txt`
+
+```bash
+nano CMakeLists.txt
+```
+
+Paste this (it auto-detects your CPU architecture, OS version, and compiler
+so it picks the correct TDAQ library folder):
+
+```cmake
+cmake_minimum_required(VERSION 3.14)
+project(OksQueryApp CXX)
+
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+# ===== Change this if you switch TDAQ releases =====
+set(TDAQ_VERSION "14-00-00" CACHE STRING "TDAQ release version")
+
+set(TDAQ_ROOT        "/cvmfs/atlas.cern.ch/repo/sw/tdaq/tdaq/tdaq-${TDAQ_VERSION}/installed")
+set(TDAQ_COMMON_ROOT "/cvmfs/atlas.cern.ch/repo/sw/tdaq/tdaq-common/tdaq-common-${TDAQ_VERSION}/installed")
+
+# ===== Detect the current platform =====
+# OS major version from /etc/os-release (e.g. "9" on AlmaLinux 9)
+file(STRINGS "/etc/os-release" _os_release)
+set(OS_MAJOR "")
+foreach(_line ${_os_release})
+    if(_line MATCHES "^VERSION_ID=\"?([0-9]+)")
+        set(OS_MAJOR "${CMAKE_MATCH_1}")
+    endif()
+endforeach()
+if(NOT OS_MAJOR)
+    message(FATAL_ERROR "Could not detect OS version from /etc/os-release")
+endif()
+
+# Compiler major version (e.g. 15 from 15.2.0)
+string(REGEX MATCH "^[0-9]+" GCC_MAJOR "${CMAKE_CXX_COMPILER_VERSION}")
+
+message(STATUS "Platform: ${CMAKE_SYSTEM_PROCESSOR} | OS: el${OS_MAJOR} | GCC: ${GCC_MAJOR}")
+
+# ===== Locate the correct lib dir (exact match, then any -opt) =====
+function(find_tdaq_lib root out_var)
+    set(_exact "${root}/${CMAKE_SYSTEM_PROCESSOR}-el${OS_MAJOR}-gcc${GCC_MAJOR}-opt/lib")
+    if(EXISTS "${_exact}")
+        set(${out_var} "${_exact}" PARENT_SCOPE)
+        return()
+    endif()
+    file(GLOB _matches "${root}/${CMAKE_SYSTEM_PROCESSOR}-el${OS_MAJOR}-*-opt/lib")
+    if(_matches)
+        list(GET _matches 0 _first)
+        set(${out_var} "${_first}" PARENT_SCOPE)
+        return()
+    endif()
+    message(FATAL_ERROR "No lib dir under ${root} for ${CMAKE_SYSTEM_PROCESSOR}-el${OS_MAJOR}")
+endfunction()
+
+find_tdaq_lib(${TDAQ_ROOT} TDAQ_LIB)
+find_tdaq_lib(${TDAQ_COMMON_ROOT} TDAQ_COMMON_LIB)
+
+message(STATUS "OKS library dir : ${TDAQ_LIB}")
+message(STATUS "ERS library dir : ${TDAQ_COMMON_LIB}")
+
+# ===== Executable =====
+add_executable(query_oks query_oks.cpp)
+
+target_include_directories(query_oks PRIVATE
+    ${TDAQ_ROOT}/include
+    ${TDAQ_COMMON_ROOT}/include
+)
+
+target_link_directories(query_oks PRIVATE
+    ${TDAQ_LIB}
+    ${TDAQ_COMMON_LIB}
+)
+
+target_link_libraries(query_oks PRIVATE oks ers)
+
+# Bake library paths into the executable so it runs anywhere
+set_target_properties(query_oks PROPERTIES
+    BUILD_RPATH   "${TDAQ_LIB};${TDAQ_COMMON_LIB}"
+    INSTALL_RPATH "${TDAQ_LIB};${TDAQ_COMMON_LIB}"
+)
+```
+
+---
+
+## Step 3 — Create the build helper (`build.sh`)
+
+```bash
+nano build.sh
+```
+
+Paste this:
+
+```bash
+#!/bin/bash
+# build.sh — configure, build, and run the OKS query
+set -e
+cmake -S . -B build > /dev/null
+cmake --build build
+echo "----------------------------------------"
+./build/query_oks
+```
+
+Make it executable:
+
+```bash
+chmod +x build.sh
+```
+
+---
+
+## Step 4 — Build and run
+
+**First time (or after editing `CMakeLists.txt`):**
+```bash
+./build.sh
+```
+
+**Every time after editing `query_oks.cpp`:**
+```bash
+./build.sh
+```
+
+**Or manually, without the script:**
+```bash
+cmake -S . -B build
+cmake --build build
+./build/query_oks
+```
+
+### Expected output
+```
+-- Platform: x86_64 | OS: el9 | GCC: 15
+-- OKS library dir : .../installed/x86_64-el9-gcc15-opt/lib
+-- ERS library dir : .../installed/x86_64-el9-gcc15-opt/lib
+...
+Successfully loaded: siom/hw/computers.data.xml
+
+Found 2 matching computers:
+ -> Object ID: localhost.localdomain
+ -> Object ID: localhost
+```
+
+---
+
+## Customizing the query
+
+Edit `query_oks.cpp`:
+
+- **Change the data file** → line with `std::string db_file = ...`
+- **Change the class** → `kernel.find_class("Computer")` and the `-c` equivalent
+- **Change the query** → the `query_str` line
+
+Then run `./build.sh` again.
+
+### Query syntax reminder
+```
+( all | this  <expression> )
+```
+| Type | Example |
+|---|---|
+| Attribute | `(all ("Memory" "1024" >=))` |
+| Equality | `(all ("RLogin" "ssh" =))` |
+| Regex | `(all ("Name" ".*lxplus.*" ~=))` |
+| Object ID | `(all (object-id "localhost" =))` |
+| AND | `(all (and ("A" "1" =) ("B" "2" =)))` |
+| Relationship | `(all ("RunsOn" some (object-id "host" =)))` |
+
+Comparators: `=` `!=` `<` `>` `<=` `>=` `~=`
+
+---
+
+## Optional — Read attribute values (not just IDs)
+
+Replace the print loop (Step 6) in `query_oks.cpp` with:
+
+```cpp
+    if (results && !results->empty()) {
+        std::cout << "Found " << results->size() << " matching computers:\n";
+        for (auto it = results->begin(); it != results->end(); ++it) {
+            OksObject* obj = *it;
+            std::cout << " -> Object ID: " << obj->GetId() << "\n";
+
+            OksData* mem   = obj->GetAttributeValue("Memory");
+            OksData* cpu   = obj->GetAttributeValue("CPU");
+            OksData* cores = obj->GetAttributeValue("NumberOfCores");
+
+            std::cout << "      Memory: " << *mem   << " MB\n";
+            std::cout << "      CPU:    " << *cpu   << " MHz\n";
+            std::cout << "      Cores:  " << *cores << "\n";
+        }
+    }
+```
+
+Then `./build.sh`.
+
+---
+
+## Troubleshooting
+
+| Symptom | Cause | Fix |
+|---|---|---|
+| `ers/ers.h: No such file` | Missing `tdaq-common` includes | Handled by `CMakeLists.txt` (both include dirs added) |
+| `'std::source_location' ... C++20` | Headers need C++20 | Handled (`CMAKE_CXX_STANDARD 20`) |
+| `skipping incompatible ... aarch64` | Glob picked wrong arch | Handled (platform detection) |
+| `undefined reference ... GLIBC_2.38` | Picked `el10` lib on `el9` | Handled (OS version detection) |
+| `No lib dir under ...` | Wrong release path | Check `TDAQ_VERSION` matches a real CVMFS release |
+
+### Clean rebuild (if anything gets confused)
+```bash
+rm -rf build
+./build.sh
+```
+
+---
+
+## Files summary
+
+| File | Purpose |
+|---|---|
+| `query_oks.cpp` | The C++ query program |
+| `CMakeLists.txt` | Build configuration (auto-detects platform) |
+| `build.sh` | One-command build + run |
+| `build/query_oks` | Compiled executable (output) |
 ## 8.5 Accessing Previous Git Versions & Historical Configurations
 
 Every configuration ever used in a run is preserved in the **OKS Git repository**:
@@ -461,6 +790,220 @@ export TDAQ_DB_USER_REPOSITORY=`pwd`
 # 3. Query it
 oks_dump -f daq/partitions/<partition>.data.xml
 ```
+# OKS / TDAQ Version Guide — Latest & Previous Versions
+
+There are **two kinds of versions** in the TDAQ world. This guide covers both:
+
+| Type | What it is | Where it lives | How you switch |
+|---|---|---|---|
+| **Software release** | The code/tools (`oks_dump`, libs, Python) | CVMFS folders | Source a different `setup.sh` |
+| **Configuration revision** | The configuration *data* (XML files) | OKS Git repository | Git checkout / `oks_clone_repository` |
+
+---
+
+## Table of Contents
+
+- [Part A — Software Releases (CVMFS)](#part-a--software-releases-cvmfs)
+- [Part B — Configuration Revisions (Git)](#part-b--configuration-revisions-git)
+- [Part C — Using a Version with C++](#part-c--using-a-version-with-c)
+- [Quick Reference](#quick-reference)
+
+---
+
+# Part A — Software Releases (CVMFS)
+
+Releases like `tdaq-13-00-00`, `tdaq-14-00-00` are folders on CVMFS.
+
+## A1. List all available releases
+
+```bash
+ls /cvmfs/atlas.cern.ch/repo/sw/tdaq/tdaq | sort -V
+```
+
+The last entry is the **latest** release.
+
+## A2. Switch to a release (latest or previous)
+
+> ⚠️ Always use a **fresh shell** — never source one release on top of another.
+
+```bash
+exit                                          # leave the old environment
+ssh <your_username>@lxplus.cern.ch            # fresh login
+
+# Source the release you want:
+# LATEST
+source /cvmfs/atlas.cern.ch/repo/sw/tdaq/tdaq/tdaq-14-00-00/installed/setup.sh
+# PREVIOUS (just change the version number)
+source /cvmfs/atlas.cern.ch/repo/sw/tdaq/tdaq/tdaq-13-00-00/installed/setup.sh
+```
+
+## A3. Verify which release is active
+
+```bash
+which oks_dump        # path should contain the release you sourced
+echo $BINARY_TAG      # platform tag set by the release (if defined)
+```
+
+## A4. If you don't know the exact path
+
+```bash
+find /cvmfs/atlas.cern.ch/repo/sw/tdaq/tdaq \
+     -maxdepth 5 -name setup.sh 2>/dev/null | sort -V | tail -10
+```
+
+---
+
+# Part B — Configuration Revisions (Git)
+
+Every configuration ever used is preserved in the **OKS Git repository**:
+- Each run's config is tagged `r<runNumber>@<partition>`
+- The Run Number DB stores the exact commit hash per run
+
+You can retrieve any revision by **hash**, **tag**, or **date**.
+
+## B1. Using plain git
+
+```bash
+# Clone once
+mkdir ~/oks-repo && cd ~/oks-repo
+git clone `oks_git_repository` .
+
+# See all versions
+git log --oneline --all --decorate     # full history
+git tag -l 'r*'                        # run tags
+git branch -a                          # branches
+
+# Go to a previous version
+git checkout <commit-hash>             # e.g. git checkout 6800fe3b
+git checkout r380689@all_hosts         # or by run tag
+
+# Back to latest
+git checkout master
+```
+
+## B2. Using `oks_clone_repository` (recommended)
+
+Clones and checks out a specific version in one step:
+
+```bash
+# Latest (default)
+oks_clone_repository
+
+# Previous, by commit hash
+oks_clone_repository --version hash:6800fe3b
+
+# Previous, by run tag (runNumber@partition)
+oks_clone_repository --version tag:r380689@all_hosts
+
+# Previous, by date (config as of that date)
+oks_clone_repository --version date:"2026-06-15"
+oks_clone_repository --version date:"2020-07-31T16:33:59"
+oks_clone_repository --version date:"2 years ago"      # tdaq-13-01-00+
+```
+
+## B3. Using the `TDAQ_DB_VERSION` environment variable
+
+No manual checkout — OKS tools resolve the version automatically:
+
+```bash
+export TDAQ_DB_VERSION=hash:6800fe3b               # exact revision
+export TDAQ_DB_VERSION=date:"2026-06-15"           # latest before date
+unset  TDAQ_DB_VERSION                             # back to latest (HEAD)
+```
+
+| Format | Meaning |
+|---|---|
+| `hash:<value>` | Exact commit |
+| `date:<value>` | Latest revision *before* that date |
+| `tag:<value>` | Run tag (`r<run>@<partition>`) |
+
+## B4. Find which version a run used, then get it
+
+```bash
+# 1. Query the Run Number DB for a time window
+rn_ls -c "oracle://atonr_adg/rn_r" -w ATLAS_RUN_NUMBER \
+      -s '2020-07-31T12:00:00' -t '2020-08-02T12:00:00' -a '%xml'
+#    → note the hash in the "Version" column and the "Config Name"
+
+# 2. Check out exactly that version
+oks_clone_repository --version hash:<that-hash>
+```
+
+## B5. List versions WITHOUT cloning
+
+```bash
+git ls-remote --tags  `oks_git_repository`    # all tags + hashes
+git ls-remote --heads `oks_git_repository`    # all branches
+```
+
+---
+
+# Part C — Using a Version with C++
+
+Key insight: **reading an older configuration needs NO recompilation.**
+Your C++ binary just loads whatever files OKS points it at.
+
+## C1. Older configuration (git revision) — no rebuild
+
+```bash
+# 1. Check out the old version
+cd `oks_clone_repository --version hash:6800fe3b`
+
+# 2. Tell OKS to use this checkout
+export TDAQ_DB_USER_REPOSITORY=`pwd`
+
+# 3. Run your existing binary
+~/private/my_tdaq_project/build/query_oks
+```
+
+## C2. Different software release — rebuild required
+
+If you switch the *release* your code links against (Part A), rebuild:
+
+```bash
+# source the other release first (Part A), then:
+cd ~/private/my_tdaq_project
+rm -rf build
+./build.sh
+```
+
+## Summary: do you need to rebuild?
+
+| Change | Rebuild C++? |
+|---|---|
+| Older/newer configuration revision (git) | ❌ No |
+| Different data file or query | ❌ No (edit code only if hardcoded) |
+| Different TDAQ software release | ✅ Yes |
+
+---
+
+# Quick Reference
+
+| Goal | Command |
+|---|---|
+| List software releases | `ls /cvmfs/atlas.cern.ch/repo/sw/tdaq/tdaq \| sort -V` |
+| Use latest release | `source .../tdaq-14-00-00/installed/setup.sh` (fresh shell) |
+| Use previous release | `source .../tdaq-13-00-00/installed/setup.sh` (fresh shell) |
+| Config history | `git log --oneline --all` |
+| Config run tags | `git tag -l 'r*'` |
+| Checkout config version | `git checkout <hash-or-tag>` |
+| Clone config at version | `oks_clone_repository --version hash:\|tag:\|date:` |
+| Pin version via env | `export TDAQ_DB_VERSION=hash:<h>` / `date:<d>` |
+| Version used by a run | `rn_ls ... -a '%xml'` |
+| Use checkout in tools/C++ | `export TDAQ_DB_USER_REPOSITORY=\`pwd\`` |
+| Back to latest config | `git checkout master` / `unset TDAQ_DB_VERSION` |
+
+---
+
+## Notes & Gotchas
+
+- **Fresh shell for releases** — sourcing one release over another mixes paths.
+- **"Latest before date"** — a date selector returns the newest commit *before* that date.
+- **Relative dates** (`"2 years ago"`) need tdaq-13-01-00 or newer.
+- **Repository filenames** — with git access, use repo-relative names like
+  `daq/segments/setup.data.xml`, not filesystem paths.
+- **CERN GitLab mirror** (`atlas-tdaq-software/oks`) is read-only; real config
+  changes go through the TDAQ git server.
 
 ## 9. References
 
