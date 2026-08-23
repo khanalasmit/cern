@@ -114,6 +114,44 @@ python -m unittest discover -s translator_module/tests -v
 
 ### Verification results
 
+Syntax compilation:
+
+```text
+python -m py_compile translator_module/agent/translator.py translator_module/cli.py
+Passed
+```
+
+CLI tests:
+
+```text
+python -m unittest translator_module.tests.test_cli -v
+Ran 6 tests in 0.020s
+OK
+```
+
+Historical-query tests:
+
+```text
+python -m unittest translator_module.tests.test_historical_query -v
+Ran 26 tests in 5.664s
+OK (skipped=2)
+```
+
+Full suite using the documented `PYTHONPATH` setup:
+
+```text
+$env:PYTHONPATH='translator_module'
+python -m unittest discover -s translator_module/tests -v
+Ran 46 tests in 5.698s
+OK (skipped=2)
+```
+
+### Current status
+
+`OksTranslator` now accepts source-backed schemas directly, and the CLI no longer materializes a temporary historical schema file. The next integration boundary is historical data-path discovery and execution context; current translation still uses the existing few-shot file and does not execute OKS queries.
+
+### Verification results
+
 Historical-query and loader tests:
 
 ```text
@@ -423,3 +461,81 @@ python -m unittest translator_module.tests.test_historical_query -v
 $env:PYTHONPATH='translator_module'
 python -m unittest discover -s translator_module/tests -v
 ```
+
+## 2026-08-23 — Translator source integration
+
+### Scope
+
+Started the translator integration slice:
+
+- Extended `OksTranslator` with `schema_source`, `schema_paths`, and `revision` parameters.
+- Preserved the existing path-based constructor behavior.
+- Added mutual-exclusion and missing-source validation.
+- Added historical revision context to the LLM system prompt.
+- Added revision provenance to successful translation results.
+- Removed the CLI temporary schema-file bridge.
+- The CLI now passes `GitRevisionSource` directly to `OksTranslator`.
+
+### Safety decisions
+
+1. Historical schema bytes remain outside the working tree.
+2. The RAG index is built directly from the selected `FileSource`.
+3. A translator cannot silently use both a filesystem schema path and a source-backed schema.
+4. Existing callers using `OksTranslator(schema_xml_path, gold_pairs_path, ...)` remain supported.
+5. The serializer remains revision-independent; revision metadata stays around the query result.
+
+### Files created or modified
+
+- Modified: `translator_module/agent/translator.py`
+- Modified: `translator_module/cli.py`
+- Updated: `HISTORICAL_QUERY_DEVELOPMENT_LOG.md`
+
+### Verification pending
+
+Run:
+
+```bash
+python -m py_compile translator_module/agent/translator.py translator_module/cli.py
+python -m unittest translator_module.tests.test_cli -v
+python -m unittest translator_module.tests.test_historical_query -v
+$env:PYTHONPATH='translator_module'
+python -m unittest discover -s translator_module/tests -v
+```
+
+### Verification results
+
+Syntax compilation:
+
+```text
+python -m py_compile translator_module/agent/translator.py translator_module/cli.py
+Passed
+```
+
+CLI tests:
+
+```text
+python -m unittest translator_module.tests.test_cli -v
+Ran 6 tests in 0.020s
+OK
+```
+
+Historical-query tests:
+
+```text
+python -m unittest translator_module.tests.test_historical_query -v
+Ran 26 tests in 5.664s
+OK (skipped=2)
+```
+
+Full suite using the documented `PYTHONPATH` setup:
+
+```text
+$env:PYTHONPATH='translator_module'
+python -m unittest discover -s translator_module/tests -v
+Ran 46 tests in 5.698s
+OK (skipped=2)
+```
+
+### Current status
+
+`OksTranslator` now accepts source-backed schemas directly, and the CLI no longer materializes a temporary historical schema file. The next integration boundary is historical data-path discovery and execution context; current translation still uses the existing few-shot file and does not execute OKS queries.

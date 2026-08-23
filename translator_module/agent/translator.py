@@ -4,6 +4,7 @@ from openai import OpenAI, APIStatusError, APIConnectionError
 from pydantic import ValidationError
 from translator_module.rag.ingest import HybridIndexer
 from translator_module.rag.retrieve import Retriever
+from translator_module.revision.source import FileSource
 from .few_shot import FewShotManager
 from .ir_validator import validate_ir
 from .serializer import serialize_ir_to_oks
@@ -45,15 +46,38 @@ Where <Expression> is ONE of:
 
 class OksTranslator:
     def __init__(self,
-                 schema_xml_path: str,
-                 gold_pairs_path: str,
+                 schema_xml_path: str = None,
+                 gold_pairs_path: str = None,
                  llm_api_key: str = None,
                  llm_base_url: str = None,
-                 llm_model: str = None):
+                 llm_model: str = None,
+                 schema_source: FileSource = None,
+                 schema_paths = None,
+                 revision: str = None):
 
         # Initialize RAG
         self.indexer = HybridIndexer()
-        self.indexer.ingest_xml(schema_xml_path)
+        self.revision = revision
+        if schema_source is not None:
+            if schema_xml_path is not None:
+                raise ValueError(
+                    "schema_xml_path and schema_source are mutually exclusive"
+                )
+            if not schema_paths:
+                raise ValueError(
+                    "schema_paths is required when schema_source is supplied"
+                )
+            self.indexer.ingest_source(
+                schema_source,
+                schema_paths,
+                revision=revision,
+            )
+        else:
+            if not schema_xml_path:
+                raise ValueError(
+                    "schema_xml_path is required when schema_source is not supplied"
+                )
+            self.indexer.ingest_xml(schema_xml_path)
         self.retriever = Retriever(self.indexer)
 
         # Initialize Few-Shot (share the encoder from the RAG indexer)
@@ -87,6 +111,8 @@ Your task is to translate natural language into a strictly formatted JSON Interm
 {schema_context}
 
 {few_shot_context}
+
+{self._revision_prompt_context()}
 
 IMPORTANT RULES:
 - Return ONLY valid JSON matching the QueryIR schema above.
@@ -169,7 +195,8 @@ IMPORTANT RULES:
                     "status": "success",
                     "ir": ir_dict,
                     "oks_query": oks_query_str,
-                    "explanation": ir_dict.get("explanation", "")
+                    "explanation": ir_dict.get("explanation", ""),
+                    "revision": self.revision,
                 }
 
             except json.JSONDecodeError as e:
@@ -196,6 +223,16 @@ IMPORTANT RULES:
 
         # All retries exhausted
         return {"status": "error", "message": f"Failed after {1 + max_retries} attempts. Last error: {last_error}"}
+
+    def _revision_prompt_context(self) -> str:
+        if not self.revision:
+            return ""
+        return (
+            "HISTORICAL SCHEMA CONTEXT:\n"
+            f"The supplied schema was read from Git revision {self.revision}.\n"
+            "Use only identifiers and constraints present in this historical "
+            "schema context; do not use current-working-tree identifiers."
+        )
 
     @staticmethod
     def _strip_markdown_fences(text: str) -> str:

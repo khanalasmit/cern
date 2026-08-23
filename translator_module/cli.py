@@ -4,7 +4,6 @@ import json
 import os
 from pathlib import Path
 import sys
-import tempfile
 
 # Running ``python cli.py`` makes this directory importable, but not its
 # parent.  Add the repository root so absolute ``translator_module.*``
@@ -133,19 +132,16 @@ def _create_translator(args, llm_api_key, llm_base_url, llm_model):
             f"{args.schema_path}"
         )
 
-    # OksTranslator currently accepts a filesystem path and ingests the schema
-    # during construction. Materialize one historical blob temporarily until
-    # the source-aware RAG loader is introduced.
-    with tempfile.TemporaryDirectory(prefix="historical-oks-") as temp_dir:
-        historical_schema = Path(temp_dir) / "historical_schema.xml"
-        historical_schema.write_bytes(source.read_bytes(args.schema_path))
-        translator = OksTranslator(
-            str(historical_schema),
-            str(gold_pairs_path),
-            llm_api_key=llm_api_key,
-            llm_base_url=llm_base_url,
-            llm_model=llm_model,
-        )
+    translator = OksTranslator(
+        schema_xml_path=None,
+        gold_pairs_path=str(gold_pairs_path),
+        llm_api_key=llm_api_key,
+        llm_base_url=llm_base_url,
+        llm_model=llm_model,
+        schema_source=source,
+        schema_paths=[args.schema_path],
+        revision=resolved.commit,
+    )
 
     return translator, resolved
 
