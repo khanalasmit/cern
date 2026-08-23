@@ -210,6 +210,32 @@ The historical snapshot can now be handed to the native OKS query runtime withou
 
 Historical sources can now safely cross the boundary into a native execution tool. The next integration slice should decide how the CLI requests execution and how native `oks_dump` output is represented in the public query result, while preserving the current translation-only behavior by default.
 
+## CLI execution integration
+
+### Scope
+
+The interactive CLI can now opt into executing translated historical queries. Translation-only behavior remains the default, so selecting a past revision does not require historical data files unless `--execute` is supplied.
+
+### Implementation
+
+- Added repeatable `--data-path` arguments for explicit repository-relative data files. When omitted, execution discovers `test_data/**/*.data.xml` in the selected revision.
+- Added `--execute`, which requires one historical selector (`--commit-hash`, `--tag`, `--date`, or `--run-id`).
+- Added `--target-class` as an execution-time override when the LLM does not emit a usable `target_class`.
+- Added `--oks-dump-executable` and `--execution-timeout` for deployment-specific runtime configuration.
+- Historical initialization now builds an `OksSnapshot` only for execution, keeping schema-only historical translation compatible with commits that do not contain data files.
+- The CLI constructs `HistoricalExecutionContext` from the translated query and invokes `OksDumpExecutor` against the selected snapshot. Git-backed execution materializes only inside the adapter's temporary-directory context.
+
+### Tests and verification
+
+- Added parser coverage for repeatable data paths, target-class overrides, executable configuration, and timeout configuration.
+- Added a guard test proving `--execute` cannot silently run against the current working tree.
+- `python -m py_compile translator_module/cli.py translator_module/tests/test_cli.py` passed.
+- Full suite: 61 tests passed, 2 dependency-based tests skipped because `rank_bm25` is not installed locally.
+
+### Current status
+
+The end-to-end CLI boundary is now present: historical revision selection -> source-backed schema RAG -> translation/validation/serialization -> optional historical `oks_dump` execution. Native output is still displayed as raw text because `oks_dump` is human-readable and its exact deployment-specific output format has not yet been standardized.
+
 ## 2026-08-23 — Target class and execution adapter boundary
 
 ### Scope

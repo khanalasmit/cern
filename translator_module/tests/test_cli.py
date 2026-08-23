@@ -55,3 +55,34 @@ class CliArgumentTests(unittest.TestCase):
             cli.build_argument_parser().parse_args(
                 ["--date", "2026-08-01T12:00:00"]
             )
+
+    def test_execution_options_accept_repeatable_data_paths(self):
+        args = cli.build_argument_parser().parse_args(
+            [
+                "--commit-hash",
+                "abc123",
+                "--execute",
+                "--data-path",
+                "test_data/one.data.xml",
+                "--data-path",
+                "test_data/two.data.xml",
+                "--target-class",
+                "Application",
+                "--oks-dump-executable",
+                "C:/oks/bin/oks_dump",
+                "--execution-timeout",
+                "12.5",
+            ]
+        )
+
+        self.assertTrue(args.execute)
+        self.assertEqual(
+            args.data_path,
+            ["test_data/one.data.xml", "test_data/two.data.xml"],
+        )
+        self.assertEqual(args.target_class, "Application")
+        self.assertEqual(args.oks_dump_executable, "C:/oks/bin/oks_dump")
+        self.assertEqual(args.execution_timeout, 12.5)
+
+    def test_execution_requires_historical_selector(self):
+        self.assertEqual(cli.main(["--execute"]), 2)

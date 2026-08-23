@@ -68,6 +68,34 @@ def build_argument_parser() -> argparse.ArgumentParser:
         default="oks_scraped/gold_pairs.jsonl",
         help="working-tree or repository-relative few-shot examples path",
     )
+    parser.add_argument(
+        "--data-path",
+        action="append",
+        help=(
+            "repository-relative historical OKS data file; repeat the option "
+            "for multiple files (defaults to test_data/**/*.data.xml)"
+        ),
+    )
+    parser.add_argument(
+        "--execute",
+        action="store_true",
+        help="execute each translated query against the selected historical snapshot",
+    )
+    parser.add_argument(
+        "--target-class",
+        help="override the target class emitted by the translator during execution",
+    )
+    parser.add_argument(
+        "--oks-dump-executable",
+        default="oks_dump",
+        help="oks_dump executable or absolute path (default: oks_dump)",
+    )
+    parser.add_argument(
+        "--execution-timeout",
+        type=float,
+        default=60.0,
+        help="maximum seconds allowed for one oks_dump call (default: 60)",
+    )
     return parser
 
 
@@ -93,7 +121,7 @@ def _working_tree_path(root: Path, configured_path: str) -> Path:
 
 
 def _create_translator(args, llm_api_key, llm_base_url, llm_model):
-    """Create a translator, optionally using one historical schema blob."""
+    """Create a translator and optional execution snapshot."""
 
     from translator_module.agent.translator import OksTranslator
 
@@ -108,7 +136,7 @@ def _create_translator(args, llm_api_key, llm_base_url, llm_model):
             llm_api_key=llm_api_key,
             llm_base_url=llm_base_url,
             llm_model=llm_model,
-        ), None
+        ), None, None
 
     from translator_module.revision import (
         GitRevisionResolver,
@@ -143,11 +171,26 @@ def _create_translator(args, llm_api_key, llm_base_url, llm_model):
         revision=resolved.commit,
     )
 
-    return translator, resolved
+    snapshot = None
+    if args.execute:
+        from translator_module.revision import SnapshotBuilder
+
+        snapshot = SnapshotBuilder().build(
+            source,
+            resolved,
+            schema_paths=[args.schema_path],
+            data_paths=args.data_path,
+        )
+
+    return translator, resolved, snapshot
 
 
 def main(argv=None):
     args = build_argument_parser().parse_args(argv)
+
+    if args.execute and not _is_historical_request(args):
+        print("Failed to initialize the translator: --execute requires a historical revision selector.")
+        return 2
 
     # Load environment variables
     try:
@@ -182,7 +225,7 @@ def main(argv=None):
     print("Initializing OKS Intelligent Query Agent...")
 
     try:
-        translator, resolved_revision = _create_translator(
+        translator, resolved_revision, snapshot = _create_translator(
             args,
             llm_api_key=llm_api_key,
             llm_base_url=llm_base_url,
@@ -230,6 +273,32 @@ def main(argv=None):
                 # Print IR without the explanation field to avoid duplication
                 ir_display = {k: v for k, v in ir.items() if k != "explanation"}
                 print(f"  {json.dumps(ir_display, indent=2)}")
+
+                if args.execute:
+                    from translator_module.execution import (
+                        HistoricalExecutionContext,
+                        OksDumpExecutor,
+                    )
+
+                    target_class = args.target_class or ir.get("target_class")
+                    execution_context = HistoricalExecutionContext(
+                        snapshot=snapshot,
+                        oks_query=result["oks_query"],
+                        target_class=target_class,
+                    )
+                    execution_result = OksDumpExecutor(
+                        executable=args.oks_dump_executable,
+                        timeout=args.execution_timeout,
+                    ).execute(execution_context)
+                    print("-" * 60)
+                    print(
+                        "\n  Historical execution output "
+                        f"(revision {execution_result.revision}):"
+                    )
+                    print(execution_result.stdout or "  (oks_dump returned no output)")
+                    if execution_result.stderr:
+                        print("\n  oks_dump diagnostics:")
+                        print(execution_result.stderr)
             else:
                 print(f"  Error: {result.get('message')}")
             print("=" * 60 + "\n")
