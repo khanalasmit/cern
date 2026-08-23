@@ -5,3 +5,4 @@ numpy
 faiss-cpu
 openai
 python-dotenv
+networkx

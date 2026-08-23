@@ -49,8 +49,8 @@ def main():
     repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     try:
         translator = OksTranslator(
-            os.path.join(repo_root, "oks_scraped", "oks_schema_examples.xml"),
-            os.path.join(repo_root, "oks_scraped", "gold_pairs.jsonl"),
+            os.path.join(repo_root, "combined_data", "oks_schema_corpus.xml"),
+            os.path.join(repo_root, "combined_data", "all_few_shot.jsonl"),
             llm_api_key=llm_api_key,
             llm_base_url=llm_base_url,
             llm_model=llm_model
@@ -75,6 +75,9 @@ def main():
 
             print("\n" + "=" * 60)
             if result.get("status") == "success":
+                target_cls = result.get("target_class")
+                if target_cls:
+                    print(f"  Target Class: {target_cls}")
                 print("  OKS Query (copy-paste ready):")
                 print(f"  {result.get('oks_query')}")
                 print("-" * 60)

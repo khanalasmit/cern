@@ -5,7 +5,7 @@ from pydantic import ValidationError
 from translator_module.rag.ingest import HybridIndexer
 from translator_module.rag.retrieve import Retriever
 from .few_shot import FewShotManager
-from .ir_validator import validate_ir
+from .ir_validator import validate_ir, validate_ir_semantics, SemanticValidationError
 from .serializer import serialize_ir_to_oks
 
 # The IR schema description embedded in the system prompt so the LLM knows
@@ -14,6 +14,7 @@ IR_SCHEMA_DESCRIPTION = """\
 The JSON IR (Intermediate Representation) you must produce follows this schema:
 
 {
+  "target_class": "<Class-Name>",   // The primary OKS class name the query runs against (e.g. "Application", "IPCServiceApplication")
   "scope": "this" | "all",          // "this" = exact class only, "all" = class + subclasses
   "expression": <Expression>,
   "explanation": "A brief explanation of each query component"
@@ -69,7 +70,7 @@ class OksTranslator:
 
         self.client = OpenAI(api_key=api_key, base_url=base_url)
 
-    def translate(self, natural_language_query: str, max_retries: int = 1) -> dict:
+    def translate(self, natural_language_query: str, max_retries: int = 2) -> dict:
         """Translates NL to OKS Query String via IR validation with a repair loop."""
 
         # 1. Retrieve Schema Context
@@ -89,12 +90,15 @@ Your task is to translate natural language into a strictly formatted JSON Interm
 {few_shot_context}
 
 IMPORTANT RULES:
-- Return ONLY valid JSON matching the QueryIR schema above.
-- Do NOT include markdown formatting (no ```json blocks), code fences, or explanatory text outside the JSON.
+- The few-shot examples above show OKS query syntax as context. YOUR output must be ONLY valid JSON matching the QueryIR schema above.
+- Return ONLY valid JSON. Do NOT include markdown formatting (no ```json blocks), code fences, or explanatory text outside the JSON.
+- Specify "target_class" as the exact class from the schema context that the query is filtering.
 - All attribute/relationship names, object IDs, and values MUST come from the supplied schema context.
 - Do NOT invent any class, attribute, relationship, or object ID.
+- RELATIONSHIP TYPING: Any nested expression inside a relationship ("rel" some/all <expr>) is evaluated against the TARGET CLASS of that relationship. You must ensure the target class actually defines or inherits the attribute you are comparing.
 - Include an "explanation" field with a brief breakdown of each query component.
 - Use scope "all" unless the user explicitly says "this class only".
+- SCOPE PLACEMENT: "all"/"this" appears ONLY as the top-level scope of the query, NEVER inside and/or/not expressions.
 """
 
         messages = [
@@ -150,7 +154,6 @@ IMPORTANT RULES:
                     )
                 }
 
-
             ir_json_str = response.choices[0].message.content
 
             # Strip potential markdown formatting
@@ -159,14 +162,18 @@ IMPORTANT RULES:
             try:
                 ir_dict = json.loads(ir_json_str)
 
-                # 5. Validation
+                # 5. Structural Validation (Layer 1)
                 validated_ir = validate_ir(ir_dict)
+
+                # 5b. Semantic Schema Validation (Layer 2)
+                validate_ir_semantics(validated_ir, self.indexer)
 
                 # 6. Serialization
                 oks_query_str = serialize_ir_to_oks(validated_ir)
 
                 return {
                     "status": "success",
+                    "target_class": validated_ir.target_class,
                     "ir": ir_dict,
                     "oks_query": oks_query_str,
                     "explanation": ir_dict.get("explanation", "")
@@ -179,11 +186,13 @@ IMPORTANT RULES:
                     f"Raw output (first 500 chars): {ir_json_str[:500]}\n"
                     f"Please respond with ONLY valid JSON matching the IR schema."
                 )
-            except ValidationError as e:
+            except (ValidationError, SemanticValidationError, ValueError) as e:
                 last_error = f"IR Validation failed: {e}"
                 error_feedback = (
-                    f"Your JSON was parseable but failed IR validation: {e}\n"
-                    f"Please fix the errors and respond with ONLY valid JSON."
+                    f"Your JSON failed validation:\n{e}\n"
+                    f"Please fix the error (make sure target_class, attributes, and relationships match the schema, "
+                    f"and that any nested relationship attributes exist on the relationship's target class). "
+                    f"Respond with ONLY valid JSON."
                 )
             except Exception as e:
                 last_error = str(e)
@@ -220,8 +229,8 @@ if __name__ == "__main__":
 
     # Simple test run
     translator = OksTranslator(
-        os.path.join(repo_root, "oks_scraped", "oks_schema_examples.xml"),
-        os.path.join(repo_root, "oks_scraped", "gold_pairs.jsonl"),
+        os.path.join(repo_root, "combined_data", "oks_schema_corpus.xml"),
+        os.path.join(repo_root, "combined_data", "all_few_shot.jsonl"),
         llm_api_key=env.get("LLM_API_KEY"),
         llm_base_url=env.get("LLM_BASE_URL"),
         llm_model=env.get("LLM_MODEL")
