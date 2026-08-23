@@ -4,6 +4,7 @@ from openai import OpenAI, APIStatusError, APIConnectionError
 from pydantic import ValidationError
 from translator_module.rag.ingest import HybridIndexer
 from translator_module.rag.retrieve import Retriever
+from translator_module.revision.models import ResolvedRevision
 from translator_module.revision.source import FileSource
 from .few_shot import FewShotManager
 from .ir_validator import validate_ir
@@ -56,11 +57,17 @@ class OksTranslator:
                  schema_paths = None,
                  revision: str = None,
                  few_shot_source: FileSource = None,
-                 few_shot_path: str = None):
+                 few_shot_path: str = None,
+                 revision_metadata: ResolvedRevision = None):
 
         # Initialize RAG
         self.indexer = HybridIndexer()
         self.revision = revision
+        self.revision_metadata = revision_metadata
+        if revision_metadata is not None and revision != revision_metadata.commit:
+            raise ValueError(
+                "revision must match revision_metadata.commit when both are supplied"
+            )
         if schema_source is not None:
             if schema_xml_path is not None:
                 raise ValueError(
@@ -202,13 +209,16 @@ IMPORTANT RULES:
                 # 6. Serialization
                 oks_query_str = serialize_ir_to_oks(validated_ir)
 
-                return {
+                result = {
                     "status": "success",
                     "ir": ir_dict,
                     "oks_query": oks_query_str,
                     "explanation": ir_dict.get("explanation", ""),
                     "revision": self.revision,
                 }
+                if self.revision_metadata is not None:
+                    result["revision_provenance"] = self._revision_provenance()
+                return result
 
             except json.JSONDecodeError as e:
                 last_error = f"JSON parsing failed: {e}"
@@ -244,6 +254,24 @@ IMPORTANT RULES:
             "Use only identifiers and constraints present in this historical "
             "schema context; do not use current-working-tree identifiers."
         )
+
+    def _revision_provenance(self) -> dict:
+        """Return JSON-safe provenance for successful historical results."""
+
+        if self.revision_metadata is None:
+            return {}
+        return {
+            "repository": str(self.revision_metadata.repository),
+            "commit": self.revision_metadata.commit,
+            "requested_as": self.revision_metadata.requested_as,
+            "ref": self.revision_metadata.ref,
+            "commit_date": (
+                self.revision_metadata.commit_date.isoformat()
+                if self.revision_metadata.commit_date is not None
+                else None
+            ),
+            "run_id": self.revision_metadata.run_id,
+        }
 
     @staticmethod
     def _strip_markdown_fences(text: str) -> str:

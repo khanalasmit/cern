@@ -169,6 +169,7 @@ def _create_translator(args, llm_api_key, llm_base_url, llm_model):
         schema_source=source,
         schema_paths=[args.schema_path],
         revision=resolved.commit,
+        revision_metadata=resolved,
         few_shot_source=source,
         few_shot_path=args.gold_pairs,
     )

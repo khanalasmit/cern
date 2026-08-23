@@ -261,6 +261,29 @@ Historical schema retrieval must not be paired with current-working-tree prompt 
 
 The historical schema and few-shot prompt inputs now come from one selected Git revision. The remaining user-facing correctness work is to validate that serialized queries reference identifiers available in the historical schema and to make runtime output auditable and machine-readable where the native OKS tool permits it.
 
+## Historical result provenance
+
+### Scope
+
+Successful historical translations now carry enough metadata to identify the exact source selection that produced them. The existing `revision` SHA field remains available for compatibility.
+
+### Implementation
+
+- `OksTranslator` accepts the resolved `ResolvedRevision` as optional `revision_metadata`.
+- The CLI passes the resolved revision object into the translator.
+- Historical success results now include `revision_provenance` with repository, full commit SHA, selection method, ref, commit timestamp when available, and run ID when applicable.
+- A mismatch between the legacy `revision` string and `revision_metadata.commit` fails during initialization instead of producing misleading provenance.
+- Current working-tree callers remain compatible and do not receive historical provenance fields.
+
+### Verification
+
+- The provenance implementation is syntax-checked with the existing translator/CLI compile check.
+- Existing historical and full test suites remain the required regression checks; no runtime LLM call is made by the tests.
+
+### Current status
+
+Historical schema, few-shot inputs, serialized query, and result metadata now share one revision identity. The next validation step is to add a schema-aware identifier check before execution so a query that passed the generic IR validator cannot silently target a class or attribute absent from the old schema.
+
 ## 2026-08-23 — Target class and execution adapter boundary
 
 ### Scope
