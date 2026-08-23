@@ -348,10 +348,14 @@ class OksPipeline:
             version=version_label,
         )
 
-        # Ensure user-facing answer has the required run number and partition header for historical queries
+        # Ensure user-facing answer has the required configuration / run header
         if (intent_info.intent == Intent.OKS_HISTORICAL_QUERY or effective_version not in (None, "current")) and extracted_run is not None:
             header = f"Run Number: {extracted_run}\nPartition: {partition}\n\n"
             if not interpretation.startswith("Run Number:"):
+                interpretation = header + interpretation
+        elif intent_info.intent == Intent.OKS_CURRENT_QUERY:
+            header = "Configuration: Current / Default (HEAD)\n\n"
+            if not interpretation.startswith("Configuration:"):
                 interpretation = header + interpretation
 
         return {
