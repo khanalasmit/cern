@@ -7,6 +7,10 @@ from rag.retrieve import Retriever
 from .few_shot import FewShotManager
 from .ir_validator import validate_ir
 from .serializer import serialize_ir_to_oks
+try:
+    from memory import ConversationMemory
+except ImportError:  # Support importing translator_module as a package.
+    from ..memory import ConversationMemory
 
 # The IR schema description embedded in the system prompt so the LLM knows
 # exactly what JSON structure to produce.
@@ -49,7 +53,10 @@ class OksTranslator:
                  gold_pairs_path: str,
                  llm_api_key: str = None,
                  llm_base_url: str = None,
-                 llm_model: str = None):
+                 llm_model: str = None,
+                 memory: ConversationMemory = None,
+                 memory_path: str = None,
+                 memory_max_turns: int = 12):
 
         # Initialize RAG
         self.indexer = HybridIndexer()
@@ -68,8 +75,16 @@ class OksTranslator:
         base_url = llm_base_url or os.environ.get("LLM_BASE_URL", "https://api.xiaomimimo.com/v1")
 
         self.client = OpenAI(api_key=api_key, base_url=base_url)
+        # A translator instance owns its in-memory default conversation. Callers
+        # serving multiple conversations should pass distinct conversation_id
+        # values to translate(), and can pass memory_path to persist them.
+        self.memory = memory if memory is not None else ConversationMemory(
+            storage_path=memory_path,
+            max_turns=memory_max_turns
+        )
 
-    def translate(self, natural_language_query: str, max_retries: int = 1) -> dict:
+    def translate(self, natural_language_query: str, max_retries: int = 1,
+                  conversation_id: str = None) -> dict:
         """Translates NL to OKS Query String via IR validation with a repair loop."""
 
         # 1. Retrieve Schema Context
@@ -97,10 +112,11 @@ IMPORTANT RULES:
 - Use scope "all" unless the user explicitly says "this class only".
 """
 
-        messages = [
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": natural_language_query}
-        ]
+        messages = [{"role": "system", "content": system_prompt}]
+        prior_history = self.memory.get_history(conversation_id)
+        if prior_history:
+            messages.extend(prior_history)
+        messages.append({"role": "user", "content": natural_language_query})
 
         last_error = None
         for attempt in range(1 + max_retries):
@@ -164,6 +180,15 @@ IMPORTANT RULES:
 
                 # 6. Serialization
                 oks_query_str = serialize_ir_to_oks(validated_ir)
+
+                # Only save a completed exchange. Failed requests and repair
+                # messages remain local to this call and cannot pollute a
+                # later turn in the conversation.
+                self.memory.add_exchange(
+                    conversation_id,
+                    natural_language_query,
+                    ir_json_str
+                )
 
                 return {
                     "status": "success",

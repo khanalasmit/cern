@@ -1,6 +1,73 @@
 import unittest
+from types import SimpleNamespace
+
 from agent.ir_validator import validate_ir, QueryIR
 from agent.serializer import serialize_ir_to_oks
+from agent.translator import OksTranslator
+from memory import ConversationMemory
+
+
+class _FakeCompletions:
+    def __init__(self, responses):
+        self.responses = iter(responses)
+        self.calls = []
+
+    def create(self, **kwargs):
+        self.calls.append(kwargs)
+        return SimpleNamespace(
+            choices=[SimpleNamespace(
+                message=SimpleNamespace(content=next(self.responses))
+            )]
+        )
+
+
+class _FakeClient:
+    def __init__(self, responses):
+        self.chat = SimpleNamespace(completions=_FakeCompletions(responses))
+
+
+class _StaticContext:
+    def get_schema_context(self, _query):
+        return ""
+
+    def get_examples(self, _query):
+        return ""
+
+
+class TestTranslatorMemory(unittest.TestCase):
+    def test_follow_up_query_receives_previous_exchange(self):
+        translator = OksTranslator.__new__(OksTranslator)
+        translator.retriever = _StaticContext()
+        translator.few_shot_manager = _StaticContext()
+        translator.llm_model = "test-model"
+        translator.memory = ConversationMemory()
+        translator.client = _FakeClient([
+            '{"scope":"all","expression":{"type":"attribute_compare",'
+            '"attribute":"Timeout","operator":">","value":"25"}}',
+            '{"scope":"all","expression":{"type":"attribute_compare",'
+            '"attribute":"Timeout","operator":"<","value":"50"}}',
+        ])
+
+        first = translator.translate("Find objects with Timeout over 25")
+        second = translator.translate("Now make it less than 50")
+
+        self.assertEqual(first["status"], "success")
+        self.assertEqual(second["status"], "success")
+        second_messages = translator.client.chat.completions.calls[1]["messages"]
+        self.assertEqual(
+            second_messages[1:],
+            [
+                {"role": "user", "content": "Find objects with Timeout over 25"},
+                {
+                    "role": "assistant",
+                    "content": (
+                        '{"scope":"all","expression":{"type":"attribute_compare",'
+                        '"attribute":"Timeout","operator":">","value":"25"}}'
+                    ),
+                },
+                {"role": "user", "content": "Now make it less than 50"},
+            ],
+        )
 
 
 class TestIRValidation(unittest.TestCase):

@@ -4,6 +4,9 @@ venv/
 # Environment variables
 .env
 
+# Local conversation history (may contain user queries)
+.conversation_memory*.json
+
 # Python
 __pycache__/
 *.py[cod]
