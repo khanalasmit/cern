@@ -22,5 +22,6 @@ Usage::
 """
 
 from .pipeline import OksPipeline, answer
+from .intent import Intent, IntentResult, IntentClassifier, extract_run_and_partition, RunResolver
 
-__all__ = ["OksPipeline", "answer"]
+__all__ = ["OksPipeline", "answer", "Intent", "IntentResult", "IntentClassifier", "extract_run_and_partition", "RunResolver"]
