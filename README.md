@@ -25,6 +25,37 @@ Run the test suite from the repository root:
 PYTHONPATH=translator_module python -m unittest discover -s translator_module/tests -v
 ```
 
+## Historical queries
+
+Translation against an older schema is selected with one revision selector:
+
+```bash
+python translator_module/cli.py \
+  --commit-hash <full-or-short-sha> \
+  --repo G:/path/to/oks-repository
+```
+
+The CLI also accepts `--tag`, `--date <ISO-8601-with-timezone>`, or
+`--run-id <id> --run-map <json-file>`. Historical schema and few-shot files
+are read from that Git revision without checking out the working tree.
+
+To execute the translated query against historical data, add `--execute`:
+
+```bash
+python translator_module/cli.py \
+  --commit-hash <sha> \
+  --repo G:/path/to/oks-repository \
+  --execute \
+  --target-class Application \
+  --data-path test_data/application.data.xml \
+  --oks-dump-executable /path/to/oks_dump
+```
+
+Repeat `--data-path` for multiple files. If omitted, the CLI discovers
+`test_data/**/*.data.xml` in the selected revision. Execution is opt-in and
+requires the native `oks_dump` executable; without it, the CLI still supports
+historical translation and reports a clear execution error.
+
 ## Configuration
 
 `.env.example` documents the local configuration values:

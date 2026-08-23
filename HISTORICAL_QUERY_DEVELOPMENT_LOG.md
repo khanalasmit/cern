@@ -847,3 +847,17 @@ Extracted `_execute_historical_result(args, result, snapshot)` from the interact
 Added CLI tests proving that the helper passes the selected snapshot and serialized query to the executor, and that a missing historical target class is rejected before the native executor is called.
 
 Verification after this slice: CLI tests passed 10/10; the full suite passed 68 tests with 2 optional `rank_bm25` skips. No native OKS binary is required for these tests.
+
+## Final hardening and usage documentation — 2026-08-24
+
+### Implementation
+
+- Added positive, finite validation for `--execution-timeout`; zero, negative, NaN, and infinite values are rejected by argparse before translator initialization.
+- Added concrete historical-query examples to `README.md`, including commit selection, run-map selection, explicit data paths, target-class override, and `oks_dump` configuration.
+- Added an implemented-status section to `HISTORICAL_QUERY_GUIDE.md` so the vibe-coding plan matches the current repository rather than describing the feature as entirely future work.
+
+### Verification
+
+- CLI tests: 11 passed.
+- Full suite: 69 passed, 2 skipped because `rank_bm25`, `sentence_transformers`, and `faiss` are not installed in the local environment. Installing all three may pull heavyweight ML dependencies, so the RAG tests remain explicitly skipped rather than changing the project environment implicitly.
+- The native `oks_dump` runtime is not installed locally; mocked adapter coverage remains the safe verification path.

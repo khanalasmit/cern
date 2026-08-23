@@ -53,6 +53,24 @@ The first part can be implemented without an OKS runtime. The second part requir
 
 ---
 
+### Implemented status
+
+The repository now contains the initial implementation described by this
+guide. The working CLI supports `--commit-hash`, `--tag`, `--date`, and
+`--run-id`; historical schema and few-shot files are read from a Git-backed
+source without checkout. Add `--execute` to build a same-revision schema/data
+snapshot, run target-class preflight, and invoke the native `oks_dump`
+adapter. Use `--data-path` repeatedly for explicit data files, or let the
+snapshot discover `test_data/**/*.data.xml`.
+
+The native executable is intentionally optional during development. Its
+adapter returns raw output because the repository does not establish a stable
+machine-readable output contract for every OKS deployment. See
+[`HISTORICAL_QUERY_DEVELOPMENT_LOG.md`](HISTORICAL_QUERY_DEVELOPMENT_LOG.md)
+for the implementation history and current verification results.
+
+---
+
 ## 2. Prerequisites
 
 ### Runtime prerequisites

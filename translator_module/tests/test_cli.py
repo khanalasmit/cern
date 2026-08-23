@@ -92,6 +92,14 @@ class CliArgumentTests(unittest.TestCase):
     def test_execution_requires_historical_selector(self):
         self.assertEqual(cli.main(["--execute"]), 2)
 
+    def test_execution_timeout_must_be_positive_and_finite(self):
+        for value in ("0", "-1", "nan", "inf"):
+            with self.subTest(value=value):
+                with self.assertRaises(SystemExit):
+                    cli.build_argument_parser().parse_args(
+                        ["--execution-timeout", value]
+                    )
+
     def test_execution_helper_passes_historical_context_to_oks_dump(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

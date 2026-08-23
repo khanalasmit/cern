@@ -1,6 +1,7 @@
 import argparse
 from datetime import datetime
 import json
+import math
 import os
 from pathlib import Path
 import sys
@@ -29,6 +30,20 @@ def _parse_revision_date(value: str) -> datetime:
             "date must include a timezone offset, for example +05:45 or Z"
         )
     return parsed
+
+
+def _parse_positive_timeout(value: str) -> float:
+    try:
+        timeout = float(value)
+    except ValueError as exc:
+        raise argparse.ArgumentTypeError(
+            "execution timeout must be a positive number of seconds"
+        ) from exc
+    if not math.isfinite(timeout) or timeout <= 0:
+        raise argparse.ArgumentTypeError(
+            "execution timeout must be a positive finite number of seconds"
+        )
+    return timeout
 
 
 def build_argument_parser() -> argparse.ArgumentParser:
@@ -92,7 +107,7 @@ def build_argument_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--execution-timeout",
-        type=float,
+        type=_parse_positive_timeout,
         default=60.0,
         help="maximum seconds allowed for one oks_dump call (default: 60)",
     )
