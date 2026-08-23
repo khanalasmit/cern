@@ -4,14 +4,17 @@ import tempfile
 import unittest
 from dataclasses import FrozenInstanceError
 from datetime import datetime, timezone
+import os
 from pathlib import Path
 import subprocess
 
 from translator_module.revision import (
     GitRevisionSource,
     GitSourceError,
+    GitRevisionResolver,
     OksSnapshot,
     ResolvedRevision,
+    RevisionResolutionError,
     RevisionRequest,
     WorkingTreeSource,
 )
@@ -180,6 +183,118 @@ class GitRevisionSourceTests(unittest.TestCase):
             GitRevisionSource(self.root / "missing", self.old_commit)
         with self.assertRaises(GitSourceError):
             GitRevisionSource(self.root, "not-a-real-revision")
+
+
+class GitRevisionResolverTests(unittest.TestCase):
+    def setUp(self):
+        self.temp_dir = tempfile.TemporaryDirectory()
+        self.root = Path(self.temp_dir.name)
+        self._run_git("init", "--quiet", "-b", "main")
+        self._run_git("config", "user.email", "historical-query@example.test")
+        self._run_git("config", "user.name", "Historical Query Tests")
+
+        (self.root / "configuration.xml").write_text(
+            "<configuration version='old' />", encoding="utf-8"
+        )
+        self._commit("old configuration", "2026-01-01T10:00:00+00:00")
+        self.old_commit = self._git_output("rev-parse", "HEAD")
+        self._run_git("tag", "v-old")
+
+        (self.root / "configuration.xml").write_text(
+            "<configuration version='new' />", encoding="utf-8"
+        )
+        self._commit("new configuration", "2026-02-01T10:00:00+00:00")
+        self.new_commit = self._git_output("rev-parse", "HEAD")
+
+        self.resolver = GitRevisionResolver(self.root)
+
+    def tearDown(self):
+        self.temp_dir.cleanup()
+
+    def _run_git(self, *arguments, env=None):
+        return subprocess.run(
+            ["git", "-C", str(self.root), *arguments],
+            check=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            env=env,
+        )
+
+    def _git_output(self, *arguments):
+        return self._run_git(*arguments).stdout.decode("ascii").strip()
+
+    def _commit(self, message, timestamp):
+        self._run_git("add", ".")
+        environment = os.environ.copy()
+        environment["GIT_AUTHOR_DATE"] = timestamp
+        environment["GIT_COMMITTER_DATE"] = timestamp
+        self._run_git("commit", "--quiet", "-m", message, env=environment)
+
+    def test_resolves_exact_commit_to_full_sha(self):
+        resolved = self.resolver.resolve(
+            RevisionRequest(commit_hash=self.old_commit[:10])
+        )
+
+        self.assertEqual(resolved.commit, self.old_commit)
+        self.assertEqual(resolved.requested_as, "commit")
+        self.assertEqual(resolved.repository, self.root.resolve())
+        self.assertEqual(
+            resolved.commit_date,
+            datetime(2026, 1, 1, 10, 0, tzinfo=timezone.utc),
+        )
+
+    def test_resolves_tag_to_tagged_commit(self):
+        resolved = self.resolver.resolve(RevisionRequest(tag="v-old"))
+
+        self.assertEqual(resolved.commit, self.old_commit)
+        self.assertEqual(resolved.requested_as, "tag")
+
+    def test_resolves_date_to_latest_commit_at_or_before_timestamp(self):
+        before_new = self.resolver.resolve(
+            RevisionRequest(
+                date=datetime(2026, 1, 15, 12, 0, tzinfo=timezone.utc),
+                ref="main",
+            )
+        )
+        after_new = self.resolver.resolve(
+            RevisionRequest(
+                date=datetime(2026, 2, 15, 12, 0, tzinfo=timezone.utc),
+                ref="main",
+            )
+        )
+
+        self.assertEqual(before_new.commit, self.old_commit)
+        self.assertEqual(after_new.commit, self.new_commit)
+        self.assertEqual(before_new.requested_as, "date")
+
+    def test_no_selector_resolves_current_head(self):
+        resolved = self.resolver.resolve()
+
+        self.assertEqual(resolved.commit, self.new_commit)
+        self.assertEqual(resolved.requested_as, "current")
+
+    def test_rejects_ambiguous_or_unsupported_requests(self):
+        with self.assertRaisesRegex(RevisionResolutionError, "mutually exclusive"):
+            self.resolver.resolve(
+                RevisionRequest(commit_hash=self.old_commit, tag="v-old")
+            )
+        with self.assertRaisesRegex(RevisionResolutionError, "run_id"):
+            self.resolver.resolve(RevisionRequest(run_id="48192"))
+
+    def test_rejects_invalid_date_or_missing_history(self):
+        with self.assertRaisesRegex(RevisionResolutionError, "timezone-aware"):
+            self.resolver.resolve(RevisionRequest(date=datetime(2026, 1, 15)))
+        with self.assertRaises(RevisionResolutionError):
+            self.resolver.resolve(
+                RevisionRequest(
+                    date=datetime(2025, 1, 1, tzinfo=timezone.utc),
+                    ref="main",
+                )
+            )
+
+    def test_invalid_repository_fails_before_resolution(self):
+        with self.assertRaises(RevisionResolutionError):
+            GitRevisionResolver(self.root / "missing")
 
 
 if __name__ == "__main__":

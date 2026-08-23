@@ -74,6 +74,67 @@ OK
 
 The read-only Git source is implemented and verified. The next slice is revision resolution: converting a commit hash, tag, or date request into a deterministic `ResolvedRevision`.
 
+## 2026-08-23 — Revision resolution
+
+### Scope
+
+Implemented deterministic resolution of Git revision requests:
+
+- Short or full commit hash to full commit SHA.
+- Git tag to tagged commit.
+- Timezone-aware date to the newest commit at or before that time on a selected ref.
+- No selector to current `HEAD`.
+- Explicit rejection of ambiguous selectors.
+- Explicit rejection of run IDs until a run-to-commit registry is implemented.
+
+### Safety decisions
+
+1. Resolution uses read-only `git rev-parse`, `git rev-list`, and `git show` commands.
+2. The resolver never changes the active branch or working tree.
+3. Date requests must carry an explicit timezone offset.
+4. Date selection is deterministic and limited to the requested Git ref.
+5. A missing historical range is an error; it never falls back to the current revision.
+
+### Files created or modified
+
+- Created: `translator_module/revision/resolver.py`
+- Modified: `translator_module/revision/__init__.py`
+- Modified: `translator_module/tests/test_historical_query.py`
+- Updated: `HISTORICAL_QUERY_DEVELOPMENT_LOG.md`
+
+### Verification pending
+
+Run:
+
+```bash
+python -m unittest translator_module.tests.test_historical_query -v
+$env:PYTHONPATH='translator_module'
+python -m unittest discover -s translator_module/tests -v
+```
+
+### Verification results
+
+Focused historical-query tests:
+
+```text
+python -m unittest translator_module.tests.test_historical_query -v
+Ran 18 tests in 5.371s
+OK
+```
+
+Full suite using the documented `PYTHONPATH` setup:
+
+```text
+$env:PYTHONPATH='translator_module'
+python -m unittest discover -s translator_module/tests -v
+Ran 32 tests in 5.304s
+OK
+```
+
+### Current status
+
+Commit, tag, date, and current-HEAD resolution are implemented and verified. Run-ID resolution remains intentionally blocked until the explicit run-to-commit registry slice is implemented next.
+
 ### Verification note
 
 The first test run exposed one implementation issue: passing the nested glob directly to `git ls-tree` returned no match, although the equivalent working-tree glob matched. The implementation was corrected to list the historical tree and apply `PurePosixPath.match()` in Python, keeping `GitRevisionSource` and `WorkingTreeSource` consistent.
