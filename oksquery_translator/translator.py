@@ -136,14 +136,27 @@ class Translator:
             last_error = val_result.message
 
             if attempt < self.max_retries:
-                # Build a schema hint if possible
+                # Always build a schema hint for the repair prompt.
+                # The schema shows the LLM the EXACT attribute and
+                # relationship names so it can correct itself.
                 schema_hint = ""
-                if self.schema_retriever and val_result.error_type in (
-                    "bad_query", "class_not_found"
-                ):
+                if self.schema_retriever:
                     info = self.schema_retriever.get_class_info(target_class)
                     if info:
                         schema_hint = SchemaRetriever._format_class_info(info)
+
+                    # If the error mentions a specific class (e.g. inside
+                    # a relationship), fetch that class's schema too.
+                    import re
+                    err_class = re.search(
+                        r'in class "([^"]+)"', val_result.message
+                    )
+                    if err_class:
+                        mentioned = err_class.group(1)
+                        if mentioned != target_class:
+                            extra = self.schema_retriever.get_class_info(mentioned)
+                            if extra:
+                                schema_hint += "\n" + SchemaRetriever._format_class_info(extra)
 
                 repair_msg = self.prompt_builder.build_repair_prompt(
                     question, target_class, oks_query,

@@ -66,24 +66,16 @@ def main():
     print("  OKS Query Translator — ATLAS DAQ Configuration")
     print("=" * 60)
 
-    # Show environment info
-    import shutil
-    oks_dump = shutil.which("oks_dump")
-    print(f"  oks_dump:  {'found' if oks_dump else 'NOT FOUND (source TDAQ release)'}")
+    # Show LLM config
     print(f"  LLM model: {os.environ.get('LLM_MODEL', 'mimo-v2.5-pro')}")
     print(f"  LLM URL:   {os.environ.get('LLM_BASE_URL', 'https://api.xiaomimimo.com/v1')}")
-
-    try:
-        import config  # noqa: F401
-        print(f"  config:    available (Python OKS access)")
-    except ImportError:
-        print(f"  config:    NOT available (using oks_dump CLI only)")
 
     print()
     print("Commands:")
     print("  Type a question to translate and execute.")
     print("  'translate <question>' — translate only (no execution).")
     print("  'version <v>'          — set temporal version.")
+    print("  'probe'                — re-run environment probe.")
     print("  'exit' / 'quit'        — exit.")
     print("-" * 60)
 
@@ -96,10 +88,21 @@ def main():
         print(f"Failed to initialize pipeline: {e}")
         return
 
-    class_count = len(pipeline.schema_retriever.get_class_list())
+    # Run environment probe (breif.md Step 1)
+    print("\n--- Environment Probe (breif.md Step 1) ---")
+    probe = pipeline.schema_retriever.environment_probe()
+    print(f"  oks_dump:    {probe['oks_dump']}")
+    if "oks_dump_status" in probe:
+        print(f"  oks_dump -f: {probe['oks_dump_status']}")
+    print(f"  config mod:  {probe['config_module']}")
+    print(f"  schema dir:  {probe['schema_dir']}")
+    print(f"  data file:   {probe['data_file']}")
+    print(f"  classes:     {probe['class_count']} discovered from live schema")
+    if probe['classes']:
+        print(f"  first 20:    {', '.join(probe['classes'][:20])}")
+
     example_count = pipeline.few_shot_manager.get_example_count()
-    print(f"  Schema: {class_count} classes loaded")
-    print(f"  Few-shot: {example_count} examples loaded")
+    print(f"  few-shot:    {example_count} examples loaded")
     print(f"  Ready!\n")
 
     current_version = None
@@ -117,6 +120,18 @@ def main():
         if user_input.lower() in ("exit", "quit"):
             print("Goodbye!")
             break
+
+        # Probe command
+        if user_input.lower() == "probe":
+            probe = pipeline.schema_retriever.environment_probe()
+            print(f"\n--- Environment Probe ---")
+            for k, v in probe.items():
+                if k == "classes":
+                    print(f"  {k}: {', '.join(v[:20])}")
+                else:
+                    print(f"  {k}: {v}")
+            print()
+            continue
 
         # Version command
         if user_input.lower().startswith("version "):

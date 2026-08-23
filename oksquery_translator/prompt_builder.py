@@ -164,8 +164,9 @@ class PromptBuilder:
                             schema_hint: str = "") -> str:
         """
         Build a repair prompt to feed back to the LLM after a validation
-        failure.  Includes the error message and optionally a schema hint
-        (e.g. available attributes on a class).
+        failure.  Parses the oks_dump error to provide targeted guidance,
+        and always includes the full schema of the class so the LLM can
+        see the EXACT attribute and relationship names.
 
         Parameters
         ----------
@@ -178,22 +179,79 @@ class PromptBuilder:
         error_message : str
             The error message (stderr from oks_dump, or syntax checker).
         schema_hint : str, optional
-            Additional schema info to help the LLM correct itself.
+            Full schema of the class (attributes + relationships).
 
         Returns
         -------
         str : The repair prompt (sent as a user message).
         """
+        import re
+
         parts = [
-            "Your previous query was invalid.",
+            "YOUR PREVIOUS QUERY FAILED. You MUST fix it.",
             f"CLASS: {previous_class}",
             f"QUERY: {previous_query}",
             "",
-            f"Error from the OKS engine:\n  {error_message}",
+            f"Error from the OKS engine:",
+            f"  {error_message}",
+            "",
         ]
-        if schema_hint:
-            parts.append(f"\n{schema_hint}")
-        parts.append(
-            "\nPlease fix the query. Output EXACTLY two lines: CLASS: and QUERY:"
+
+        # Parse the error to give targeted guidance
+        rel_missing = re.search(
+            r"can't find relationship \"([^\"]+)\" in class \"([^\"]+)\"",
+            error_message
         )
+        attr_missing = re.search(
+            r"can't find attribute \"([^\"]+)\" in class \"([^\"]+)\"",
+            error_message
+        )
+        class_missing = re.search(
+            r"can't find class \"([^\"]+)\"",
+            error_message
+        )
+
+        if rel_missing:
+            bad_name = rel_missing.group(1)
+            on_class = rel_missing.group(2)
+            parts.append(
+                f">>> THE PROBLEM: You used relationship \"{bad_name}\" but "
+                f"it does NOT exist on class \"{on_class}\"."
+            )
+            parts.append(
+                f">>> You MUST use one of the EXACT relationship names "
+                f"listed in the schema below. Do NOT guess or abbreviate."
+            )
+        elif attr_missing:
+            bad_name = attr_missing.group(1)
+            on_class = attr_missing.group(2)
+            parts.append(
+                f">>> THE PROBLEM: You used attribute \"{bad_name}\" but "
+                f"it does NOT exist on class \"{on_class}\"."
+            )
+            parts.append(
+                f">>> You MUST use one of the EXACT attribute names "
+                f"listed in the schema below. Do NOT guess or abbreviate."
+            )
+        elif class_missing:
+            bad_class = class_missing.group(1)
+            parts.append(
+                f">>> THE PROBLEM: Class \"{bad_class}\" does not exist. "
+                f"Use a different class name."
+            )
+
+        if schema_hint:
+            parts.append("")
+            parts.append("=== CORRECT SCHEMA FOR THIS CLASS (use ONLY these names) ===")
+            parts.append(schema_hint)
+            parts.append("=== END OF SCHEMA ===")
+
+        parts.append("")
+        parts.append(
+            "Fix the query using ONLY the attribute/relationship names "
+            "from the schema above. Output EXACTLY two lines:"
+        )
+        parts.append("CLASS: <ClassName>")
+        parts.append("QUERY: <OksQuery string>")
+
         return "\n".join(parts)

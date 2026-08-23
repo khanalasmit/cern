@@ -27,7 +27,9 @@ from typing import Dict, List, Optional, Tuple
 # ---------------------------------------------------------------------------
 _KEYWORD_TO_CLASSES = {
     "application":   ["Application", "BaseApplication", "RunControlApplication"],
+    "applications":  ["Application", "BaseApplication", "RunControlApplication"],
     "executable":    ["Executable", "Binary"],
+    "executables":   ["Executable", "Binary"],
     "binary":        ["Binary", "Executable"],
     "computer":      ["Computer"],
     "host":          ["Computer"],
@@ -36,6 +38,10 @@ _KEYWORD_TO_CLASSES = {
     "partition":     ["Partition"],
     "resource":      ["Resource", "ResourceBase"],
     "timeout":       ["BaseApplication", "Executable"],
+    "inittimeout":   ["BaseApplication", "Executable"],
+    "exittimeout":   ["BaseApplication", "Executable"],
+    "initialise":    ["BaseApplication", "Executable"],
+    "initialize":    ["BaseApplication", "Executable"],
     "trigger":       ["DFTriggerIn"],
     "readout":       ["ROSDescriptor", "ReadoutApplication"],
     "ros":           ["ROSDescriptor"],
@@ -47,12 +53,19 @@ _KEYWORD_TO_CLASSES = {
     "parameter":     ["Parameter"],
     "rack":          ["Rack", "RackBase"],
     "test":          ["Test", "Test4Class", "Test4Object", "ExecutableTest"],
-    "controller":    ["RunControlApplication"],
+    "control":       ["RunControlApplication", "RunControlApplicationBase"],
+    "controller":    ["RunControlApplication", "RunControlApplicationBase"],
+    "run":           ["RunControlApplication"],
+    "rc":            ["RunControlApplication", "RunControlApplicationBase"],
     "gatherer":      ["MIGApplication"],
     "monitoring":    ["MIGApplication", "MIGConfiguration"],
     "infrastructure": ["InfrastructureBase"],
     "ipc":           ["IPCServiceApplication"],
     "service":       ["IPCServiceApplication"],
+    "corba":         ["IPCServiceApplication"],
+    "container":     ["Container"],
+    "element":       ["Element"],
+    "failure":       ["TestFailure"],
 }
 
 
@@ -89,8 +102,51 @@ class SchemaRetriever:
     # Public API
     # ------------------------------------------------------------------
 
+    def environment_probe(self) -> dict:
+        """
+        Step 1 from breif.md: Confirm the release path exists and
+        oks_dump runs.  Build a list of all class names by scanning
+        the schema files.
+
+        Returns a dict with environment status and class count.
+        """
+        probe = {
+            "oks_dump": self._oks_dump_path or "NOT FOUND",
+            "config_module": "available" if self._config_available else "NOT available",
+            "schema_dir": self.schema_dir or "NOT FOUND",
+            "data_file": self.data_file,
+            "class_count": 0,
+            "classes": [],
+        }
+
+        # Probe: can we actually run oks_dump?
+        if self._oks_dump_path:
+            try:
+                result = subprocess.run(
+                    [self._oks_dump_path, "-f", self.data_file],
+                    capture_output=True, text=True, timeout=15
+                )
+                probe["oks_dump_status"] = (
+                    "OK" if result.returncode == 0
+                    else f"exit {result.returncode}: {result.stderr.strip()[:200]}"
+                )
+            except Exception as e:
+                probe["oks_dump_status"] = f"error: {e}"
+
+        # Load classes
+        classes = self.get_class_list()
+        probe["class_count"] = len(classes)
+        probe["classes"] = classes[:20]  # first 20 for display
+
+        return probe
+
     def get_class_list(self) -> List[str]:
-        """Return the cached list of all class names in the schema."""
+        """
+        Return the cached list of all class names in the schema.
+
+        Uses real runtime commands (db.classes(), oks_dump -f, grep)
+        to discover classes from the live TDAQ environment.
+        """
         if self._class_list is None:
             self._class_list = self._load_class_list()
         return self._class_list
@@ -140,35 +196,102 @@ class SchemaRetriever:
         """
         Match a user question to candidate OKS class names.
 
-        Strategy:
-          1. Keyword synonym lookup
-          2. Substring match against the full class list
-          3. Deduplicate and cap at ``max_classes``
+        PRIMARY STRATEGY: Match question tokens against the REAL class
+        list loaded from the live schema (via db.classes() / oks_dump /
+        grep).  This is the approach from breif.md Step 2.
+
+        SECONDARY BOOST: Keyword synonym lookup for common terms like
+        "host" → Computer, "control" → RunControlApplication.
+
+        TERTIARY: Attribute-name scanning — if a question mentions a
+        specific attribute name (e.g. "timeout"), find which classes
+        actually HAVE that attribute by inspecting the live schema.
+
+        Strategy order:
+          1. Exact / substring match against real class names
+          2. Keyword synonym boost
+          3. Attribute-name scanning on matched + candidate classes
+          4. Expand via relationships (if a match points to another class)
+          5. Deduplicate and cap at max_classes
         """
         all_classes = self.get_class_list()
         question_lower = question.lower()
         tokens = set(re.findall(r'[a-zA-Z_]+', question_lower))
 
         candidates = []
+        scored: Dict[str, int] = {}  # class → relevance score
 
-        # 1. Synonym lookup
+        # ----------------------------------------------------------
+        # 1. PRIMARY: Match tokens against real class names
+        #    The class list comes from db.classes() / oks_dump / grep
+        #    on the live schema — NOT from a hardcoded list.
+        # ----------------------------------------------------------
+        for cls in all_classes:
+            cls_lower = cls.lower()
+            # Split CamelCase into words for matching
+            cls_words = set(w.lower() for w in re.findall(r'[A-Z][a-z]+|[a-z]+', cls))
+            cls_words.add(cls_lower)
+
+            for token in tokens:
+                if len(token) < 2:
+                    continue
+                # Exact class name match (highest priority)
+                if token == cls_lower:
+                    scored[cls] = scored.get(cls, 0) + 10
+                # Token is a substring of the class name
+                elif len(token) >= 3 and token in cls_lower:
+                    scored[cls] = scored.get(cls, 0) + 5
+                # Token matches a CamelCase word in the class name
+                elif token in cls_words:
+                    scored[cls] = scored.get(cls, 0) + 7
+
+        # ----------------------------------------------------------
+        # 2. SECONDARY: Keyword synonym boost
+        #    Supplementary hints for common NL terms that don't
+        #    directly match class names.
+        # ----------------------------------------------------------
         for token in tokens:
             if token in _KEYWORD_TO_CLASSES:
                 for cls in _KEYWORD_TO_CLASSES[token]:
-                    if cls in all_classes and cls not in candidates:
-                        candidates.append(cls)
+                    if cls in all_classes:
+                        scored[cls] = scored.get(cls, 0) + 3
 
-        # 2. Substring match (case-insensitive) against class names
-        for cls in all_classes:
-            cls_lower = cls.lower()
-            for token in tokens:
-                if len(token) >= 3 and token in cls_lower and cls not in candidates:
-                    candidates.append(cls)
+        # ----------------------------------------------------------
+        # 3. TERTIARY: Attribute-name scanning
+        #    If the question mentions a term that looks like an
+        #    attribute name (e.g. "timeout", "name", "host"),
+        #    inspect the top candidate classes' actual attributes
+        #    to verify they have it — and scan a few more classes
+        #    if the top candidates don't.
+        # ----------------------------------------------------------
+        # Attribute-like tokens (longer, possibly compound)
+        attr_tokens = {t for t in tokens if len(t) >= 4}
+        if attr_tokens:
+            # Check the top candidates first
+            top_candidates = sorted(scored, key=scored.get, reverse=True)[:5]
+            for cls in top_candidates:
+                info = self.get_class_info(cls)
+                if not info:
+                    continue
+                for attr in info.get("attributes", []):
+                    attr_lower = attr["name"].lower()
+                    for token in attr_tokens:
+                        if token in attr_lower:
+                            scored[cls] = scored.get(cls, 0) + 4
 
-        # 3. If a matched class has relationships pointing to other classes,
-        #    include those target classes too (up to max_classes).
-        expanded = list(candidates[:max_classes])
-        for cls_name in candidates[:max_classes]:
+        # ----------------------------------------------------------
+        # 4. Sort by score and pick top candidates
+        # ----------------------------------------------------------
+        sorted_classes = sorted(scored, key=scored.get, reverse=True)
+        candidates = sorted_classes[:max_classes]
+
+        # ----------------------------------------------------------
+        # 5. Expand via relationships
+        #    If a matched class has relationships pointing to other
+        #    classes, include those too (up to max_classes).
+        # ----------------------------------------------------------
+        expanded = list(candidates)
+        for cls_name in candidates:
             info = self.get_class_info(cls_name)
             if info and len(expanded) < max_classes:
                 for rel in info.get("relationships", []):
