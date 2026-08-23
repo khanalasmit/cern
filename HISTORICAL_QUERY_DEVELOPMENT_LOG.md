@@ -150,6 +150,68 @@ OK (skipped=2)
 
 `OksTranslator` now accepts source-backed schemas directly, and the CLI no longer materializes a temporary historical schema file. The next integration boundary is historical data-path discovery and execution context; current translation still uses the existing few-shot file and does not execute OKS queries.
 
+## 2026-08-23 — Historical snapshot and execution context
+
+### Scope
+
+Implemented the historical data boundary without inventing an OKS runtime:
+
+- Added `SnapshotBuilder` and configurable schema/data glob patterns.
+- Extended `OksSnapshot` to retain its source object.
+- Added required schema and data path discovery from one revision.
+- Added `HistoricalDataLoader` for standalone and embedded data XML.
+- Added immutable `HistoricalExecutionContext` containing snapshot, serialized query, and optional target class.
+- Added tests for discovery, missing files, data parsing, and source consistency.
+
+### Safety decisions
+
+1. A snapshot owns both schema and data paths and the source that serves them.
+2. By default, historical execution requires at least one schema and one data file.
+3. Missing required files fail snapshot construction instead of silently using current files.
+4. The execution context does not execute queries yet; it provides the boundary for a future OKS adapter.
+5. The future executor will receive the same snapshot used for translation, preventing schema/data revision mixing.
+
+### Files created or modified
+
+- Modified: `translator_module/revision/models.py`
+- Created: `translator_module/revision/snapshot.py`
+- Modified: `translator_module/revision/__init__.py`
+- Created: `translator_module/execution/__init__.py`
+- Created: `translator_module/execution/data_loader.py`
+- Created: `translator_module/execution/context.py`
+- Modified: `translator_module/tests/test_historical_query.py`
+- Updated: `HISTORICAL_QUERY_DEVELOPMENT_LOG.md`
+
+### Verification results
+
+Syntax compilation:
+
+```text
+python -m py_compile translator_module/revision/models.py translator_module/revision/snapshot.py translator_module/execution/data_loader.py translator_module/execution/context.py
+Passed
+```
+
+Historical-query tests:
+
+```text
+python -m unittest translator_module.tests.test_historical_query -v
+Ran 31 tests in 6.393s
+OK (skipped=2)
+```
+
+Full suite using the documented `PYTHONPATH` setup:
+
+```text
+$env:PYTHONPATH='translator_module'
+python -m unittest discover -s translator_module/tests -v
+Ran 51 tests in 6.489s
+OK (skipped=2)
+```
+
+### Current status
+
+Historical schemas and data can now be discovered and loaded from one source-backed snapshot. The next step is to pass that snapshot through translation and add a real OKS execution adapter, including a target class in the IR.
+
 ### Verification results
 
 Historical-query and loader tests:

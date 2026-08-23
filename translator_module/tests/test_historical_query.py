@@ -21,6 +21,12 @@ from translator_module.revision import (
     RevisionRequest,
     WorkingTreeSource,
 )
+from translator_module.revision import SnapshotBuilder, SnapshotError
+from translator_module.execution import (
+    HistoricalDataLoader,
+    HistoricalExecutionContext,
+)
+from translator_module.execution.context import ExecutionContextError
 from translator_module.rag.schema_loader import SchemaLoadError, SchemaLoader
 from unittest.mock import patch
 import numpy as np
@@ -130,6 +136,81 @@ class SchemaLoaderTests(unittest.TestCase):
     def test_reports_malformed_xml_with_source_and_location(self):
         with self.assertRaisesRegex(SchemaLoadError, "broken.xml.*line"):
             SchemaLoader.load_bytes(b"<broken>", "broken.xml")
+
+
+class HistoricalSnapshotTests(unittest.TestCase):
+    def setUp(self):
+        self.temp_dir = tempfile.TemporaryDirectory()
+        self.root = Path(self.temp_dir.name)
+        (self.root / "test_schema").mkdir()
+        (self.root / "test_data").mkdir()
+        (self.root / "test_schema" / "application.schema.xml").write_text(
+            "<oks-schema><class name='Application' /></oks-schema>",
+            encoding="utf-8",
+        )
+        (self.root / "test_data" / "application.data.xml").write_text(
+            "<oks-data><obj class='Application' id='app-1' /></oks-data>",
+            encoding="utf-8",
+        )
+        self.source = WorkingTreeSource(self.root)
+        self.revision = ResolvedRevision(
+            repository=self.root.resolve(),
+            commit="a" * 40,
+            requested_as="current",
+        )
+
+    def tearDown(self):
+        self.temp_dir.cleanup()
+
+    def test_builder_discovers_schema_and_data_from_one_source(self):
+        snapshot = SnapshotBuilder().build(self.source, self.revision)
+
+        self.assertEqual(snapshot.schema_paths, ("test_schema/application.schema.xml",))
+        self.assertEqual(snapshot.data_paths, ("test_data/application.data.xml",))
+        self.assertIs(snapshot.source, self.source)
+
+    def test_builder_rejects_missing_required_files(self):
+        with self.assertRaisesRegex(SnapshotError, "missing data"):
+            SnapshotBuilder().build(
+                self.source,
+                self.revision,
+                data_paths=["test_data/missing.data.xml"],
+            )
+
+    def test_data_loader_reads_historical_data_documents(self):
+        snapshot = SnapshotBuilder().build(self.source, self.revision)
+        documents = HistoricalDataLoader.load_source(
+            self.source,
+            snapshot.data_paths,
+        )
+
+        self.assertEqual(len(documents), 1)
+        self.assertEqual(documents[0].source_path, "test_data/application.data.xml")
+        self.assertEqual(documents[0].root.find(".//obj").get("id"), "app-1")
+
+    def test_execution_context_loads_only_snapshot_data(self):
+        snapshot = SnapshotBuilder().build(self.source, self.revision)
+        context = HistoricalExecutionContext(
+            snapshot=snapshot,
+            oks_query="(all (object-id \"app-1\" =))",
+            target_class="Application",
+        )
+
+        documents = context.load_data()
+
+        self.assertEqual(len(documents), 1)
+        self.assertEqual(context.target_class, "Application")
+
+    def test_execution_context_requires_a_source(self):
+        snapshot = OksSnapshot(
+            revision=self.revision,
+            schema_paths=("test_schema/application.schema.xml",),
+            data_paths=("test_data/application.data.xml",),
+        )
+        context = HistoricalExecutionContext(snapshot, "(all (object-id \"app-1\" =))")
+
+        with self.assertRaises(ExecutionContextError):
+            context.load_data()
 
 
 @unittest.skipUnless(

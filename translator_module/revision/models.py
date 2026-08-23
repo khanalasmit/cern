@@ -5,6 +5,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import Optional
 
+from .source import FileSource
+
 
 @dataclass(frozen=True)
 class RevisionRequest:
@@ -41,3 +43,4 @@ class OksSnapshot:
     revision: ResolvedRevision
     schema_paths: tuple[str, ...] = ()
     data_paths: tuple[str, ...] = ()
+    source: Optional[FileSource] = None

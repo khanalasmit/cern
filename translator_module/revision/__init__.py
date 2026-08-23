@@ -5,6 +5,7 @@ from .source import FileSource, WorkingTreeSource
 from .git_source import GitRevisionSource, GitSourceError
 from .resolver import GitRevisionResolver, RevisionResolutionError
 from .run_registry import RunRevision, RunRevisionRegistry, RunRegistryError
+from .snapshot import SnapshotBuilder, SnapshotError, SnapshotPatterns
 
 __all__ = [
     "FileSource",
@@ -15,6 +16,9 @@ __all__ = [
     "RunRevision",
     "RunRevisionRegistry",
     "RunRegistryError",
+    "SnapshotBuilder",
+    "SnapshotError",
+    "SnapshotPatterns",
     "OksSnapshot",
     "ResolvedRevision",
     "RevisionRequest",
