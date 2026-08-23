@@ -1,6 +1,10 @@
-import os
-import sys
+import argparse
+from datetime import datetime
 import json
+import os
+from pathlib import Path
+import sys
+import tempfile
 
 # Running ``python cli.py`` makes this directory importable, but not its
 # parent.  Add the repository root so absolute ``translator_module.*``
@@ -10,7 +14,145 @@ REPO_ROOT = os.path.dirname(MODULE_DIR)
 if REPO_ROOT not in sys.path:
     sys.path.insert(0, REPO_ROOT)
 
-def main():
+
+def _parse_revision_date(value: str) -> datetime:
+    """Parse an ISO-8601 timestamp and require an explicit timezone."""
+
+    normalized = value[:-1] + "+00:00" if value.endswith("Z") else value
+    try:
+        parsed = datetime.fromisoformat(normalized)
+    except ValueError as exc:
+        raise argparse.ArgumentTypeError(
+            f"invalid ISO-8601 date: {value!r}"
+        ) from exc
+    if parsed.tzinfo is None or parsed.utcoffset() is None:
+        raise argparse.ArgumentTypeError(
+            "date must include a timezone offset, for example +05:45 or Z"
+        )
+    return parsed
+
+
+def build_argument_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(
+        description="Translate natural-language questions into OKS queries."
+    )
+    selector = parser.add_mutually_exclusive_group()
+    selector.add_argument("--commit-hash", help="query schema from a Git commit")
+    selector.add_argument("--tag", help="query schema from a Git tag")
+    selector.add_argument(
+        "--date",
+        type=_parse_revision_date,
+        help="query the newest commit at or before an ISO-8601 timestamp",
+    )
+    selector.add_argument("--run-id", help="query the commit mapped to a domain run ID")
+    parser.add_argument(
+        "--repo",
+        default=REPO_ROOT,
+        help="Git repository containing the historical OKS files",
+    )
+    parser.add_argument(
+        "--ref",
+        default="main",
+        help="Git ref used for date-based resolution (default: main)",
+    )
+    parser.add_argument(
+        "--run-map",
+        help="JSON file mapping run IDs to Git commits",
+    )
+    parser.add_argument(
+        "--schema-path",
+        default="oks_scraped/oks_schema_examples.xml",
+        help="repository-relative schema wrapper path",
+    )
+    parser.add_argument(
+        "--gold-pairs",
+        default="oks_scraped/gold_pairs.jsonl",
+        help="working-tree or repository-relative few-shot examples path",
+    )
+    return parser
+
+
+def build_revision_request(args):
+    from translator_module.revision import RevisionRequest
+
+    return RevisionRequest(
+        commit_hash=args.commit_hash,
+        tag=args.tag,
+        date=args.date,
+        run_id=args.run_id,
+        ref=args.ref,
+    )
+
+
+def _is_historical_request(args) -> bool:
+    return any((args.commit_hash, args.tag, args.date, args.run_id))
+
+
+def _working_tree_path(root: Path, configured_path: str) -> Path:
+    path = Path(configured_path).expanduser()
+    return path if path.is_absolute() else root / path
+
+
+def _create_translator(args, llm_api_key, llm_base_url, llm_model):
+    """Create a translator, optionally using one historical schema blob."""
+
+    from translator_module.agent.translator import OksTranslator
+
+    repository = Path(args.repo).expanduser().resolve()
+    gold_pairs_path = _working_tree_path(repository, args.gold_pairs)
+
+    if not _is_historical_request(args):
+        schema_path = _working_tree_path(repository, args.schema_path)
+        return OksTranslator(
+            str(schema_path),
+            str(gold_pairs_path),
+            llm_api_key=llm_api_key,
+            llm_base_url=llm_base_url,
+            llm_model=llm_model,
+        ), None
+
+    from translator_module.revision import (
+        GitRevisionResolver,
+        GitRevisionSource,
+        RunRevisionRegistry,
+    )
+
+    registry = None
+    if args.run_id:
+        if not args.run_map:
+            raise ValueError("--run-id requires --run-map")
+        registry = RunRevisionRegistry.from_json(args.run_map)
+
+    resolved = GitRevisionResolver(repository, run_registry=registry).resolve(
+        build_revision_request(args)
+    )
+    source = GitRevisionSource(repository, resolved.commit)
+    if not source.exists(args.schema_path):
+        raise FileNotFoundError(
+            f"historical schema path is missing in {resolved.commit}: "
+            f"{args.schema_path}"
+        )
+
+    # OksTranslator currently accepts a filesystem path and ingests the schema
+    # during construction. Materialize one historical blob temporarily until
+    # the source-aware RAG loader is introduced.
+    with tempfile.TemporaryDirectory(prefix="historical-oks-") as temp_dir:
+        historical_schema = Path(temp_dir) / "historical_schema.xml"
+        historical_schema.write_bytes(source.read_bytes(args.schema_path))
+        translator = OksTranslator(
+            str(historical_schema),
+            str(gold_pairs_path),
+            llm_api_key=llm_api_key,
+            llm_base_url=llm_base_url,
+            llm_model=llm_model,
+        )
+
+    return translator, resolved
+
+
+def main(argv=None):
+    args = build_argument_parser().parse_args(argv)
+
     # Load environment variables
     try:
         from dotenv import load_dotenv
@@ -43,21 +185,24 @@ def main():
 
     print("Initializing OKS Intelligent Query Agent...")
 
-    # Initialize the translator
-    from translator_module.agent.translator import OksTranslator
-    # Resolve repo-root data files relative to this file (works on any OS)
-    repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     try:
-        translator = OksTranslator(
-            os.path.join(repo_root, "oks_scraped", "oks_schema_examples.xml"),
-            os.path.join(repo_root, "oks_scraped", "gold_pairs.jsonl"),
+        translator, resolved_revision = _create_translator(
+            args,
             llm_api_key=llm_api_key,
             llm_base_url=llm_base_url,
-            llm_model=llm_model
+            llm_model=llm_model,
         )
     except Exception as e:
         print(f"Failed to initialize the translator: {e}")
-        return
+        return 2
+
+    if resolved_revision is not None:
+        print(
+            "Using historical Git revision "
+            f"{resolved_revision.commit} ({resolved_revision.requested_as})."
+        )
+    else:
+        print("Using the current working-tree schema.")
 
     print("Ready! Type 'exit' or 'quit' to stop.\n")
 
@@ -100,4 +245,4 @@ def main():
             print(f"An unexpected error occurred: {e}")
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

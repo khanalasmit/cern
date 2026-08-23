@@ -114,6 +114,39 @@ python -m unittest discover -s translator_module/tests -v
 
 ### Verification results
 
+CLI tests:
+
+```text
+python -m unittest translator_module.tests.test_cli -v
+Ran 6 tests in 0.036s
+OK
+```
+
+Historical-query tests:
+
+```text
+python -m unittest translator_module.tests.test_historical_query -v
+Ran 21 tests in 7.579s
+OK
+```
+
+Full suite using the documented `PYTHONPATH` setup:
+
+```text
+$env:PYTHONPATH='translator_module'
+python -m unittest discover -s translator_module/tests -v
+Ran 41 tests in 7.620s
+OK
+```
+
+The CLI negative tests intentionally exercise argparse failures for a naive timestamp and mutually exclusive selectors; their usage/error output is expected.
+
+### Current status
+
+The branch has been pushed to `origin/feat/eval-dataset-and-rag-v2`. CLI revision selection is implemented and tested. The next source-integration slice should replace the temporary schema-file bridge with a source-aware RAG loader and begin handling historical schema/data paths together.
+
+### Verification results
+
 Focused historical-query tests:
 
 ```text
@@ -136,6 +169,46 @@ The first run had one failure in the new run-ID test because the selector contro
 ### Current status
 
 Explicit run-ID resolution is implemented, tested, documented, and ready for CLI integration.
+
+## 2026-08-23 — CLI revision selection
+
+### Scope
+
+Pushed the completed revision work and started CLI integration:
+
+- Added mutually exclusive `--commit-hash`, `--tag`, `--date`, and `--run-id` options.
+- Added `--repo`, `--ref`, `--run-map`, `--schema-path`, and `--gold-pairs` options.
+- Added timezone-aware ISO-8601 date parsing.
+- Added CLI helpers for constructing `RevisionRequest` objects.
+- Kept default behavior on the current working-tree schema.
+- Added a temporary historical schema-blob bridge for the current path-based `OksTranslator` API.
+- Added parser tests that do not start an LLM or access the network.
+
+### Safety decisions
+
+1. The CLI resolves a historical revision before constructing the translator.
+2. Historical schema bytes are read through `GitRevisionSource` and written only to a temporary file because the current translator still requires a filesystem path.
+3. The active Git checkout is never changed.
+4. The temporary schema file is deleted immediately after translator initialization; the in-memory index is retained.
+5. The current `gold_pairs.jsonl` remains a working-tree source until historical few-shot source injection is implemented.
+6. A run ID requires an explicit `--run-map` path.
+
+### Files created or modified
+
+- Modified: `translator_module/cli.py`
+- Created: `translator_module/tests/test_cli.py`
+- Updated: `HISTORICAL_QUERY_DEVELOPMENT_LOG.md`
+
+### Verification pending
+
+Run:
+
+```bash
+python -m unittest translator_module.tests.test_cli -v
+python -m unittest translator_module.tests.test_historical_query -v
+$env:PYTHONPATH='translator_module'
+python -m unittest discover -s translator_module/tests -v
+```
 
 ### Verification results
 
