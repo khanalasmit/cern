@@ -9,6 +9,11 @@ from .executor import (
     OksExecutionError,
 )
 from .oks_dump import OksDumpError, OksDumpExecutor, OksDumpResult
+from .schema_preflight import (
+    HistoricalSchemaPreflight,
+    SchemaPreflightError,
+    SchemaPreflightResult,
+)
 
 __all__ = [
     "DataDocument",
@@ -22,4 +27,7 @@ __all__ = [
     "OksDumpError",
     "OksDumpExecutor",
     "OksDumpResult",
+    "HistoricalSchemaPreflight",
+    "SchemaPreflightError",
+    "SchemaPreflightResult",
 ]

@@ -280,19 +280,28 @@ def main(argv=None):
                 if args.execute:
                     from translator_module.execution import (
                         HistoricalExecutionContext,
+                        HistoricalSchemaPreflight,
                         OksDumpExecutor,
                     )
 
                     target_class = args.target_class or ir.get("target_class")
-                    execution_context = HistoricalExecutionContext(
-                        snapshot=snapshot,
-                        oks_query=result["oks_query"],
-                        target_class=target_class,
-                    )
-                    execution_result = OksDumpExecutor(
-                        executable=args.oks_dump_executable,
-                        timeout=args.execution_timeout,
-                    ).execute(execution_context)
+                    try:
+                        preflight = HistoricalSchemaPreflight.validate(
+                            snapshot,
+                            target_class,
+                        )
+                        execution_context = HistoricalExecutionContext(
+                            snapshot=snapshot,
+                            oks_query=result["oks_query"],
+                            target_class=preflight.target_class,
+                        )
+                        execution_result = OksDumpExecutor(
+                            executable=args.oks_dump_executable,
+                            timeout=args.execution_timeout,
+                        ).execute(execution_context)
+                    except Exception as exc:
+                        print(f"\n  Historical execution failed: {exc}")
+                        continue
                     print("-" * 60)
                     print(
                         "\n  Historical execution output "

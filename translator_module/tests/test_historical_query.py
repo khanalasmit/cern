@@ -26,9 +26,11 @@ from translator_module.execution import (
     HistoricalOksExecutor,
     HistoricalDataLoader,
     HistoricalExecutionContext,
+    HistoricalSchemaPreflight,
     OksExecutionError,
     OksDumpError,
     OksDumpExecutor,
+    SchemaPreflightError,
 )
 from translator_module.execution.context import ExecutionContextError
 from translator_module.rag.schema_loader import SchemaLoadError, SchemaLoader
@@ -257,6 +259,38 @@ class HistoricalSnapshotTests(unittest.TestCase):
 
         with self.assertRaises(ExecutionContextError):
             context.require_target_class()
+
+    def test_schema_preflight_accepts_existing_target_class(self):
+        snapshot = SnapshotBuilder().build(self.source, self.revision)
+
+        result = HistoricalSchemaPreflight.validate(snapshot, "Application")
+
+        self.assertEqual(result.revision, "a" * 40)
+        self.assertEqual(result.target_class, "Application")
+        self.assertEqual(result.schema_paths, snapshot.schema_paths)
+
+    def test_schema_preflight_rejects_missing_target_class(self):
+        snapshot = SnapshotBuilder().build(self.source, self.revision)
+
+        with self.assertRaisesRegex(
+            SchemaPreflightError,
+            "MissingClass.*historical revision",
+        ):
+            HistoricalSchemaPreflight.validate(snapshot, "MissingClass")
+
+    def test_schema_preflight_does_not_require_direct_inherited_members(self):
+        (self.root / "test_schema" / "application.schema.xml").write_text(
+            "<oks-schema>"
+            "<class name='Base'><attribute name='Inherited' type='string' /></class>"
+            "<class name='Application' super-class='Base' />"
+            "</oks-schema>",
+            encoding="utf-8",
+        )
+        snapshot = SnapshotBuilder().build(self.source, self.revision)
+
+        result = HistoricalSchemaPreflight.validate(snapshot, "Application")
+
+        self.assertEqual(result.target_class, "Application")
 
     def test_executor_requires_a_native_backend(self):
         snapshot = SnapshotBuilder().build(self.source, self.revision)

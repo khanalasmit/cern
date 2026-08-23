@@ -819,3 +819,23 @@ Pushed implementation commits after the earlier translator integration entry:
 Final verification for this continuation: focused historical tests passed 40/40 with 2 optional skips; the full suite passed 63 tests with 2 optional skips. The skips are due to missing local `rank_bm25`. `oks_dump` is not installed locally, so native execution remains covered by mocked subprocess tests and reports a clear error until the OKS runtime is available.
 
 The working tree is clean and the branch is synchronized with `origin/feat/eval-dataset-and-rag-v2`.
+
+## Historical schema preflight validation — 2026-08-23
+
+### Scope
+
+Added a conservative validation gate immediately before native historical execution. It prevents a translated query from invoking `oks_dump` with a target class that does not exist in the selected revision.
+
+### Implementation
+
+- Added `translator_module/execution/schema_preflight.py` with `HistoricalSchemaPreflight`, `SchemaPreflightResult`, and `SchemaPreflightError`.
+- The validator loads the snapshot's schema paths through `SchemaLoader` and checks exact target-class presence.
+- It intentionally does not validate direct attribute or relationship membership. OKS inheritance can supply those members, and the native runtime remains responsible for complete schema semantics.
+- The CLI runs preflight only in `--execute` mode and reports failures as historical execution errors.
+
+### Verification
+
+- Added tests for an existing target class, a missing target class, and a class whose inherited members are not declared directly.
+- `python -m py_compile translator_module/execution/schema_preflight.py translator_module/execution/__init__.py translator_module/cli.py translator_module/tests/test_historical_query.py` passed.
+- Focused historical suite: 43 tests passed, 2 dependency-based tests skipped.
+- Full suite: 66 tests passed, 2 dependency-based tests skipped.
