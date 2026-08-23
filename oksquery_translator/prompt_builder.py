@@ -75,10 +75,16 @@ HARD RULES you MUST obey:
      (e.g., 'SubDetector', NOT 'Subdetector'; 'InitTimeout', NOT 'inittimeout'; 'RunsOn', NOT 'runs_on').
   5. Values are ALWAYS quoted strings, even numbers: "2" not 2.
   6. The attribute MUST exist on the target class (check the schema below).
+     NEVER invent attributes like "Name" or "name" unless "Name" is explicitly listed under Attributes for that class.
+     To match or filter on an object's identifier, use (object-id "..." =) or (object-id "" !=).
   7. object-id only supports '=' comparator.
   8. Tokens like #this.UID are compared literally (stored verbatim).
   9. Inside a relationship expression, attributes are evaluated against
      the RELATIONSHIP'S TARGET CLASS, not the outer class.
+  10. ALWAYS prioritize the attributes and relationships listed under 'Relevant OKS Schema Context'
+      over few-shot examples. If a few-shot example uses an attribute that is not in the live schema,
+      look for a relationship (e.g. "Detector" instead of "SubDetector") or use (object-id "..." =).
+  11. To match all objects of a class, use (all (object-id "" !=)).
 """
 
 # ---------------------------------------------------------------------------
@@ -168,8 +174,8 @@ class PromptBuilder:
         """
         Build a repair prompt to feed back to the LLM after a validation
         failure.  Parses the oks_dump error to provide targeted guidance,
-        detects case mismatches and close matches, and includes the full
-        schema of the class.
+        detects case mismatches, relationship alternatives, and close matches,
+        and includes the full schema of the class.
 
         Parameters
         ----------
@@ -254,7 +260,7 @@ class PromptBuilder:
                     f"it does NOT exist on class \"{on_class}\"."
                 )
                 if close:
-                    parts.append(f">>> Did you mean one of these: {', '.join(close)}?")
+                    parts.append(f">>> Did you mean one of these relationships: {', '.join(close)}?")
                 parts.append(
                     f">>> You MUST use one of the EXACT relationship names "
                     f"listed in the schema below. Do NOT guess or abbreviate."
@@ -273,23 +279,38 @@ class PromptBuilder:
                     f">>> In OKS, casing must match EXACTLY. Replace \"{bad_name}\" with \"{case_match}\"."
                 )
             else:
-                # Check close matches
-                close = [a for a in available_attrs if bad_name.lower() in a.lower() or a.lower() in bad_name.lower()]
-                parts.append(
-                    f">>> THE PROBLEM: You used attribute \"{bad_name}\" but "
-                    f"it does NOT exist on class \"{on_class}\"."
-                )
-                if close:
-                    parts.append(f">>> Did you mean one of these: {', '.join(close)}?")
-                parts.append(
-                    f">>> You MUST use one of the EXACT attribute names "
-                    f"listed in the schema below. Do NOT guess or abbreviate."
-                )
+                # Check if there is a relationship with a matching or similar name
+                rel_match = next((r for r in available_rels if bad_name.lower() in r.lower() or r.lower() in bad_name.lower()), None)
+                if rel_match:
+                    parts.append(
+                        f">>> THE PROBLEM: \"{bad_name}\" is NOT an attribute on class \"{on_class}\", "
+                        f"but there is a RELATIONSHIP named \"{rel_match}\"."
+                    )
+                    parts.append(
+                        f">>> Try using relationship traversal instead: (\"{rel_match}\" some (object-id \"...\" =))"
+                    )
+                else:
+                    close = [a for a in available_attrs if bad_name.lower() in a.lower() or a.lower() in bad_name.lower()]
+                    parts.append(
+                        f">>> THE PROBLEM: You used attribute \"{bad_name}\" but "
+                        f"it does NOT exist on class \"{on_class}\"."
+                    )
+                    if bad_name.lower() in ("name", "id"):
+                        parts.append(
+                            f">>> HINT: Class \"{on_class}\" may not have a \"{bad_name}\" attribute. "
+                            f"To match on object identifier, use (object-id \"...\" =)."
+                        )
+                    if close:
+                        parts.append(f">>> Did you mean one of these attributes: {', '.join(close)}?")
+                    parts.append(
+                        f">>> You MUST use one of the EXACT attribute names "
+                        f"listed in the schema below. Do NOT guess or abbreviate."
+                    )
         elif class_missing:
             bad_class = class_missing.group(1)
             parts.append(
                 f">>> THE PROBLEM: Class \"{bad_class}\" does not exist. "
-                f"Use a different class name."
+                f"Use a different class name from the available schema."
             )
 
         if schema_hint:
