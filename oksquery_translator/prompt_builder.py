@@ -70,11 +70,14 @@ HARD RULES you MUST obey:
   1. The scope token (all or this) appears ONCE, at the top level only.
   2. 'and'/'or' need >= 2 operands. 'not' needs exactly 1.
   3. Attribute names and relationship names are QUOTED STRINGS.
-  4. Values are ALWAYS quoted strings, even numbers: "2" not 2.
-  5. The attribute MUST exist on the target class (check the schema below).
-  6. object-id only supports '=' comparator.
-  7. Tokens like #this.UID are compared literally (stored verbatim).
-  8. Inside a relationship expression, attributes are evaluated against
+  4. Attribute and relationship names are STRICTLY CASE-SENSITIVE.
+     You MUST copy the EXACT CamelCase / casing from the 'Relevant OKS Schema Context'
+     (e.g., 'SubDetector', NOT 'Subdetector'; 'InitTimeout', NOT 'inittimeout'; 'RunsOn', NOT 'runs_on').
+  5. Values are ALWAYS quoted strings, even numbers: "2" not 2.
+  6. The attribute MUST exist on the target class (check the schema below).
+  7. object-id only supports '=' comparator.
+  8. Tokens like #this.UID are compared literally (stored verbatim).
+  9. Inside a relationship expression, attributes are evaluated against
      the RELATIONSHIP'S TARGET CLASS, not the outer class.
 """
 
@@ -165,8 +168,8 @@ class PromptBuilder:
         """
         Build a repair prompt to feed back to the LLM after a validation
         failure.  Parses the oks_dump error to provide targeted guidance,
-        and always includes the full schema of the class so the LLM can
-        see the EXACT attribute and relationship names.
+        detects case mismatches and close matches, and includes the full
+        schema of the class.
 
         Parameters
         ----------
@@ -197,6 +200,25 @@ class PromptBuilder:
             "",
         ]
 
+        # Extract available attribute/relationship names from schema_hint if present
+        available_attrs = []
+        available_rels = []
+        if schema_hint:
+            for line in schema_hint.splitlines():
+                line = line.strip()
+                if line.startswith("- ") and "(" in line:
+                    attr_name = line[2:].split("(")[0].strip()
+                    if attr_name:
+                        available_attrs.append(attr_name)
+                elif line.startswith("- ") and "→" in line:
+                    rel_name = line[2:].split("→")[0].strip()
+                    if rel_name:
+                        available_rels.append(rel_name)
+                elif line.startswith("- "):
+                    item_name = line[2:].strip()
+                    if item_name:
+                        available_attrs.append(item_name)
+
         # Parse the error to give targeted guidance
         rel_missing = re.search(
             r"can't find relationship \"([^\"]+)\" in class \"([^\"]+)\"",
@@ -214,25 +236,55 @@ class PromptBuilder:
         if rel_missing:
             bad_name = rel_missing.group(1)
             on_class = rel_missing.group(2)
-            parts.append(
-                f">>> THE PROBLEM: You used relationship \"{bad_name}\" but "
-                f"it does NOT exist on class \"{on_class}\"."
-            )
-            parts.append(
-                f">>> You MUST use one of the EXACT relationship names "
-                f"listed in the schema below. Do NOT guess or abbreviate."
-            )
+            # Check case-mismatch
+            case_match = next((r for r in available_rels if r.lower() == bad_name.lower()), None)
+            if case_match:
+                parts.append(
+                    f">>> CRITICAL CASE-SENSITIVITY ERROR: You wrote relationship \"{bad_name}\", "
+                    f"but the exact casing on class \"{on_class}\" is \"{case_match}\"."
+                )
+                parts.append(
+                    f">>> In OKS, casing must match EXACTLY. Replace \"{bad_name}\" with \"{case_match}\"."
+                )
+            else:
+                # Check close matches
+                close = [r for r in available_rels if bad_name.lower() in r.lower() or r.lower() in bad_name.lower()]
+                parts.append(
+                    f">>> THE PROBLEM: You used relationship \"{bad_name}\" but "
+                    f"it does NOT exist on class \"{on_class}\"."
+                )
+                if close:
+                    parts.append(f">>> Did you mean one of these: {', '.join(close)}?")
+                parts.append(
+                    f">>> You MUST use one of the EXACT relationship names "
+                    f"listed in the schema below. Do NOT guess or abbreviate."
+                )
         elif attr_missing:
             bad_name = attr_missing.group(1)
             on_class = attr_missing.group(2)
-            parts.append(
-                f">>> THE PROBLEM: You used attribute \"{bad_name}\" but "
-                f"it does NOT exist on class \"{on_class}\"."
-            )
-            parts.append(
-                f">>> You MUST use one of the EXACT attribute names "
-                f"listed in the schema below. Do NOT guess or abbreviate."
-            )
+            # Check case-mismatch
+            case_match = next((a for a in available_attrs if a.lower() == bad_name.lower()), None)
+            if case_match:
+                parts.append(
+                    f">>> CRITICAL CASE-SENSITIVITY ERROR: You wrote attribute \"{bad_name}\", "
+                    f"but the exact casing on class \"{on_class}\" is \"{case_match}\"."
+                )
+                parts.append(
+                    f">>> In OKS, casing must match EXACTLY. Replace \"{bad_name}\" with \"{case_match}\"."
+                )
+            else:
+                # Check close matches
+                close = [a for a in available_attrs if bad_name.lower() in a.lower() or a.lower() in bad_name.lower()]
+                parts.append(
+                    f">>> THE PROBLEM: You used attribute \"{bad_name}\" but "
+                    f"it does NOT exist on class \"{on_class}\"."
+                )
+                if close:
+                    parts.append(f">>> Did you mean one of these: {', '.join(close)}?")
+                parts.append(
+                    f">>> You MUST use one of the EXACT attribute names "
+                    f"listed in the schema below. Do NOT guess or abbreviate."
+                )
         elif class_missing:
             bad_class = class_missing.group(1)
             parts.append(

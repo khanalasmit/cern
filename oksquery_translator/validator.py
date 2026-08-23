@@ -88,6 +88,137 @@ _LOGICAL_KEYWORDS = {"and", "or", "not"}
 _SPECIAL_KEYWORDS = {"object-id", "some", "all"}
 
 
+def format_tokens(tokens: List[str]) -> str:
+    """
+    Format a list of tokens back into a standard OksQuery S-expression string.
+    """
+    res = []
+    for i, t in enumerate(tokens):
+        if t == '(':
+            if i > 0 and tokens[i - 1] not in ('(', ' '):
+                res.append(' ')
+            res.append('(')
+        elif t == ')':
+            res.append(')')
+        else:
+            if i > 0 and tokens[i - 1] != '(':
+                res.append(' ')
+            res.append(t)
+    return "".join(res)
+
+
+def align_query_to_schema(target_class: str, query: str,
+                          schema_retriever=None) -> tuple[str, str]:
+    """
+    Canonicalize and auto-correct casing for target class, attribute names,
+    relationship names, and enum values against the live schema.
+
+    In OKS, attribute and class names are strictly case-sensitive. This
+    function ensures that casing mistakes (like 'Subdetector' -> 'SubDetector'
+    or 'inittimeout' -> 'InitTimeout') are transparently aligned with the schema.
+
+    Parameters
+    ----------
+    target_class : str
+        The class name to query against.
+    query : str
+        The OksQuery string.
+    schema_retriever : SchemaRetriever, optional
+        Schema retriever to query class and attribute definitions.
+
+    Returns
+    -------
+    tuple (aligned_class, aligned_query)
+    """
+    if not schema_retriever or not query:
+        return target_class, query
+
+    aligned_class = target_class
+
+    # 1. Canonicalize class name casing
+    try:
+        class_list = schema_retriever.get_class_list()
+        for c in class_list:
+            if c.lower() == target_class.lower():
+                aligned_class = c
+                break
+    except Exception:
+        pass
+
+    # 2. Gather attributes and relationships for this class and related classes
+    attr_map = {}   # lower -> Canonical
+    rel_map = {}    # lower -> Canonical
+    enum_map = {}   # lower_attr -> { lower_enum -> Canonical_enum }
+
+    try:
+        info = schema_retriever.get_class_info(aligned_class)
+        if info:
+            for a in info.get("attributes", []):
+                aname = a.get("name", "")
+                if aname:
+                    attr_map[aname.lower()] = aname
+                    if a.get("type") == "enum" and a.get("range"):
+                        enums = [e.strip() for e in a["range"].split(",") if e.strip()]
+                        enum_map[aname.lower()] = {e.lower(): e for e in enums}
+
+            for r in info.get("relationships", []):
+                rname = r.get("name", "")
+                if rname:
+                    rel_map[rname.lower()] = rname
+                    target = r.get("target_class")
+                    if target:
+                        tinfo = schema_retriever.get_class_info(target)
+                        if tinfo:
+                            for ta in tinfo.get("attributes", []):
+                                taname = ta.get("name", "")
+                                if taname:
+                                    attr_map[taname.lower()] = taname
+                            for tr in tinfo.get("relationships", []):
+                                trname = tr.get("name", "")
+                                if trname:
+                                    rel_map[trname.lower()] = trname
+    except Exception:
+        pass
+
+    # 3. Tokenize query and align identifiers
+    try:
+        tokenizer = SExpressionTokenizer()
+        tokens = tokenizer.tokenize(query)
+    except Exception:
+        return aligned_class, query
+
+    aligned_tokens = []
+    for i, t in enumerate(tokens):
+        if t.startswith('"') and t.endswith('"') and len(t) >= 2:
+            inner = t[1:-1]
+            inner_lower = inner.lower()
+
+            # Is it an attribute name?
+            if inner_lower in attr_map:
+                aligned_tokens.append(f'"{attr_map[inner_lower]}"')
+            # Is it a relationship name?
+            elif inner_lower in rel_map:
+                aligned_tokens.append(f'"{rel_map[inner_lower]}"')
+            else:
+                # Check if it's an enum value for a preceding attribute in the clause
+                # Look backwards for the attribute name in this predicate
+                replaced_enum = False
+                for prev in reversed(aligned_tokens[max(0, i - 4):i]):
+                    if prev.startswith('"') and prev.endswith('"'):
+                        prev_name = prev[1:-1].lower()
+                        if prev_name in enum_map and inner_lower in enum_map[prev_name]:
+                            aligned_tokens.append(f'"{enum_map[prev_name][inner_lower]}"')
+                            replaced_enum = True
+                            break
+                if not replaced_enum:
+                    aligned_tokens.append(t)
+        else:
+            aligned_tokens.append(t)
+
+    aligned_query = format_tokens(aligned_tokens)
+    return aligned_class, aligned_query
+
+
 def syntax_precheck(query: str) -> ValidationResult:
     """
     Fast local syntax check.  Returns a ValidationResult.

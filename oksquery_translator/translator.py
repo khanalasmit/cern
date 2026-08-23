@@ -18,7 +18,7 @@ from openai import OpenAI, APIStatusError, APIConnectionError
 
 from .prompt_builder import PromptBuilder
 from .schema_retrieval import SchemaRetriever
-from .validator import validate_query, syntax_precheck
+from .validator import validate_query, syntax_precheck, align_query_to_schema
 
 
 class Translator:
@@ -120,6 +120,12 @@ class Translator:
                     messages.append({"role": "user", "content": repair_msg})
                     continue
                 break
+
+            # --- Auto-align schema casing (e.g. Subdetector -> SubDetector) ---
+            if self.schema_retriever:
+                target_class, oks_query = align_query_to_schema(
+                    target_class, oks_query, self.schema_retriever
+                )
 
             # --- Validate ---
             val_result = validate_query(target_class, oks_query, self.data_file)

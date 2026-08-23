@@ -152,3 +152,38 @@ class TestValidationResult:
         assert not r.valid
         assert r.error_type == "syntax"
         assert "bad parens" in r.message
+
+
+class TestAlignQueryToSchema:
+    """Test automatic schema alignment and case-correction."""
+
+    def test_format_tokens(self):
+        from oksquery_translator.validator import format_tokens
+        tokens = ['(', 'all', '(', '"SubDetector"', '"PMT"', '=', ')', ')']
+        assert format_tokens(tokens) == '(all ("SubDetector" "PMT" =))'
+
+    def test_align_query_casing_with_mock_schema(self):
+        from oksquery_translator.validator import align_query_to_schema
+        from unittest.mock import MagicMock
+
+        mock_retriever = MagicMock()
+        mock_retriever.get_class_list.return_value = ["ReadoutApplication", "BaseApplication"]
+        mock_retriever.get_class_info.return_value = {
+            "name": "ReadoutApplication",
+            "attributes": [
+                {"name": "SubDetector", "type": "enum", "range": "PMT,WireChamber"},
+                {"name": "Id", "type": "u16"},
+            ],
+            "relationships": [
+                {"name": "RunsOn", "target_class": "Computer"}
+            ]
+        }
+
+        # Query with lowercase 'd' in Subdetector and lowercase 'pmt'
+        target_cls, aligned_q = align_query_to_schema(
+            "readoutapplication", '(all ("Subdetector" "pmt" =))', mock_retriever
+        )
+
+        assert target_cls == "ReadoutApplication"
+        assert aligned_q == '(all ("SubDetector" "PMT" =))'
+
