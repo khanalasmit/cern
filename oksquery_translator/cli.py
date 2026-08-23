@@ -171,16 +171,22 @@ def main():
         print()
         print("=" * 60)
         if result["status"] == "success":
+            print(f"  Intent:       {result.get('intent', 'OKS_CURRENT_QUERY')}")
+            if result.get("run_number"):
+                print(f"  Run Number:   {result['run_number']}")
+                print(f"  Partition:    {result.get('partition', 'all_hosts')}")
             print(f"  Target Class: {result['target_class']}")
             print(f"  OKS Query:    {result['oks_query']}")
             print(f"  Attempts:     {result.get('attempts', 1)}")
             print(f"  Results:      {result['result_count']} object(s) matched")
-            if current_version:
-                print(f"  Version:      {current_version}")
+            if result.get("version"):
+                print(f"  Version:      {result['version']}")
             print("-" * 60)
             print()
             print(f"  {result['answer']}")
         else:
+            if result.get("intent"):
+                print(f"  Intent:       {result['intent']}")
             print(f"  Error: {result.get('answer', result.get('message', ''))}")
         print("=" * 60)
         print()

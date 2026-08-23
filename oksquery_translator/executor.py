@@ -268,9 +268,16 @@ class Executor:
         if not version:
             return backup
 
-        if version.startswith("hash:") or version.startswith("date:"):
+        if (version.startswith("hash:") or version.startswith("date:") or 
+            version.startswith("tag:")):
             backup["TDAQ_DB_VERSION"] = os.environ.get("TDAQ_DB_VERSION")
             os.environ["TDAQ_DB_VERSION"] = version
+        elif version.startswith("run:") or (version.startswith("r") and version[1:].isdigit()):
+            # Run number format, e.g. "run:454833" or "r454833" -> "tag:r454833@ATLAS"
+            run_num = version.split(":")[-1].lstrip("r")
+            tag_name = f"tag:r{run_num}@ATLAS"
+            backup["TDAQ_DB_VERSION"] = os.environ.get("TDAQ_DB_VERSION")
+            os.environ["TDAQ_DB_VERSION"] = tag_name
         elif version.startswith("tdaq-"):
             # CVMFS snapshot
             snapshot_path = (
