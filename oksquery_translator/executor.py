@@ -1,0 +1,304 @@
+"""
+executor.py — Filter #2: Query Execution
+==========================================
+
+Executes a validated OksQuery against the real OKS engine and returns
+ONLY the matching objects.  The full configuration is never exposed.
+
+Two execution backends:
+  1. Python ``config`` module (preferred — structured output)
+  2. ``oks_dump`` CLI (fallback — parsed text)
+
+Supports temporal version access via:
+  - TDAQ_DB_PATH   (CVMFS snapshot, works on lxplus)
+  - TDAQ_DB_VERSION (git hash/date, works on online nodes)
+"""
+
+import os
+import re
+import shutil
+import subprocess
+from typing import Any, Dict, List, Optional
+
+
+class ExecutionResult:
+    """Container for query execution results."""
+
+    def __init__(self, success: bool, objects: List[Dict[str, Any]] = None,
+                 count: int = 0, message: str = "",
+                 version_used: str = ""):
+        self.success = success
+        self.objects = objects or []
+        self.count = count
+        self.message = message
+        self.version_used = version_used
+
+    def to_dict(self) -> dict:
+        return {
+            "success": self.success,
+            "objects": self.objects,
+            "count": self.count,
+            "message": self.message,
+            "version_used": self.version_used,
+        }
+
+
+class Executor:
+    """
+    Executes OksQuery strings and returns structured results.
+
+    Usage::
+
+        executor = Executor()
+        result = executor.execute("Executable", '(all ("InitTimeout" "2" >))')
+        for obj in result.objects:
+            print(obj["id"], obj["attributes"])
+    """
+
+    def __init__(self, data_file: str = "daq/segments/setup.data.xml"):
+        self.data_file = data_file
+        self._config_available = self._check_config()
+        self._oks_dump_path = shutil.which("oks_dump")
+
+    def execute(self, target_class: str, query: str,
+                version: str = None,
+                max_objects: int = 200) -> ExecutionResult:
+        """
+        Execute a query and return matching objects.
+
+        Parameters
+        ----------
+        target_class : str
+            OKS class name.
+        query : str
+            Validated OksQuery string.
+        version : str, optional
+            Temporal version specifier:
+              - "hash:<commit>"  → sets TDAQ_DB_VERSION
+              - "date:<date>"    → sets TDAQ_DB_VERSION
+              - "tdaq-XX-YY-ZZ"  → sets TDAQ_DB_PATH to CVMFS snapshot
+        max_objects : int
+            Cap the number of returned objects.
+
+        Returns
+        -------
+        ExecutionResult
+        """
+        # Set up temporal environment if needed
+        env_backup = self._set_version_env(version)
+        version_label = version or "current"
+
+        try:
+            # Strategy 1: Python config module
+            if self._config_available:
+                try:
+                    return self._execute_config(
+                        target_class, query, max_objects, version_label
+                    )
+                except Exception as e:
+                    # Fall through to oks_dump
+                    pass
+
+            # Strategy 2: oks_dump CLI
+            if self._oks_dump_path:
+                return self._execute_oks_dump(
+                    target_class, query, max_objects, version_label
+                )
+
+            return ExecutionResult(
+                success=False,
+                message=(
+                    "No execution backend available. "
+                    "Ensure the TDAQ release is sourced "
+                    "(source .../setup.sh) so that 'oks_dump' and/or "
+                    "the Python 'config' module are available."
+                ),
+            )
+        finally:
+            self._restore_env(env_backup)
+
+    # ------------------------------------------------------------------
+    # Config module execution
+    # ------------------------------------------------------------------
+
+    def _execute_config(self, target_class: str, query: str,
+                        max_objects: int, version_label: str) -> ExecutionResult:
+        """Execute via the Python config module."""
+        import config as oks_config
+
+        db = oks_config.Configuration("oksconflibs:" + self.data_file)
+        raw_objects = db.get_objs(target_class, query)
+
+        objects = []
+        for obj in raw_objects:
+            if len(objects) >= max_objects:
+                break
+            obj_dict = {
+                "id": obj.UID(),
+                "class": target_class,
+                "attributes": {},
+            }
+            # Try to read common attributes
+            try:
+                attrs = db.attributes(target_class)
+                if isinstance(attrs, dict):
+                    for aname in attrs:
+                        try:
+                            obj_dict["attributes"][aname] = str(
+                                getattr(obj, aname, "")
+                            )
+                        except Exception:
+                            pass
+                elif isinstance(attrs, (list, tuple)):
+                    for a in attrs:
+                        aname = a if isinstance(a, str) else a.get("name", "")
+                        if aname:
+                            try:
+                                obj_dict["attributes"][aname] = str(
+                                    getattr(obj, aname, "")
+                                )
+                            except Exception:
+                                pass
+            except Exception:
+                pass
+
+            objects.append(obj_dict)
+
+        total_count = len(list(raw_objects)) if hasattr(raw_objects, '__len__') else len(objects)
+
+        return ExecutionResult(
+            success=True,
+            objects=objects,
+            count=total_count,
+            version_used=version_label,
+        )
+
+    # ------------------------------------------------------------------
+    # oks_dump CLI execution
+    # ------------------------------------------------------------------
+
+    def _execute_oks_dump(self, target_class: str, query: str,
+                          max_objects: int, version_label: str) -> ExecutionResult:
+        """Execute via oks_dump CLI and parse the output."""
+        cmd = [self._oks_dump_path, "-c", target_class, "-q", query,
+               self.data_file]
+
+        try:
+            result = subprocess.run(
+                cmd, capture_output=True, text=True, timeout=60
+            )
+        except subprocess.TimeoutExpired:
+            return ExecutionResult(
+                success=False,
+                message="oks_dump timed out after 60s.",
+            )
+
+        if result.returncode not in (0, 5):
+            return ExecutionResult(
+                success=False,
+                message=f"oks_dump failed (exit {result.returncode}): "
+                        f"{result.stderr.strip()}",
+            )
+
+        objects = self._parse_oks_dump_output(result.stdout, target_class)
+
+        return ExecutionResult(
+            success=True,
+            objects=objects[:max_objects],
+            count=len(objects),
+            version_used=version_label,
+        )
+
+    @staticmethod
+    def _parse_oks_dump_output(output: str, target_class: str) -> List[Dict]:
+        """
+        Parse oks_dump query output to extract matching objects.
+
+        The output format for queried objects is typically:
+          Object "obj-id@ClassName"
+            attribute-name: value
+            ...
+        """
+        objects = []
+        current_obj = None
+
+        for line in output.splitlines():
+            stripped = line.strip()
+
+            # Match object header: Object "id@Class" or similar
+            obj_match = re.match(
+                r'^\s*Object\s+"([^"]+?)(?:@[^"]+)?"', line
+            )
+            if obj_match:
+                if current_obj is not None:
+                    objects.append(current_obj)
+                current_obj = {
+                    "id": obj_match.group(1),
+                    "class": target_class,
+                    "attributes": {},
+                }
+                continue
+
+            # Match attribute lines (indented, with key: value)
+            if current_obj is not None and ":" in stripped:
+                attr_match = re.match(r'^(\w[\w\s]*\w|\w+)\s*:\s*(.*)', stripped)
+                if attr_match:
+                    key = attr_match.group(1).strip()
+                    value = attr_match.group(2).strip()
+                    # Skip internal fields
+                    if key not in ("oks-file", "oks-type"):
+                        current_obj["attributes"][key] = value
+
+        if current_obj is not None:
+            objects.append(current_obj)
+
+        return objects
+
+    # ------------------------------------------------------------------
+    # Temporal version environment
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def _set_version_env(version: str) -> Dict[str, Optional[str]]:
+        """
+        Set environment variables for temporal access.
+        Returns backup of original values for restoration.
+        """
+        backup = {}
+        if not version:
+            return backup
+
+        if version.startswith("hash:") or version.startswith("date:"):
+            backup["TDAQ_DB_VERSION"] = os.environ.get("TDAQ_DB_VERSION")
+            os.environ["TDAQ_DB_VERSION"] = version
+        elif version.startswith("tdaq-"):
+            # CVMFS snapshot
+            snapshot_path = (
+                f"/cvmfs/atlas.cern.ch/repo/sw/tdaq/tdaq/{version}"
+                f"/installed/share/data"
+            )
+            backup["TDAQ_DB_PATH"] = os.environ.get("TDAQ_DB_PATH")
+            os.environ["TDAQ_DB_PATH"] = snapshot_path
+
+        return backup
+
+    @staticmethod
+    def _restore_env(backup: Dict[str, Optional[str]]):
+        """Restore environment variables from backup."""
+        for key, value in backup.items():
+            if value is None:
+                os.environ.pop(key, None)
+            else:
+                os.environ[key] = value
+
+    # ------------------------------------------------------------------
+    # Helpers
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def _check_config() -> bool:
+        try:
+            import config  # noqa: F401
+            return True
+        except ImportError:
+            return False

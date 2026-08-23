@@ -1,0 +1,175 @@
+"""
+cli.py — Interactive CLI for the OKS Query Translator
+======================================================
+
+Run with::
+
+    python -m oksquery_translator.cli
+
+Provides an interactive prompt where users can type natural-language
+questions and receive translated OksQuery strings and answers.
+"""
+
+import json
+import os
+import sys
+
+# Ensure the package is importable when running as __main__
+MODULE_DIR = os.path.dirname(os.path.abspath(__file__))
+REPO_ROOT = os.path.dirname(MODULE_DIR)
+if REPO_ROOT not in sys.path:
+    sys.path.insert(0, REPO_ROOT)
+
+
+def _load_env():
+    """Load .env file for LLM configuration."""
+    try:
+        from dotenv import load_dotenv
+        for env_path in (
+            os.path.join(MODULE_DIR, ".env"),
+            os.path.join(REPO_ROOT, ".env"),
+        ):
+            if os.path.isfile(env_path):
+                load_dotenv(env_path, override=True)
+                return
+    except ImportError:
+        # Manual fallback
+        for env_path in (
+            os.path.join(MODULE_DIR, ".env"),
+            os.path.join(REPO_ROOT, ".env"),
+        ):
+            if not os.path.isfile(env_path):
+                continue
+            try:
+                with open(env_path, "r") as f:
+                    for line in f:
+                        line = line.strip()
+                        if line and not line.startswith("#") and "=" in line:
+                            key, val = line.split("=", 1)
+                            os.environ[key.strip()] = val.strip()
+                return
+            except Exception:
+                continue
+
+
+def main():
+    """Entry point for the interactive CLI."""
+    _load_env()
+
+    # Check API key
+    api_key = os.environ.get("LLM_API_KEY", "")
+    if not api_key or api_key == "your_api_key_here":
+        print("WARNING: LLM_API_KEY is not set. Please configure .env first.")
+        print("         Copy .env.example to .env and add your API key.\n")
+
+    print("=" * 60)
+    print("  OKS Query Translator — ATLAS DAQ Configuration")
+    print("=" * 60)
+
+    # Show environment info
+    import shutil
+    oks_dump = shutil.which("oks_dump")
+    print(f"  oks_dump:  {'found' if oks_dump else 'NOT FOUND (source TDAQ release)'}")
+    print(f"  LLM model: {os.environ.get('LLM_MODEL', 'mimo-v2.5-pro')}")
+    print(f"  LLM URL:   {os.environ.get('LLM_BASE_URL', 'https://api.xiaomimimo.com/v1')}")
+
+    try:
+        import config  # noqa: F401
+        print(f"  config:    available (Python OKS access)")
+    except ImportError:
+        print(f"  config:    NOT available (using oks_dump CLI only)")
+
+    print()
+    print("Commands:")
+    print("  Type a question to translate and execute.")
+    print("  'translate <question>' — translate only (no execution).")
+    print("  'version <v>'          — set temporal version.")
+    print("  'exit' / 'quit'        — exit.")
+    print("-" * 60)
+
+    # Initialise the pipeline
+    print("\nInitializing pipeline...")
+    try:
+        from oksquery_translator.pipeline import OksPipeline
+        pipeline = OksPipeline(repo_root=REPO_ROOT)
+    except Exception as e:
+        print(f"Failed to initialize pipeline: {e}")
+        return
+
+    class_count = len(pipeline.schema_retriever.get_class_list())
+    example_count = pipeline.few_shot_manager.get_example_count()
+    print(f"  Schema: {class_count} classes loaded")
+    print(f"  Few-shot: {example_count} examples loaded")
+    print(f"  Ready!\n")
+
+    current_version = None
+
+    while True:
+        try:
+            user_input = input("> ").strip()
+        except (KeyboardInterrupt, EOFError):
+            print("\nGoodbye!")
+            break
+
+        if not user_input:
+            continue
+
+        if user_input.lower() in ("exit", "quit"):
+            print("Goodbye!")
+            break
+
+        # Version command
+        if user_input.lower().startswith("version "):
+            version_arg = user_input[8:].strip()
+            if version_arg.lower() in ("none", "current", "reset"):
+                current_version = None
+                print("  Temporal version reset to current.\n")
+            else:
+                current_version = version_arg
+                print(f"  Temporal version set to: {current_version}\n")
+            continue
+
+        # Translate-only command
+        if user_input.lower().startswith("translate "):
+            question = user_input[10:].strip()
+            if not question:
+                print("  Usage: translate <your question>\n")
+                continue
+            print("  Translating...")
+            result = pipeline.translate_only(question)
+            print()
+            if result["status"] == "success":
+                print(f"  Target Class: {result['target_class']}")
+                print(f"  OKS Query:    {result['oks_query']}")
+                print(f"  Attempts:     {result.get('attempts', 1)}")
+            else:
+                print(f"  Error: {result.get('message', 'unknown')}")
+            print()
+            continue
+
+        # Full pipeline
+        question = user_input
+        print("  Thinking...")
+
+        result = pipeline.answer(question, version=current_version)
+
+        print()
+        print("=" * 60)
+        if result["status"] == "success":
+            print(f"  Target Class: {result['target_class']}")
+            print(f"  OKS Query:    {result['oks_query']}")
+            print(f"  Attempts:     {result.get('attempts', 1)}")
+            print(f"  Results:      {result['result_count']} object(s) matched")
+            if current_version:
+                print(f"  Version:      {current_version}")
+            print("-" * 60)
+            print()
+            print(f"  {result['answer']}")
+        else:
+            print(f"  Error: {result.get('answer', result.get('message', ''))}")
+        print("=" * 60)
+        print()
+
+
+if __name__ == "__main__":
+    main()
