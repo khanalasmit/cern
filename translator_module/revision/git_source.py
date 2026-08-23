@@ -1,8 +1,12 @@
 """Read-only access to files stored in a Git revision."""
 
 from pathlib import Path, PurePosixPath
+from contextlib import contextmanager
+from io import BytesIO
 import subprocess
-from typing import List, Sequence
+import tarfile
+import tempfile
+from typing import Iterator, List, Sequence
 
 from .source import FileSource, _validate_relative_path
 
@@ -99,3 +103,40 @@ class GitRevisionSource(FileSource):
             for path in files
             if path and PurePosixPath(path).match(pathspec)
         )
+
+    @contextmanager
+    def materialize(self) -> Iterator[Path]:
+        """Extract the commit archive into a temporary directory.
+
+        This is an isolated snapshot, not a Git worktree. The active checkout
+        and branch remain untouched.
+        """
+
+        archive = self._run_git(["archive", "--format=tar", self.commit]).stdout
+        with tempfile.TemporaryDirectory(prefix="historical-oks-") as temp_dir:
+            destination = Path(temp_dir).resolve()
+            try:
+                with tarfile.open(fileobj=BytesIO(archive), mode="r:") as tar:
+                    for member in tar.getmembers():
+                        if member.issym() or member.islnk():
+                            raise GitSourceError(
+                                f"refusing to extract link from Git archive: {member.name}"
+                            )
+                        target = (destination / member.name).resolve()
+                        try:
+                            target.relative_to(destination)
+                        except ValueError as exc:
+                            raise GitSourceError(
+                                f"unsafe path in Git archive: {member.name}"
+                            ) from exc
+                    try:
+                        tar.extractall(destination, filter="data")
+                    except TypeError:
+                        # Python versions before 3.12 do not accept filter;
+                        # members were validated above before extraction.
+                        tar.extractall(destination)
+            except (tarfile.TarError, OSError) as exc:
+                raise GitSourceError(
+                    f"could not materialize Git revision {self.commit}: {exc}"
+                ) from exc
+            yield destination

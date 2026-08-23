@@ -27,6 +27,8 @@ from translator_module.execution import (
     HistoricalDataLoader,
     HistoricalExecutionContext,
     OksExecutionError,
+    OksDumpError,
+    OksDumpExecutor,
 )
 from translator_module.execution.context import ExecutionContextError
 from translator_module.rag.schema_loader import SchemaLoadError, SchemaLoader
@@ -260,6 +262,75 @@ class HistoricalSnapshotTests(unittest.TestCase):
         self.assertIs(backend.received["snapshot"], snapshot)
         self.assertEqual(backend.received["oks_query"], context.oks_query)
 
+    def test_oks_dump_executor_builds_safe_command_and_returns_raw_output(self):
+        snapshot = SnapshotBuilder().build(self.source, self.revision)
+        context = HistoricalExecutionContext(
+            snapshot=snapshot,
+            oks_query="(all (object-id \"app-1\" =))",
+            target_class="Application",
+        )
+
+        completed = subprocess.CompletedProcess(
+            args=["oks_dump"],
+            returncode=0,
+            stdout="app-1\n",
+            stderr="",
+        )
+        with patch(
+            "translator_module.execution.oks_dump.subprocess.run",
+            return_value=completed,
+        ) as run:
+            result = OksDumpExecutor().execute(context)
+
+        self.assertEqual(result.stdout, "app-1\n")
+        self.assertEqual(result.revision, "a" * 40)
+        command = run.call_args.args[0]
+        self.assertEqual(
+            command[:5],
+            ["oks_dump", "--class", "Application", "--query", context.oks_query],
+        )
+        self.assertEqual(
+            command[-1],
+            str((self.root / "test_data" / "application.data.xml").resolve()),
+        )
+        self.assertFalse(run.call_args.kwargs.get("shell", False))
+
+    def test_oks_dump_executor_reports_missing_runtime(self):
+        snapshot = SnapshotBuilder().build(self.source, self.revision)
+        context = HistoricalExecutionContext(
+            snapshot=snapshot,
+            oks_query="(all (object-id \"app-1\" =))",
+            target_class="Application",
+        )
+
+        with patch(
+            "translator_module.execution.oks_dump.subprocess.run",
+            side_effect=FileNotFoundError,
+        ):
+            with self.assertRaisesRegex(OksDumpError, "not found"):
+                OksDumpExecutor().execute(context)
+
+    def test_oks_dump_executor_reports_native_failure_code(self):
+        snapshot = SnapshotBuilder().build(self.source, self.revision)
+        context = HistoricalExecutionContext(
+            snapshot=snapshot,
+            oks_query="(all (object-id \"app-1\" =))",
+            target_class="Application",
+        )
+        completed = subprocess.CompletedProcess(
+            args=["oks_dump"],
+            returncode=3,
+            stdout="",
+            stderr="invalid query",
+        )
+
+        with patch(
+            "translator_module.execution.oks_dump.subprocess.run",
+            return_value=completed,
+        ):
+            with self.assertRaisesRegex(OksDumpError, "bad query"):
+                OksDumpExecutor().execute(context)
+
 
 @unittest.skipUnless(
     HybridIndexer is not None,
@@ -387,6 +458,17 @@ class GitRevisionSourceTests(unittest.TestCase):
             (self.root / "config.data.xml").read_text(encoding="utf-8"),
             "<data version='new' />",
         )
+
+    def test_git_source_materializes_historical_files_without_checkout(self):
+        source = GitRevisionSource(self.root, self.old_commit)
+
+        with source.materialize() as materialized:
+            self.assertEqual(
+                (materialized / "config.data.xml").read_text(encoding="utf-8"),
+                "<data version='old' />",
+            )
+
+        self.assertEqual(self._git_output("rev-parse", "HEAD"), self.head_before_reads)
 
     def test_missing_historical_file_has_a_clear_error(self):
         source = GitRevisionSource(self.root, self.old_commit)

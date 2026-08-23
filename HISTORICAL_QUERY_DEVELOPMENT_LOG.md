@@ -182,6 +182,34 @@ OK (skipped=2)
 
 `OksTranslator` now accepts source-backed schemas directly, and the CLI no longer materializes a temporary historical schema file. The next integration boundary is historical data-path discovery and execution context; current translation still uses the existing few-shot file and does not execute OKS queries.
 
+## OksDump subprocess adapter
+
+### Scope
+
+The historical snapshot can now be handed to the native OKS query runtime without checking out the requested revision. This slice adds a subprocess adapter for the documented `oks_dump` command and makes both working-tree and Git-backed sources materializable as temporary directories.
+
+### Implementation
+
+- Added `FileSource.materialize()` as the common context-manager boundary for runtime tools that require filesystem paths.
+- `WorkingTreeSource.materialize()` yields its existing root without copying files.
+- `GitRevisionSource.materialize()` creates a temporary directory from `git archive` at the resolved commit. It validates archive members and rejects unsafe paths or links before extraction.
+- Added `translator_module/execution/oks_dump.py` with `OksDumpExecutor`, `OksDumpResult`, and `OksDumpError`.
+- The adapter invokes `oks_dump --class <target_class> --query <query> <data files>` with argument lists rather than shell strings, applies a timeout, preserves stdout/stderr, and reports documented native exit-code meanings.
+- The adapter returns the native text output unchanged. Result normalization is intentionally deferred until the OKS output format and target-class semantics are confirmed.
+- Schema paths are not passed as separate command arguments because the existing OKS usage documents the data file(s) as the runtime input; the snapshot still retains both schema and data paths for validation and future backends.
+
+### Tests and verification
+
+- Added a Git-source materialization test proving historical files are available from a temporary directory while the working tree remains unchanged.
+- Added mocked subprocess tests for safe command construction, missing `oks_dump`, timeout/error behavior, and native failure codes.
+- The local environment does not provide an `oks_dump` executable, so native-runtime tests are mocked. The adapter will fail clearly with `OksDumpError` until the OKS runtime is installed and discoverable on `PATH`.
+- Focused historical-query suite: 38 tests passed, 2 dependency-based tests skipped.
+- Full suite: 59 tests passed, 2 dependency-based tests skipped.
+
+### Current status
+
+Historical sources can now safely cross the boundary into a native execution tool. The next integration slice should decide how the CLI requests execution and how native `oks_dump` output is represented in the public query result, while preserving the current translation-only behavior by default.
+
 ## 2026-08-23 — Target class and execution adapter boundary
 
 ### Scope

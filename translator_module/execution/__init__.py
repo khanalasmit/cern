@@ -8,6 +8,7 @@ from .executor import (
     OksExecutionBackend,
     OksExecutionError,
 )
+from .oks_dump import OksDumpError, OksDumpExecutor, OksDumpResult
 
 __all__ = [
     "DataDocument",
@@ -18,4 +19,7 @@ __all__ = [
     "HistoricalOksExecutor",
     "OksExecutionBackend",
     "OksExecutionError",
+    "OksDumpError",
+    "OksDumpExecutor",
+    "OksDumpResult",
 ]

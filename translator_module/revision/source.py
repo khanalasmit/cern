@@ -1,9 +1,10 @@
 """Filesystem-like sources used by current and historical loaders."""
 
 from abc import ABC, abstractmethod
+from contextlib import contextmanager
 from io import BytesIO
 from pathlib import Path, PurePosixPath
-from typing import BinaryIO, List
+from typing import BinaryIO, Iterator, List
 import ntpath
 
 
@@ -25,6 +26,10 @@ class FileSource(ABC):
     def open_binary(self, relative_path: str) -> BinaryIO:
         """Expose file contents as a binary stream for XML parsers."""
         return BytesIO(self.read_bytes(relative_path))
+
+    @abstractmethod
+    def materialize(self) -> Iterator[Path]:
+        """Yield a filesystem directory containing this source snapshot."""
 
 
 def _validate_relative_path(relative_path: str) -> PurePosixPath:
@@ -84,3 +89,8 @@ class WorkingTreeSource(FileSource):
                     ) from exc
                 matches.append(relative.as_posix())
         return sorted(matches)
+
+    @contextmanager
+    def materialize(self) -> Iterator[Path]:
+        """Yield the existing working-tree root without changing it."""
+        yield self.root
