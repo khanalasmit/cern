@@ -53,6 +53,38 @@ python -m unittest discover -s translator_module/tests -v
 
 ### Verification results
 
+Syntax compilation:
+
+```text
+python -m py_compile translator_module/agent/ir_validator.py translator_module/agent/translator.py translator_module/execution/context.py translator_module/execution/executor.py
+Passed
+```
+
+Historical-query tests:
+
+```text
+python -m unittest translator_module.tests.test_historical_query -v
+Ran 34 tests in 6.455s
+OK (skipped=2)
+```
+
+Full suite using the documented `PYTHONPATH` setup:
+
+```text
+$env:PYTHONPATH='translator_module'
+python -m unittest discover -s translator_module/tests -v
+Ran 55 tests in 6.482s
+OK (skipped=2)
+```
+
+The standalone `test_translator` command without `PYTHONPATH=translator_module` failed during discovery because the existing tests import `agent` as a top-level package. The full documented suite passed, including the new target-class test.
+
+### Current status
+
+`QueryIR` can now carry a target class, and historical execution has a backend adapter contract. A native OKS backend is still required before real historical query execution can occur.
+
+### Verification results
+
 Focused historical-query tests:
 
 ```text
@@ -149,6 +181,51 @@ OK (skipped=2)
 ### Current status
 
 `OksTranslator` now accepts source-backed schemas directly, and the CLI no longer materializes a temporary historical schema file. The next integration boundary is historical data-path discovery and execution context; current translation still uses the existing few-shot file and does not execute OKS queries.
+
+## 2026-08-23 — Target class and execution adapter boundary
+
+### Scope
+
+Implemented the next execution contract:
+
+- Added optional `target_class` to `QueryIR` for backward-compatible evaluation rows.
+- Updated the translator IR prompt to request `target_class` for executable queries.
+- Added `HistoricalExecutionContext.require_target_class()`.
+- Added the `OksExecutionBackend` protocol.
+- Added `HistoricalOksExecutor` and provenance-bearing `ExecutionResult`.
+- Added tests for missing backends, missing target classes, and backend context forwarding.
+- Kept serialization unchanged.
+
+### Safety decisions
+
+1. `target_class` is optional during migration so existing dataset rows do not break.
+2. Historical execution rejects contexts without a target class.
+3. No fake OKS parser or query semantics were invented.
+4. The native backend receives the complete historical snapshot, serialized query, and target class together.
+5. The executor raises a clear error until a native OKS backend is configured.
+
+### Files created or modified
+
+- Modified: `translator_module/agent/ir_validator.py`
+- Modified: `translator_module/agent/translator.py`
+- Modified: `translator_module/execution/context.py`
+- Created: `translator_module/execution/executor.py`
+- Modified: `translator_module/execution/__init__.py`
+- Modified: `translator_module/tests/test_historical_query.py`
+- Modified: `translator_module/tests/test_translator.py`
+- Updated: `HISTORICAL_QUERY_DEVELOPMENT_LOG.md`
+
+### Verification pending
+
+Run:
+
+```bash
+python -m py_compile translator_module/agent/ir_validator.py translator_module/agent/translator.py translator_module/execution/context.py translator_module/execution/executor.py
+python -m unittest translator_module.tests.test_historical_query -v
+python -m unittest translator_module.tests.test_translator -v
+$env:PYTHONPATH='translator_module'
+python -m unittest discover -s translator_module/tests -v
+```
 
 ## 2026-08-23 — Historical snapshot and execution context
 

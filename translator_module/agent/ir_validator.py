@@ -69,6 +69,9 @@ RelationshipCompare.model_rebuild()
 class QueryIR(BaseModel):
     scope: Literal["this", "all"]
     expression: Expression
+    # Optional during migration so existing evaluation rows remain valid.
+    # Historical execution requires this field to be present.
+    target_class: Optional[str] = None
     explanation: Optional[str] = None
 
 

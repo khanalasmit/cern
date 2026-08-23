@@ -23,8 +23,10 @@ from translator_module.revision import (
 )
 from translator_module.revision import SnapshotBuilder, SnapshotError
 from translator_module.execution import (
+    HistoricalOksExecutor,
     HistoricalDataLoader,
     HistoricalExecutionContext,
+    OksExecutionError,
 )
 from translator_module.execution.context import ExecutionContextError
 from translator_module.rag.schema_loader import SchemaLoadError, SchemaLoader
@@ -211,6 +213,52 @@ class HistoricalSnapshotTests(unittest.TestCase):
 
         with self.assertRaises(ExecutionContextError):
             context.load_data()
+
+    def test_execution_context_requires_target_class(self):
+        snapshot = SnapshotBuilder().build(self.source, self.revision)
+        context = HistoricalExecutionContext(
+            snapshot=snapshot,
+            oks_query="(all (object-id \"app-1\" =))",
+        )
+
+        with self.assertRaises(ExecutionContextError):
+            context.require_target_class()
+
+    def test_executor_requires_a_native_backend(self):
+        snapshot = SnapshotBuilder().build(self.source, self.revision)
+        context = HistoricalExecutionContext(
+            snapshot=snapshot,
+            oks_query="(all (object-id \"app-1\" =))",
+            target_class="Application",
+        )
+
+        with self.assertRaises(OksExecutionError):
+            HistoricalOksExecutor().execute(context)
+
+    def test_executor_passes_historical_context_to_backend(self):
+        snapshot = SnapshotBuilder().build(self.source, self.revision)
+        context = HistoricalExecutionContext(
+            snapshot=snapshot,
+            oks_query="(all (object-id \"app-1\" =))",
+            target_class="Application",
+        )
+
+        class RecordingBackend:
+            def __init__(self):
+                self.received = None
+
+            def execute(self, **kwargs):
+                self.received = kwargs
+                return [{"id": "app-1"}]
+
+        backend = RecordingBackend()
+        result = HistoricalOksExecutor(backend).execute(context)
+
+        self.assertEqual(result.revision, "a" * 40)
+        self.assertEqual(result.target_class, "Application")
+        self.assertEqual(result.rows, ({"id": "app-1"},))
+        self.assertIs(backend.received["snapshot"], snapshot)
+        self.assertEqual(backend.received["oks_query"], context.oks_query)
 
 
 @unittest.skipUnless(

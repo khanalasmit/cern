@@ -4,6 +4,19 @@ from agent.serializer import serialize_ir_to_oks
 
 
 class TestIRValidation(unittest.TestCase):
+    def test_target_class_is_supported_for_execution(self):
+        ir = validate_ir({
+            "scope": "all",
+            "target_class": "Application",
+            "expression": {
+                "type": "object_id",
+                "operator": "=",
+                "object_id": "app-1",
+            },
+        })
+
+        self.assertEqual(ir.target_class, "Application")
+
     def test_simple_attribute_compare(self):
         valid_ir_dict = {
             "scope": "all",

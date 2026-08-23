@@ -16,6 +16,7 @@ The JSON IR (Intermediate Representation) you must produce follows this schema:
 
 {
   "scope": "this" | "all",          // "this" = exact class only, "all" = class + subclasses
+  "target_class": "<class-name>",    // required when the query will be executed
   "expression": <Expression>,
   "explanation": "A brief explanation of each query component"
 }
@@ -120,6 +121,7 @@ IMPORTANT RULES:
 - All attribute/relationship names, object IDs, and values MUST come from the supplied schema context.
 - Do NOT invent any class, attribute, relationship, or object ID.
 - Include an "explanation" field with a brief breakdown of each query component.
+- Include "target_class" whenever the query will be executed against a configuration snapshot.
 - Use scope "all" unless the user explicitly says "this class only".
 """
 

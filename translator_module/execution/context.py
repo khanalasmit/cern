@@ -19,6 +19,13 @@ class HistoricalExecutionContext:
     oks_query: str
     target_class: Optional[str] = None
 
+    def require_target_class(self) -> str:
+        if not self.target_class or not self.target_class.strip():
+            raise ExecutionContextError(
+                "historical execution requires QueryIR.target_class"
+            )
+        return self.target_class.strip()
+
     def load_data(self) -> list[DataDocument]:
         if self.snapshot.source is None:
             raise ExecutionContextError(
