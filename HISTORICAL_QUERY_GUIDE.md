@@ -328,7 +328,7 @@ Add run_revisions.example.yaml with fake values only. Add tests for valid
 lookup, missing run IDs, malformed files, and provenance in ResolvedRevision.
 ```
 
-If YAML is selected, add `PyYAML` to `translator_module/requirements.txt`; otherwise use JSON and avoid another dependency.
+This implementation selects JSON to avoid adding another dependency. The example registry is `run_revisions.example.json`. If the team later selects YAML, add `PyYAML` to `translator_module/requirements.txt` and preserve the same validation contract.
 
 ---
 

@@ -118,6 +118,31 @@ Focused historical-query tests:
 
 ```text
 python -m unittest translator_module.tests.test_historical_query -v
+Ran 21 tests in 6.398s
+OK
+```
+
+Full suite using the documented `PYTHONPATH` setup:
+
+```text
+$env:PYTHONPATH='translator_module'
+python -m unittest discover -s translator_module/tests -v
+Ran 35 tests in 6.515s
+OK
+```
+
+The first run had one failure in the new run-ID test because the selector control flow overwrote the registered commit with `HEAD`. That was corrected before the successful verification above.
+
+### Current status
+
+Explicit run-ID resolution is implemented, tested, documented, and ready for CLI integration.
+
+### Verification results
+
+Focused historical-query tests:
+
+```text
+python -m unittest translator_module.tests.test_historical_query -v
 Ran 18 tests in 5.371s
 OK
 ```
@@ -134,6 +159,51 @@ OK
 ### Current status
 
 Commit, tag, date, and current-HEAD resolution are implemented and verified. Run-ID resolution remains intentionally blocked until the explicit run-to-commit registry slice is implemented next.
+
+## 2026-08-23 — Run-ID registry
+
+### Scope
+
+Implemented explicit run-to-commit resolution using JSON:
+
+- Added `RunRevisionRegistry` and `RunRevision` data objects.
+- Added validation for missing commits, malformed entries, empty IDs, and whitespace in commit references.
+- Added support for string entries and metadata objects containing `commit` and optional `timestamp`.
+- Connected `GitRevisionResolver` to an optional registry.
+- Added a sample file at `run_revisions.example.json` using placeholder commits.
+- Updated the implementation guide to record JSON as the selected format.
+
+### Safety decisions
+
+1. Run IDs are resolved only through an explicit registry.
+2. A missing run ID fails instead of falling back to a date or current `HEAD`.
+3. A registered but invalid commit is still verified by Git before resolution succeeds.
+4. Registry timestamps are metadata only; the authoritative timestamp remains the Git commit timestamp.
+5. JSON was selected to avoid adding a YAML dependency at this stage.
+
+### Verification note
+
+The first test run exposed a selector-control-flow bug: the run-ID branch resolved the registered commit, but the later no-selector fallback overwrote it with `HEAD`. The resolver was corrected to use one mutually exclusive `if`/`elif` chain for run-ID, date, commit, tag, and current resolution.
+
+### Files created or modified
+
+- Created: `translator_module/revision/run_registry.py`
+- Created: `run_revisions.example.json`
+- Modified: `translator_module/revision/resolver.py`
+- Modified: `translator_module/revision/__init__.py`
+- Modified: `translator_module/tests/test_historical_query.py`
+- Updated: `HISTORICAL_QUERY_GUIDE.md`
+- Updated: `HISTORICAL_QUERY_DEVELOPMENT_LOG.md`
+
+### Verification pending
+
+Run:
+
+```bash
+python -m unittest translator_module.tests.test_historical_query -v
+$env:PYTHONPATH='translator_module'
+python -m unittest discover -s translator_module/tests -v
+```
 
 ### Verification note
 

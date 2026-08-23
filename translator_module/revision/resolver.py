@@ -6,6 +6,7 @@ import subprocess
 from typing import Sequence
 
 from .models import ResolvedRevision, RevisionRequest
+from .run_registry import RunRevisionRegistry
 
 
 class RevisionResolutionError(RuntimeError):
@@ -20,13 +21,18 @@ class GitRevisionResolver:
     from a commit message or an approximate timestamp.
     """
 
-    def __init__(self, repository: Path | str):
+    def __init__(
+        self,
+        repository: Path | str,
+        run_registry: RunRevisionRegistry | None = None,
+    ):
         repository_path = Path(repository).expanduser().resolve()
         if not repository_path.is_dir():
             raise RevisionResolutionError(
                 f"repository is not a directory: {repository_path}"
             )
         self.repository = repository_path
+        self.run_registry = run_registry
 
     def _run_git(
         self,
@@ -99,11 +105,14 @@ class GitRevisionResolver:
             )
 
         if request.run_id is not None:
-            raise RevisionResolutionError(
-                "run_id cannot be resolved until a run-to-commit registry is configured"
-            )
-
-        if request.date is not None:
+            if self.run_registry is None:
+                raise RevisionResolutionError(
+                    "run_id requires an explicit run-to-commit registry"
+                )
+            entry = self.run_registry.resolve(request.run_id)
+            commit = self._resolve_commit(entry.commit)
+            requested_as = "run_id"
+        elif request.date is not None:
             if request.date.tzinfo is None or request.date.utcoffset() is None:
                 raise RevisionResolutionError(
                     "date must be timezone-aware; use an ISO 8601 offset"
@@ -144,4 +153,5 @@ class GitRevisionResolver:
             requested_as=requested_as,
             ref=request.ref,
             commit_date=self._commit_date(commit),
+            run_id=str(request.run_id) if request.run_id is not None else None,
         )

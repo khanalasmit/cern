@@ -4,6 +4,7 @@ import tempfile
 import unittest
 from dataclasses import FrozenInstanceError
 from datetime import datetime, timezone
+import json
 import os
 from pathlib import Path
 import subprocess
@@ -15,6 +16,8 @@ from translator_module.revision import (
     OksSnapshot,
     ResolvedRevision,
     RevisionResolutionError,
+    RunRegistryError,
+    RunRevisionRegistry,
     RevisionRequest,
     WorkingTreeSource,
 )
@@ -280,6 +283,48 @@ class GitRevisionResolverTests(unittest.TestCase):
             )
         with self.assertRaisesRegex(RevisionResolutionError, "run_id"):
             self.resolver.resolve(RevisionRequest(run_id="48192"))
+
+    def test_resolves_run_id_from_explicit_registry(self):
+        registry_path = self.root / "run_revisions.json"
+        registry_path.write_text(
+            json.dumps(
+                {
+                    "48192": {
+                        "commit": self.old_commit,
+                        "timestamp": "2026-01-01T10:00:00+00:00",
+                    }
+                }
+            ),
+            encoding="utf-8",
+        )
+        registry = RunRevisionRegistry.from_json(registry_path)
+        resolved = GitRevisionResolver(self.root, run_registry=registry).resolve(
+            RevisionRequest(run_id="48192")
+        )
+
+        self.assertEqual(resolved.commit, self.old_commit)
+        self.assertEqual(resolved.requested_as, "run_id")
+        self.assertEqual(resolved.run_id, "48192")
+
+    def test_run_registry_rejects_missing_and_malformed_entries(self):
+        with self.assertRaises(RunRegistryError):
+            RunRevisionRegistry.from_mapping({"48192": {"timestamp": "missing commit"}})
+        with self.assertRaises(RunRegistryError):
+            RunRevisionRegistry.from_mapping({"48192": {"commit": "bad commit"}})
+        with self.assertRaises(RunRegistryError):
+            RunRevisionRegistry.from_mapping(["not an object"])
+
+        registry = RunRevisionRegistry.from_mapping({"48192": self.old_commit})
+        with self.assertRaisesRegex(RunRegistryError, "not present"):
+            registry.resolve("99999")
+
+    def test_run_id_with_invalid_registered_commit_fails_resolution(self):
+        registry = RunRevisionRegistry.from_mapping({"48192": "not-a-real-commit"})
+
+        with self.assertRaises(RevisionResolutionError):
+            GitRevisionResolver(self.root, run_registry=registry).resolve(
+                RevisionRequest(run_id="48192")
+            )
 
     def test_rejects_invalid_date_or_missing_history(self):
         with self.assertRaisesRegex(RevisionResolutionError, "timezone-aware"):

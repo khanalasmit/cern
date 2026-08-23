@@ -4,6 +4,7 @@ from .models import OksSnapshot, ResolvedRevision, RevisionRequest
 from .source import FileSource, WorkingTreeSource
 from .git_source import GitRevisionSource, GitSourceError
 from .resolver import GitRevisionResolver, RevisionResolutionError
+from .run_registry import RunRevision, RunRevisionRegistry, RunRegistryError
 
 __all__ = [
     "FileSource",
@@ -11,6 +12,9 @@ __all__ = [
     "GitSourceError",
     "GitRevisionResolver",
     "RevisionResolutionError",
+    "RunRevision",
+    "RunRevisionRegistry",
+    "RunRegistryError",
     "OksSnapshot",
     "ResolvedRevision",
     "RevisionRequest",
