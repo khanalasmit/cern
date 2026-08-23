@@ -32,6 +32,7 @@ from translator_module.execution import (
 )
 from translator_module.execution.context import ExecutionContextError
 from translator_module.rag.schema_loader import SchemaLoadError, SchemaLoader
+from translator_module.agent.few_shot import FewShotManager
 from unittest.mock import patch
 import numpy as np
 
@@ -140,6 +141,37 @@ class SchemaLoaderTests(unittest.TestCase):
     def test_reports_malformed_xml_with_source_and_location(self):
         with self.assertRaisesRegex(SchemaLoadError, "broken.xml.*line"):
             SchemaLoader.load_bytes(b"<broken>", "broken.xml")
+
+
+class HistoricalFewShotTests(unittest.TestCase):
+    def setUp(self):
+        self.temp_dir = tempfile.TemporaryDirectory()
+        self.root = Path(self.temp_dir.name)
+        self.source = WorkingTreeSource(self.root)
+        (self.root / "gold_pairs.jsonl").write_text(
+            '{"question":"old question","query_oks":"(all (object-id \\\"old-1\\\" =))"}\n',
+            encoding="utf-8",
+        )
+
+    def tearDown(self):
+        self.temp_dir.cleanup()
+
+    def test_loads_examples_from_revision_source(self):
+        manager = FewShotManager.from_source(
+            self.source,
+            "gold_pairs.jsonl",
+        )
+
+        self.assertEqual(len(manager.examples), 1)
+        self.assertIn("old question", manager.get_examples("old question"))
+
+    def test_missing_revision_examples_are_empty_without_working_tree_fallback(self):
+        manager = FewShotManager.from_source(
+            self.source,
+            "missing-gold-pairs.jsonl",
+        )
+
+        self.assertEqual(manager.get_examples("anything"), "No examples available.")
 
 
 class HistoricalSnapshotTests(unittest.TestCase):

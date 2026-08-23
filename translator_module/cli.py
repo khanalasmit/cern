@@ -162,13 +162,15 @@ def _create_translator(args, llm_api_key, llm_base_url, llm_model):
 
     translator = OksTranslator(
         schema_xml_path=None,
-        gold_pairs_path=str(gold_pairs_path),
+        gold_pairs_path=args.gold_pairs,
         llm_api_key=llm_api_key,
         llm_base_url=llm_base_url,
         llm_model=llm_model,
         schema_source=source,
         schema_paths=[args.schema_path],
         revision=resolved.commit,
+        few_shot_source=source,
+        few_shot_path=args.gold_pairs,
     )
 
     snapshot = None

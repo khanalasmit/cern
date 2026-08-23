@@ -54,7 +54,9 @@ class OksTranslator:
                  llm_model: str = None,
                  schema_source: FileSource = None,
                  schema_paths = None,
-                 revision: str = None):
+                 revision: str = None,
+                 few_shot_source: FileSource = None,
+                 few_shot_path: str = None):
 
         # Initialize RAG
         self.indexer = HybridIndexer()
@@ -82,10 +84,17 @@ class OksTranslator:
         self.retriever = Retriever(self.indexer)
 
         # Initialize Few-Shot (share the encoder from the RAG indexer)
-        self.few_shot_manager = FewShotManager(
-            gold_pairs_path,
-            encoder=self.indexer.encoder
-        )
+        if few_shot_source is not None:
+            self.few_shot_manager = FewShotManager.from_source(
+                few_shot_source,
+                few_shot_path or gold_pairs_path,
+                encoder=self.indexer.encoder,
+            )
+        else:
+            self.few_shot_manager = FewShotManager(
+                gold_pairs_path,
+                encoder=self.indexer.encoder
+            )
 
         # Initialize LLM Client
         self.llm_model = llm_model or os.environ.get("LLM_MODEL", "mimo-v2.5-pro")

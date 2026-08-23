@@ -236,6 +236,31 @@ The interactive CLI can now opt into executing translated historical queries. Tr
 
 The end-to-end CLI boundary is now present: historical revision selection -> source-backed schema RAG -> translation/validation/serialization -> optional historical `oks_dump` execution. Native output is still displayed as raw text because `oks_dump` is human-readable and its exact deployment-specific output format has not yet been standardized.
 
+## Historical few-shot source integration
+
+### Scope
+
+Historical schema retrieval must not be paired with current-working-tree prompt examples. The few-shot loader now supports reading `gold_pairs.jsonl` through the same `FileSource` as the selected schema revision.
+
+### Implementation
+
+- Added `FewShotManager.from_source(source, source_path, encoder=...)`.
+- The loader decodes JSONL bytes from the revision source and preserves the existing semantic-selection and random-fallback behavior.
+- Missing historical examples produce `No examples available.` without falling back to a current file.
+- `OksTranslator` accepts `few_shot_source` and `few_shot_path` while preserving existing path-based callers.
+- Historical CLI initialization now reads `--gold-pairs` from the selected Git revision. Current-mode CLI initialization continues to read the working-tree path.
+- The optional `sentence_transformers` import is now safe in minimal test environments; source-backed loading can operate without embeddings and use the existing fallback selection.
+
+### Tests and verification
+
+- Added tests for loading revision-backed examples and for the no-fallback behavior when the historical file is absent.
+- `python -m py_compile translator_module/agent/few_shot.py translator_module/agent/translator.py translator_module/cli.py translator_module/tests/test_historical_query.py` passed.
+- Full suite: 63 tests passed, 2 dependency-based tests skipped because `rank_bm25` is not installed locally.
+
+### Current status
+
+The historical schema and few-shot prompt inputs now come from one selected Git revision. The remaining user-facing correctness work is to validate that serialized queries reference identifiers available in the historical schema and to make runtime output auditable and machine-readable where the native OKS tool permits it.
+
 ## 2026-08-23 — Target class and execution adapter boundary
 
 ### Scope
