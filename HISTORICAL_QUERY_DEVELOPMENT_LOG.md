@@ -180,7 +180,33 @@ OK (skipped=2)
 
 ### Current status
 
-`OksTranslator` now accepts source-backed schemas directly, and the CLI no longer materializes a temporary historical schema file. The next integration boundary is historical data-path discovery and execution context; current translation still uses the existing few-shot file and does not execute OKS queries.
+`OksTranslator` now accepts source-backed schemas directly, and the CLI no longer materializes a temporary historical schema file. The next integration boundary is historical data-path discovery and execution context; current translation still uses the existing few-shot file and does not execute OKS queries. (Superseded by the continuation entries below.)
+
+## Continuation checkpoint — 2026-08-23
+
+The following implementation slices were completed and pushed to `origin/feat/eval-dataset-and-rag-v2` after the earlier translator integration entry:
+
+1. `beb14be` — added safe source materialization and the `oks_dump` subprocess adapter.
+2. `19c9ca4` — added opt-in CLI historical execution with `--execute`, repeatable `--data-path`, `--target-class`, executable, and timeout options.
+3. `fbd85d0` — loaded historical few-shot examples from the selected Git revision with no current-tree fallback.
+4. `63182cb` — added auditable `revision_provenance` to successful historical translations.
+
+The final verification for this continuation is:
+
+```text
+python -m unittest translator_module.tests.test_historical_query -v
+Ran 40 tests in 6.161s
+OK (skipped=2)
+
+$env:PYTHONPATH='translator_module'
+python -m unittest discover -s translator_module/tests -v
+Ran 63 tests in 6.234s
+OK (skipped=2)
+```
+
+The two skips are the existing RAG tests because the local environment does not have `rank_bm25`. The native `oks_dump` executable is also not installed locally; its adapter is covered with mocked subprocess tests and reports a clear runtime error until OKS is available.
+
+The working tree was clean after the push. The next implementation decision is whether the deployment can provide a stable machine-readable `oks_dump` output mode; until then, historical execution intentionally exposes raw stdout and does not guess at a row parser.
 
 ## OksDump subprocess adapter
 
@@ -780,3 +806,16 @@ OK (skipped=2)
 ### Current status
 
 `OksTranslator` now accepts source-backed schemas directly, and the CLI no longer materializes a temporary historical schema file. The next integration boundary is historical data-path discovery and execution context; current translation still uses the existing few-shot file and does not execute OKS queries.
+
+## Final continuation checkpoint — 2026-08-23
+
+Pushed implementation commits after the earlier translator integration entry:
+
+- `beb14be` — safe source materialization and the `oks_dump` subprocess adapter.
+- `19c9ca4` — opt-in CLI historical execution with repeatable data paths and runtime options.
+- `fbd85d0` — historical few-shot loading with no current-tree fallback.
+- `63182cb` — auditable revision provenance on successful historical translations.
+
+Final verification for this continuation: focused historical tests passed 40/40 with 2 optional skips; the full suite passed 63 tests with 2 optional skips. The skips are due to missing local `rank_bm25`. `oks_dump` is not installed locally, so native execution remains covered by mocked subprocess tests and reports a clear error until the OKS runtime is available.
+
+The working tree is clean and the branch is synchronized with `origin/feat/eval-dataset-and-rag-v2`.
