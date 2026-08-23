@@ -1,9 +1,12 @@
 import xml.etree.ElementTree as ET
-from typing import List, Dict, Any
+from typing import Any, Dict, Iterable, List, Optional
 from rank_bm25 import BM25Okapi
 from sentence_transformers import SentenceTransformer
 import numpy as np
 import faiss
+
+from translator_module.revision.source import FileSource, WorkingTreeSource
+from .schema_loader import SchemaDocument, SchemaLoader
 
 class SchemaChunk:
     def __init__(self, id: str, content: str, metadata: Dict[str, Any]):
@@ -17,40 +20,61 @@ class HybridIndexer:
         self.bm25: BM25Okapi = None
         self.encoder = SentenceTransformer('all-MiniLM-L6-v2')
         self.faiss_index = None
+        self.revision: Optional[str] = None
 
     def ingest_xml(self, xml_path: str):
-        """Parses the oks_schema_examples.xml and builds the chunks."""
-        tree = ET.parse(xml_path)
-        root = tree.getroot()
-        
-        # Simple extraction logic tailored to the example XML
-        for example in root.findall('.//example'):
-            for schema_file in example.findall('.//schema-file'):
-                schema_xml_str = schema_file.text
-                if not schema_xml_str:
+        """Parse a wrapper or standalone XML file from the working tree."""
+        documents = SchemaLoader.load_file(xml_path)
+        self._ingest_documents(documents)
+
+    def ingest_source(
+        self,
+        source: FileSource,
+        paths: Iterable[str],
+        revision: Optional[str] = None,
+    ):
+        """Parse schema files supplied by a working-tree or Git source."""
+        documents = SchemaLoader.load_source(source, paths)
+        self.revision = revision
+        self._ingest_documents(documents)
+
+    def _ingest_documents(self, documents: Iterable[SchemaDocument]):
+        self.chunks = []
+        for document in documents:
+            for cls in document.root.findall('.//class'):
+                class_name = cls.get('name')
+                if not class_name:
                     continue
-                try:
-                    schema_tree = ET.fromstring(schema_xml_str.strip())
-                    for cls in schema_tree.findall('.//class'):
-                        class_name = cls.get('name')
-                        desc = cls.get('description', '')
-                        
-                        # Build a textual representation
-                        content = f"Class: {class_name}\nDescription: {desc}\n"
-                        for attr in cls.findall('.//attribute'):
-                            content += f"Attribute: {attr.get('name')} (type: {attr.get('type')})\n"
-                        for rel in cls.findall('.//relationship'):
-                            content += f"Relationship: {rel.get('name')} (target: {rel.get('class-type')})\n"
-                            
-                        chunk = SchemaChunk(
-                            id=class_name,
-                            content=content,
-                            metadata={"type": "class", "name": class_name}
-                        )
-                        self.chunks.append(chunk)
-                except ET.ParseError:
-                    pass
-        
+                desc = cls.get('description', '')
+
+                content = f"Class: {class_name}\nDescription: {desc}\n"
+                for attr in cls.findall('.//attribute'):
+                    content += (
+                        f"Attribute: {attr.get('name')} "
+                        f"(type: {attr.get('type')})\n"
+                    )
+                for rel in cls.findall('.//relationship'):
+                    content += (
+                        f"Relationship: {rel.get('name')} "
+                        f"(target: {rel.get('class-type')})\n"
+                    )
+
+                metadata: Dict[str, Any] = {
+                    "type": "class",
+                    "name": class_name,
+                    "source_path": document.source_path,
+                }
+                if self.revision:
+                    metadata["revision"] = self.revision
+
+                self.chunks.append(
+                    SchemaChunk(
+                        id=class_name,
+                        content=content,
+                        metadata=metadata,
+                    )
+                )
+
         self._build_indices()
 
     def _build_indices(self):

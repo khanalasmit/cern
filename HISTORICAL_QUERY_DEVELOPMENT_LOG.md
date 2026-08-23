@@ -114,6 +114,39 @@ python -m unittest discover -s translator_module/tests -v
 
 ### Verification results
 
+Historical-query and loader tests:
+
+```text
+python -m unittest translator_module.tests.test_historical_query -v
+Ran 26 tests in 6.361s
+OK (skipped=2)
+```
+
+CLI tests:
+
+```text
+python -m unittest translator_module.tests.test_cli -v
+Ran 6 tests in 0.014s
+OK
+```
+
+Full suite using the documented `PYTHONPATH` setup:
+
+```text
+$env:PYTHONPATH='translator_module'
+python -m unittest discover -s translator_module/tests -v
+Ran 46 tests in 6.494s
+OK (skipped=2)
+```
+
+The two skips are the dependency-heavy `HybridIndexer` tests; they report that `rank_bm25` is not installed in the current environment. The source-loader tests and every existing test pass.
+
+### Current status
+
+The RAG layer can now ingest source-backed scraped or standalone schema XML without requiring a checkout. The next integration step is to make `OksTranslator` accept the source/index context directly and remove the CLI’s temporary schema-file bridge.
+
+### Verification results
+
 CLI tests:
 
 ```text
@@ -144,6 +177,50 @@ The CLI negative tests intentionally exercise argparse failures for a naive time
 ### Current status
 
 The branch has been pushed to `origin/feat/eval-dataset-and-rag-v2`. CLI revision selection is implemented and tested. The next source-integration slice should replace the temporary schema-file bridge with a source-aware RAG loader and begin handling historical schema/data paths together.
+
+## 2026-08-23 — Source-aware RAG schema loading
+
+### Scope
+
+Started replacing the path-only RAG boundary:
+
+- Added `SchemaLoader` for the scraped wrapper format and standalone OKS schema XML.
+- Added `SchemaDocument` and source-path metadata.
+- Added `HybridIndexer.ingest_source(source, paths, revision=...)`.
+- Preserved `HybridIndexer.ingest_xml(path)` for existing callers.
+- Added revision and source-path metadata to generated schema chunks.
+- Added malformed XML errors that include source and parser location.
+- Added tests for scraped schemas, standalone schemas, and source-based index ingestion.
+
+### Safety decisions
+
+1. The old path-based ingestion API remains available.
+2. Source-based ingestion resets the index before building it, preventing schema chunks from multiple revisions being mixed.
+3. Historical source paths are read through `FileSource`; the indexer does not know whether the bytes came from Git or the working tree.
+4. Malformed XML is no longer silently ignored.
+5. The current chunking behavior is preserved; inheritance and metadata expansion remain future work described in `rag.md`.
+
+### Verification note
+
+The first loader test run could not import `HybridIndexer` because `rank_bm25` is not installed in the current environment, although it is declared in `translator_module/requirements.txt`. The dependency-heavy indexer tests are now skipped with an explicit reason when the RAG dependencies are unavailable; source-loader tests remain independent and runnable.
+
+### Files created or modified
+
+- Created: `translator_module/rag/schema_loader.py`
+- Modified: `translator_module/rag/ingest.py`
+- Modified: `translator_module/tests/test_historical_query.py`
+- Updated: `HISTORICAL_QUERY_DEVELOPMENT_LOG.md`
+
+### Verification pending
+
+Run:
+
+```bash
+python -m unittest translator_module.tests.test_historical_query -v
+python -m unittest translator_module.tests.test_cli -v
+$env:PYTHONPATH='translator_module'
+python -m unittest discover -s translator_module/tests -v
+```
 
 ### Verification results
 

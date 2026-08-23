@@ -21,6 +21,19 @@ from translator_module.revision import (
     RevisionRequest,
     WorkingTreeSource,
 )
+from translator_module.rag.schema_loader import SchemaLoadError, SchemaLoader
+from unittest.mock import patch
+import numpy as np
+
+try:
+    from translator_module.rag.ingest import HybridIndexer
+    RAG_IMPORT_ERROR = None
+except ModuleNotFoundError as exc:
+    HybridIndexer = None
+    RAG_IMPORT_ERROR = str(exc)
+
+
+REPO_ROOT = Path(__file__).resolve().parents[2]
 
 
 class RevisionModelTests(unittest.TestCase):
@@ -91,6 +104,77 @@ class WorkingTreeSourceTests(unittest.TestCase):
             self.source.read_bytes(str(self.root / "config.data.xml"))
         with self.assertRaises(ValueError):
             self.source.list_files("../**/*.xml")
+
+
+class SchemaLoaderTests(unittest.TestCase):
+    def test_loads_existing_scraped_wrapper(self):
+        documents = SchemaLoader.load_file(
+            REPO_ROOT / "oks_scraped" / "oks_schema_examples.xml"
+        )
+
+        self.assertGreater(len(documents), 0)
+        self.assertTrue(any(document.root.findall(".//class") for document in documents))
+        self.assertTrue(all("::" in document.source_path for document in documents))
+
+    def test_loads_standalone_schema_through_working_tree_source(self):
+        source = WorkingTreeSource(REPO_ROOT)
+        documents = SchemaLoader.load_source(
+            source,
+            ["test_schema/xml/aal.schema.xml"],
+        )
+
+        self.assertEqual(len(documents), 1)
+        self.assertGreater(len(documents[0].root.findall(".//class")), 0)
+        self.assertEqual(documents[0].source_path, "test_schema/xml/aal.schema.xml")
+
+    def test_reports_malformed_xml_with_source_and_location(self):
+        with self.assertRaisesRegex(SchemaLoadError, "broken.xml.*line"):
+            SchemaLoader.load_bytes(b"<broken>", "broken.xml")
+
+
+@unittest.skipUnless(
+    HybridIndexer is not None,
+    f"RAG dependencies are not installed: {RAG_IMPORT_ERROR}",
+)
+class SourceAwareIndexerTests(unittest.TestCase):
+    class FakeEncoder:
+        def encode(self, values, **kwargs):
+            return np.zeros((len(values), 4), dtype="float32")
+
+    def test_ingest_source_builds_revision_metadata(self):
+        source = WorkingTreeSource(REPO_ROOT)
+
+        with patch(
+            "translator_module.rag.ingest.SentenceTransformer",
+            return_value=self.FakeEncoder(),
+        ):
+            indexer = HybridIndexer()
+            indexer.ingest_source(
+                source,
+                ["test_schema/xml/aal.schema.xml"],
+                revision="a" * 40,
+            )
+
+        self.assertGreater(len(indexer.chunks), 0)
+        self.assertTrue(
+            all(chunk.metadata["source_path"] == "test_schema/xml/aal.schema.xml"
+                for chunk in indexer.chunks)
+        )
+        self.assertTrue(
+            all(chunk.metadata["revision"] == "a" * 40 for chunk in indexer.chunks)
+        )
+
+    def test_ingest_xml_preserves_existing_wrapper_behavior(self):
+        with patch(
+            "translator_module.rag.ingest.SentenceTransformer",
+            return_value=self.FakeEncoder(),
+        ):
+            indexer = HybridIndexer()
+            indexer.ingest_xml(
+                str(REPO_ROOT / "oks_scraped" / "oks_schema_examples.xml")
+            )
+
+        self.assertGreater(len(indexer.chunks), 0)
 
 
 class GitRevisionSourceTests(unittest.TestCase):
