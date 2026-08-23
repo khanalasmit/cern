@@ -12,6 +12,7 @@ from oksquery_translator.intent import (
     Intent,
     IntentResult,
     IntentClassifier,
+    RunResolver,
     extract_run_and_partition,
     MSG_GENERAL_OUT_OF_SCOPE,
     MSG_CERN_OUT_OF_SCOPE,
@@ -70,6 +71,38 @@ class TestRunNumberAndPartitionExtraction:
         assert part == "ATLAS"
         assert tag == "tag:r380689@ATLAS"
 
+    def test_r_tag_with_question_mark(self):
+        """Should extract r380689 even when followed by question mark."""
+        run, part, tag = extract_run_and_partition("What was the configuration for r380689?")
+        assert run == 380689
+        assert part == "all_hosts"
+        assert tag == "tag:r380689@all_hosts"
+
+    def test_r_tag_short_number(self):
+        """Should extract r1234 or r5000."""
+        run, part, tag = extract_run_and_partition("What was the configuration for r5000?")
+        assert run == 5000
+        assert part == "all_hosts"
+        assert tag == "tag:r5000@all_hosts"
+
+    def test_run_is_phrase(self):
+        run, part, tag = extract_run_and_partition("run is 380689")
+        assert run == 380689
+        assert part == "all_hosts"
+        assert tag == "tag:r380689@all_hosts"
+
+    def test_run_hash_phrase(self):
+        run, part, tag = extract_run_and_partition("Check settings for run#380689")
+        assert run == 380689
+        assert part == "all_hosts"
+        assert tag == "tag:r380689@all_hosts"
+
+    def test_run_in_partition_atlas(self):
+        run, part, tag = extract_run_and_partition("What was the config in run 380689 in partition ATLAS?")
+        assert run == 380689
+        assert part == "ATLAS"
+        assert tag == "tag:r380689@ATLAS"
+
     def test_negative_ram_question(self):
         """Should NOT extract '32' as a run number."""
         run, part, tag = extract_run_and_partition("Which host has 32 GB RAM?")
@@ -87,6 +120,58 @@ class TestRunNumberAndPartitionExtraction:
         run, part, tag = extract_run_and_partition("What configuration was used in the previous run?")
         assert run is None
         assert tag is None
+
+
+class TestRunResolver:
+    """Test RunResolver validation and resolution."""
+
+    def test_query_rndb_parsing(self):
+        sample_output = """
+=================================================================================================================================================================================================================================
+|    Name |    Num |           Start At (UTC) |    Duration |       Release | User |                  Host | Partition |                                       Version |                        Config Name | Comment           |
+=================================================================================================================================================================================================================================
+| point-1 | 469021 | 2024-Mar-03 08:48:51.749 | 8:09:12.651 | tdaq-11-02-01 | crrc | pc-tdq-onl-05.cern.ch |     ATLAS | hash:ce4ceda7c528ccf9b3a14a85ef5bed2d7cf4b073 | combined/partitions/ATLAS.data.xml | Clean stop of run |
+=================================================================================================================================================================================================================================
+"""
+        resolver = RunResolver()
+        with patch("shutil.which", return_value="/usr/bin/rn_ls"), \
+             patch("subprocess.run", return_value=MagicMock(returncode=0, stdout=sample_output)):
+            info = resolver.query_rndb(469021)
+            assert info is not None
+            assert info["run_number"] == 469021
+            assert info["partition"] == "ATLAS"
+            assert info["version"] == "hash:ce4ceda7c528ccf9b3a14a85ef5bed2d7cf4b073"
+
+            # Validate should succeed and cache the version
+            assert resolver.validate_run_number(469021) is True
+            assert resolver.resolve_version(469021) == "hash:ce4ceda7c528ccf9b3a14a85ef5bed2d7cf4b073"
+
+    def test_invalid_run_not_in_rndb(self):
+        resolver = RunResolver()
+        with patch("shutil.which", return_value="/usr/bin/rn_ls"), \
+             patch("subprocess.run", return_value=MagicMock(returncode=0, stdout="========================================\n")):
+            assert resolver.validate_run_number(9999999) is False
+
+    def test_validate_with_known_valid_runs(self):
+        resolver = RunResolver(known_valid_runs={380689, 469021})
+        assert resolver.validate_run_number(380689) is True
+        assert resolver.validate_run_number(469021) is True
+        assert resolver.validate_run_number(9999999) is False
+
+    def test_invalid_zero_run(self):
+        resolver = RunResolver()
+        assert resolver.validate_run_number(0) is False
+
+    def test_invalid_negative_run(self):
+        resolver = RunResolver()
+        assert resolver.validate_run_number(-100) is False
+
+    def test_resolve_version_tag_fallback(self):
+        resolver = RunResolver()
+        assert resolver.resolve_version(380689, "all_hosts") == "tag:r380689@all_hosts"
+        assert resolver.resolve_version(380689, "ATLAS") == "tag:r380689@ATLAS"
+
+
 
 
 class TestIntentClassifierWithMockLLM:

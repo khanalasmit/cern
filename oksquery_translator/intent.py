@@ -71,7 +71,8 @@ MSG_HISTORICAL_MISSING_RUN = (
 
 class RunResolver:
     """
-    Validates ATLAS run numbers and resolves them to Git tags or version specifiers.
+    Validates ATLAS run numbers and resolves them using the CERN Run Number
+    Database (rn_ls) and Git tags.
     """
 
     def __init__(self, repo_root: str = None, default_partition: str = "all_hosts",
@@ -79,15 +80,16 @@ class RunResolver:
         self.repo_root = repo_root or os.getcwd()
         self.default_partition = default_partition
         self.known_valid_runs = known_valid_runs
+        self._cached_runs: dict = {}
 
     def validate_run_number(self, run_number: int, partition: str = None) -> bool:
         """
         Validate whether a run number is a valid ATLAS experiment run.
         Checks:
           1. Explicit known_valid_runs set if provided.
-          2. Real Git tags in repository via 'git tag -l'.
-          3. rn_ls command if available on PATH.
-          4. Range heuristic for ATLAS runs (100000 - 600000) when running offline.
+          2. CERN Run Number Database via:
+             rn_ls -c "oracle://atonr_adg/rn_r" -w "ATLAS_RUN_NUMBER" -n <run> -m <run>
+          3. Git tags in repository via 'git tag -l'.
         """
         if run_number is None or not isinstance(run_number, int) or run_number <= 0:
             return False
@@ -97,10 +99,20 @@ class RunResolver:
 
         partition = partition or self.default_partition
 
-        # Check git tags if git is available
+        # 1. Authoritative check: CERN Run Number Database (rn_ls)
         import shutil
         import subprocess
 
+        rn_ls_path = shutil.which("rn_ls")
+        if rn_ls_path:
+            rndb_info = self.query_rndb(run_number)
+            if rndb_info is not None:
+                self._cached_runs[run_number] = rndb_info
+                return True
+            # rn_ls was executed and confirmed run does NOT exist
+            return False
+
+        # 2. Check local Git tags if git is available
         try:
             cmd = ["git", "tag", "-l", f"r{run_number}*"]
             res = subprocess.run(cmd, cwd=self.repo_root, capture_output=True, text=True, timeout=5)
@@ -109,30 +121,69 @@ class RunResolver:
         except Exception:
             pass
 
-        # Check rn_ls CLI if available on PATH
-        rn_ls_path = shutil.which("rn_ls")
-        if rn_ls_path:
-            try:
-                cmd = [rn_ls_path, "-w", "ATLAS_RUN_NUMBER", "-r", str(run_number)]
-                res = subprocess.run(cmd, capture_output=True, text=True, timeout=5)
-                if res.returncode == 0 and str(run_number) in res.stdout:
-                    return True
-                return False
-            except Exception:
-                pass
-
-        # Plausible ATLAS run number heuristic for offline development (100,000 to 600,000)
-        # Numbers like 9999999 or < 10000 are rejected.
-        if 100000 <= run_number <= 600000:
-            return True
-
         return False
+
+    def query_rndb(self, run_number: int) -> Optional[dict]:
+        """
+        Query the CERN Run Number Database using rn_ls.
+        Command syntax:
+          rn_ls -c "oracle://atonr_adg/rn_r" -w "ATLAS_RUN_NUMBER" -n <run> -m <run>
+        """
+        import shutil
+        import subprocess
+
+        rn_ls_path = shutil.which("rn_ls")
+        if not rn_ls_path:
+            return None
+
+        db_conn = os.environ.get("TDAQ_RNDB_CONNECT_STRING", "oracle://atonr_adg/rn_r")
+        schema = os.environ.get("TDAQ_RNDB_SCHEMA", "ATLAS_RUN_NUMBER")
+        cmd = [
+            rn_ls_path,
+            "-c", db_conn,
+            "-w", schema,
+            "-n", str(run_number),
+            "-m", str(run_number)
+        ]
+
+        try:
+            res = subprocess.run(cmd, capture_output=True, text=True, timeout=10)
+            if res.returncode != 0:
+                return None
+
+            # Parse table output
+            for line in res.stdout.splitlines():
+                line = line.strip()
+                if line.startswith("|") and not line.startswith("| Name") and not line.startswith("|===") and not line.startswith("|---"):
+                    parts = [p.strip() for p in line.split("|")[1:-1]]
+                    if len(parts) >= 9:
+                        name, num, start_at, duration, release, user, host, part, version = parts[:9]
+                        if num == str(run_number):
+                            return {
+                                "run_number": int(num),
+                                "name": name,
+                                "partition": part,
+                                "version": version,
+                                "release": release,
+                                "host": host,
+                                "config_name": parts[9] if len(parts) > 9 else "",
+                            }
+        except Exception:
+            pass
+
+        return None
 
     def resolve_version(self, run_number: int, partition: str = None) -> str:
         """
         Resolve a run number and partition into a temporal version specifier.
-        Convention: tag:r<run_number>@<partition>
+        If rn_ls provided an exact version hash/tag (e.g. hash:ce4ceda7...),
+        returns that version. Otherwise returns tag:r<run_number>@<partition>.
         """
+        if run_number in self._cached_runs:
+            cached_ver = self._cached_runs[run_number].get("version")
+            if cached_ver:
+                return cached_ver
+
         part = partition or self.default_partition
         return f"tag:r{run_number}@{part}"
 
@@ -147,12 +198,12 @@ def extract_run_and_partition(text: str, default_partition: str = "all_hosts") -
     Extract run number and partition name from natural language text or tags.
 
     Supports patterns:
-      - r380689@all_hosts
-      - r380689@ATLAS
-      - r380689
-      - run 380689 / Run 380689 / RUN 380689
-      - run number 380689 / run_number=380689 / run_number: 380689
-      - run #380689 / run: 380689
+      - r380689@all_hosts / r380689@ATLAS
+      - r380689 / r380689? / r5000
+      - run 380689 / Run 380689 / RUN 380689 / run 5000
+      - run number 380689 / run_number=380689 / run_number: 380689 / run #380689
+      - run is 380689 / run = 380689 / run: 380689 / run-380689
+      - run 380689 in partition ATLAS / run 380689 partition all_hosts
 
     Does NOT falsely match:
       - "Which host has 32 GB RAM?"
@@ -166,36 +217,40 @@ def extract_run_and_partition(text: str, default_partition: str = "all_hosts") -
     if not text:
         return None, default_partition, None
 
-    # Pattern 1: explicit tag format with partition: r<run>@<partition> or run:<run>@<partition>
-    m_tag = re.search(r'(?:^|[\s\'"\(,])(?:tag:)?r(\d{4,8})@([A-Za-z0-9_\-]+)', text, re.IGNORECASE)
+    # Check for partition explicitly mentioned in the text (e.g. 'partition ATLAS', 'in partition all_hosts', '@ATLAS')
+    partition = default_partition
+    m_part_explicit = re.search(r'\b(?:in\s+partition|partition\s*(?:is|=|:)?)\s*([A-Za-z0-9_\-]+)\b', text, re.IGNORECASE)
+    if m_part_explicit:
+        partition = m_part_explicit.group(1)
+
+    # Pattern 1: explicit tag format with partition: r<run>@<partition> or run:<run>@<partition> or tag:r<run>@<partition>
+    m_tag = re.search(r'(?:^|[^\w])(?:tag:)?r(\d{1,8})@([A-Za-z0-9_\-]+)', text, re.IGNORECASE)
     if m_tag:
         run_num = int(m_tag.group(1))
         partition = m_tag.group(2)
         version_tag = f"tag:r{run_num}@{partition}"
         return run_num, partition, version_tag
 
-    # Pattern 2: standalone tag format: r<run> (e.g. r380689) where run is 5-8 digits or preceded by word boundary
-    m_rtag = re.search(r'(?:^|[\s\'"\(,])r(\d{5,8})(?:[\s\'"\),;:]|$)', text, re.IGNORECASE)
+    # Pattern 2: standalone tag format: r<run> (e.g. r380689, r5000)
+    # Must be preceded by non-word or start, and followed by non-digit/word boundary
+    m_rtag = re.search(r'(?:^|[^\w])r(\d{1,8})(?=[^\w]|$)', text, re.IGNORECASE)
     if m_rtag:
         run_num = int(m_rtag.group(1))
-        version_tag = f"tag:r{run_num}@{default_partition}"
-        return run_num, default_partition, version_tag
+        version_tag = f"tag:r{run_num}@{partition}"
+        return run_num, partition, version_tag
 
-    # Pattern 3: explicit "run [number] <num>" or "run_number=<num>" or "run #<num>"
+    # Pattern 3: explicit 'run [number|#|no] [is|=|:|#|-] <num>' or 'run <num>' or 'run#<num>' or 'run<num>'
     m_run = re.search(
-        r'\b(?:run\s*number|run_number|run\s*no\.?|run\s*#|run)\s*(?:=|:|\s)\s*(\d{4,8})\b',
+        r'\b(?:run\s*number|run_number|run\s*no\.?|run\s*#|run)\s*(?:=|:|\s+is\s+|\s*#\s*|\s*-\s*|\s*|\s+)\s*(\d{1,8})\b',
         text,
         re.IGNORECASE
     )
     if m_run:
-        # Check if immediately followed by @partition
         start, end = m_run.span(1)
         after = text[end:]
         m_part = re.match(r'^@([A-Za-z0-9_\-]+)', after)
         if m_part:
             partition = m_part.group(1)
-        else:
-            partition = default_partition
 
         run_num = int(m_run.group(1))
         version_tag = f"tag:r{run_num}@{partition}"
@@ -325,7 +380,7 @@ class IntentClassifier:
         final_part = det_part or llm_part or self.default_partition
 
         # If deterministic run number was found, it strongly confirms historical intent if query looks like OKS
-        if final_run is not None and final_intent in (Intent.OKS_CURRENT_QUERY, Intent.OKS_HISTORICAL_QUERY):
+        if final_run is not None and final_intent not in (Intent.GENERAL_OUT_OF_SCOPE, Intent.CERN_OUT_OF_SCOPE):
             final_intent = Intent.OKS_HISTORICAL_QUERY
 
         version_tag = None
