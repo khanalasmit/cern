@@ -839,3 +839,11 @@ Added a conservative validation gate immediately before native historical execut
 - `python -m py_compile translator_module/execution/schema_preflight.py translator_module/execution/__init__.py translator_module/cli.py translator_module/tests/test_historical_query.py` passed.
 - Focused historical suite: 43 tests passed, 2 dependency-based tests skipped.
 - Full suite: 66 tests passed, 2 dependency-based tests skipped.
+
+## CLI execution handoff testability — 2026-08-23
+
+Extracted `_execute_historical_result(args, result, snapshot)` from the interactive loop. The helper now owns target-class selection, schema preflight, immutable execution-context construction, and `OksDumpExecutor` invocation.
+
+Added CLI tests proving that the helper passes the selected snapshot and serialized query to the executor, and that a missing historical target class is rejected before the native executor is called.
+
+Verification after this slice: CLI tests passed 10/10; the full suite passed 68 tests with 2 optional `rank_bm25` skips. No native OKS binary is required for these tests.

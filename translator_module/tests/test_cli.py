@@ -2,8 +2,13 @@
 
 import unittest
 from datetime import datetime, timezone
+from pathlib import Path
+import tempfile
+from types import SimpleNamespace
+from unittest.mock import patch
 
 from translator_module import cli
+from translator_module.revision import OksSnapshot, ResolvedRevision, WorkingTreeSource
 
 
 class CliArgumentTests(unittest.TestCase):
@@ -86,3 +91,75 @@ class CliArgumentTests(unittest.TestCase):
 
     def test_execution_requires_historical_selector(self):
         self.assertEqual(cli.main(["--execute"]), 2)
+
+    def test_execution_helper_passes_historical_context_to_oks_dump(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "schema.xml").write_text(
+                "<oks-schema><class name='Application' /></oks-schema>",
+                encoding="utf-8",
+            )
+            source = WorkingTreeSource(root)
+            revision = ResolvedRevision(
+                repository=root.resolve(),
+                commit="a" * 40,
+                requested_as="commit",
+            )
+            snapshot = OksSnapshot(
+                revision=revision,
+                schema_paths=("schema.xml",),
+                data_paths=(),
+                source=source,
+            )
+            args = cli.build_argument_parser().parse_args(
+                ["--commit-hash", "abc123", "--execute"]
+            )
+            result = {
+                "oks_query": '(all (object-id "app-1" =))',
+                "ir": {"target_class": "Application"},
+            }
+            expected = SimpleNamespace(
+                revision="a" * 40,
+                stdout="app-1\n",
+                stderr="",
+            )
+
+            with patch(
+                "translator_module.execution.OksDumpExecutor.execute",
+                return_value=expected,
+            ) as execute:
+                actual = cli._execute_historical_result(args, result, snapshot)
+
+        self.assertIs(actual, expected)
+        context = execute.call_args.args[0]
+        self.assertEqual(context.target_class, "Application")
+        self.assertEqual(context.snapshot, snapshot)
+        self.assertEqual(context.oks_query, result["oks_query"])
+
+    def test_execution_helper_rejects_target_absent_from_snapshot(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "schema.xml").write_text(
+                "<oks-schema><class name='Application' /></oks-schema>",
+                encoding="utf-8",
+            )
+            source = WorkingTreeSource(root)
+            revision = ResolvedRevision(root.resolve(), "a" * 40, "commit")
+            snapshot = OksSnapshot(
+                revision=revision,
+                schema_paths=("schema.xml",),
+                source=source,
+            )
+            args = cli.build_argument_parser().parse_args(
+                ["--commit-hash", "abc123", "--execute"]
+            )
+
+            with self.assertRaisesRegex(ValueError, "Missing"):
+                cli._execute_historical_result(
+                    args,
+                    {
+                        "oks_query": "(all (object-id \"x\" =))",
+                        "ir": {"target_class": "Missing"},
+                    },
+                    snapshot,
+                )

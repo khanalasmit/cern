@@ -188,6 +188,32 @@ def _create_translator(args, llm_api_key, llm_base_url, llm_model):
     return translator, resolved, snapshot
 
 
+def _execute_historical_result(args, result, snapshot):
+    """Execute one successful translation against its immutable snapshot."""
+
+    from translator_module.execution import (
+        HistoricalExecutionContext,
+        HistoricalSchemaPreflight,
+        OksDumpExecutor,
+    )
+
+    if snapshot is None:
+        raise ValueError("historical execution requires an execution snapshot")
+
+    ir = result.get("ir", {})
+    target_class = args.target_class or ir.get("target_class")
+    preflight = HistoricalSchemaPreflight.validate(snapshot, target_class)
+    execution_context = HistoricalExecutionContext(
+        snapshot=snapshot,
+        oks_query=result["oks_query"],
+        target_class=preflight.target_class,
+    )
+    return OksDumpExecutor(
+        executable=args.oks_dump_executable,
+        timeout=args.execution_timeout,
+    ).execute(execution_context)
+
+
 def main(argv=None):
     args = build_argument_parser().parse_args(argv)
 
@@ -278,39 +304,27 @@ def main(argv=None):
                 print(f"  {json.dumps(ir_display, indent=2)}")
 
                 if args.execute:
-                    from translator_module.execution import (
-                        HistoricalExecutionContext,
-                        HistoricalSchemaPreflight,
-                        OksDumpExecutor,
-                    )
-
-                    target_class = args.target_class or ir.get("target_class")
                     try:
-                        preflight = HistoricalSchemaPreflight.validate(
+                        execution_result = _execute_historical_result(
+                            args,
+                            result,
                             snapshot,
-                            target_class,
                         )
-                        execution_context = HistoricalExecutionContext(
-                            snapshot=snapshot,
-                            oks_query=result["oks_query"],
-                            target_class=preflight.target_class,
-                        )
-                        execution_result = OksDumpExecutor(
-                            executable=args.oks_dump_executable,
-                            timeout=args.execution_timeout,
-                        ).execute(execution_context)
                     except Exception as exc:
                         print(f"\n  Historical execution failed: {exc}")
-                        continue
-                    print("-" * 60)
-                    print(
-                        "\n  Historical execution output "
-                        f"(revision {execution_result.revision}):"
-                    )
-                    print(execution_result.stdout or "  (oks_dump returned no output)")
-                    if execution_result.stderr:
-                        print("\n  oks_dump diagnostics:")
-                        print(execution_result.stderr)
+                    else:
+                        print("-" * 60)
+                        print(
+                            "\n  Historical execution output "
+                            f"(revision {execution_result.revision}):"
+                        )
+                        print(
+                            execution_result.stdout
+                            or "  (oks_dump returned no output)"
+                        )
+                        if execution_result.stderr:
+                            print("\n  oks_dump diagnostics:")
+                            print(execution_result.stderr)
             else:
                 print(f"  Error: {result.get('message')}")
             print("=" * 60 + "\n")
