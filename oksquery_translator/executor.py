@@ -62,7 +62,8 @@ class Executor:
 
     def execute(self, target_class: str, query: str,
                 version: str = None,
-                max_objects: int = 200) -> ExecutionResult:
+                max_objects: int = 200,
+                data_file: Optional[str] = None) -> ExecutionResult:
         """
         Execute a query and return matching objects.
 
@@ -84,6 +85,10 @@ class Executor:
         -------
         ExecutionResult
         """
+        # A run-number DB record may identify a different top-level data file.
+        # Keep the instance default for ordinary/current queries.
+        selected_data_file = data_file or self.data_file
+
         # Set up temporal environment if needed
         env_backup = self._set_version_env(version)
         version_label = version or "current"
@@ -93,7 +98,7 @@ class Executor:
             if self._config_available:
                 try:
                     return self._execute_config(
-                        target_class, query, max_objects, version_label
+                        target_class, query, max_objects, version_label, selected_data_file
                     )
                 except Exception as e:
                     # Fall through to oks_dump
@@ -102,7 +107,7 @@ class Executor:
             # Strategy 2: oks_dump CLI
             if self._oks_dump_path:
                 return self._execute_oks_dump(
-                    target_class, query, max_objects, version_label
+                    target_class, query, max_objects, version_label, selected_data_file
                 )
 
             return ExecutionResult(
@@ -122,11 +127,12 @@ class Executor:
     # ------------------------------------------------------------------
 
     def _execute_config(self, target_class: str, query: str,
-                        max_objects: int, version_label: str) -> ExecutionResult:
+                        max_objects: int, version_label: str,
+                        data_file: str) -> ExecutionResult:
         """Execute via the Python config module."""
         import config as oks_config
 
-        db = oks_config.Configuration("oksconflibs:" + self.data_file)
+        db = oks_config.Configuration("oksconflibs:" + data_file)
         raw_objects = db.get_objs(target_class, query)
 
         objects = []
@@ -178,10 +184,11 @@ class Executor:
     # ------------------------------------------------------------------
 
     def _execute_oks_dump(self, target_class: str, query: str,
-                          max_objects: int, version_label: str) -> ExecutionResult:
+                          max_objects: int, version_label: str,
+                          data_file: str) -> ExecutionResult:
         """Execute via oks_dump CLI and parse the output."""
         cmd = [self._oks_dump_path, "-c", target_class, "-q", query,
-               self.data_file]
+               data_file]
 
         try:
             result = subprocess.run(

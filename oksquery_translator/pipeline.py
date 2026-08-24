@@ -10,6 +10,7 @@ Wires together all modules into a single ``answer()`` call:
 
 import logging
 import os
+import re
 from typing import Dict, Optional
 
 logger = logging.getLogger("oksquery_translator.pipeline")
@@ -216,6 +217,7 @@ class OksPipeline:
         effective_version = version
         extracted_run = intent_info.run_number
         partition = intent_info.partition or "all_hosts"
+        request_data_file = self.data_file
 
         if intent_info.intent == Intent.OKS_HISTORICAL_QUERY:
             if version:
@@ -306,6 +308,30 @@ class OksPipeline:
 
                 logger.info(f"Run Validation: success (Run Number {extracted_run})")
                 effective_version = self.run_resolver.resolve_version(extracted_run, partition)
+                run_info = self.run_resolver.get_run_info(extracted_run)
+                if run_info:
+                    # The DB, not the CLI default, identifies the saved run's
+                    # partition and top-level configuration file.
+                    partition = run_info.get("partition") or partition
+                    request_data_file = run_info.get("config_name") or request_data_file
+
+                if effective_version is None:
+                    archive_revision = (run_info or {}).get("version", "unknown")
+                    msg = (
+                        f"Run Number {extracted_run} uses legacy archive revision "
+                        f"'{archive_revision}', not a Git/OKS version supported by this "
+                        "translator. No query was executed, because it would otherwise "
+                        "silently query the current configuration. Use a legacy CORAL/OKS "
+                        "Archive resolver for this run."
+                    )
+                    logger.warning(msg)
+                    return {
+                        "status": "error", "answer": msg, "oks_query": "", "target_class": "",
+                        "result_count": 0, "results": [], "attempts": 0, "message": msg,
+                        "intent": intent_info.intent.value, "run_number": extracted_run,
+                        "partition": partition, "version": None, "version_used": None,
+                        "schema_fingerprint": "", "oks_context_label": "",
+                    }
                 logger.info(f"Resolved Version: {effective_version}")
 
         # If effective_version has a run tag, recover run_number and partition if not set
@@ -316,7 +342,13 @@ class OksPipeline:
                 partition = ver_part or partition
 
         # ------ Step 0d: Build immutable OksContext ------
-        oks_context = self.context_builder.build(version_tag=effective_version)
+        context_builder = self.context_builder
+        if request_data_file != self.data_file:
+            context_builder = OksContextBuilder(
+                data_file=request_data_file,
+                schema_dir=getattr(self.schema_retriever, "schema_dir", None),
+            )
+        oks_context = context_builder.build(version_tag=effective_version)
         logger.info(
             f"OksContext: identifier={oks_context.schema_identifier!r}, "
             f"fingerprint={oks_context.schema_fingerprint!r}"
@@ -328,6 +360,18 @@ class OksPipeline:
             schema_dir = getattr(self.schema_retriever, "schema_dir", None)
             sp = OksSchemaProvider(oks_context=oks_context, data_file=self.data_file, schema_dir=schema_dir)
             self.schema_index.build_from_schema_provider(sp)
+
+        # ``oks_dump`` queries one class at a time.  Do not ask the LLM to
+        # guess a class for an explicit request for *all* objects.
+        if self._requests_all_objects(question):
+            return self._answer_all_objects(
+                intent_info=intent_info,
+                oks_context=oks_context,
+                version=effective_version,
+                run_number=extracted_run,
+                partition=partition,
+                data_file=request_data_file,
+            )
 
         # ------ Step 0e: Query Preprocessing (Tokens & Hints) ------
         query_analysis = self.query_preprocessor.analyze(question)
@@ -368,7 +412,7 @@ class OksPipeline:
         # ------ Step 2: Execute the query via preserved Executor ------
         exec_version = oks_context.version_tag or effective_version
         exec_result = self.executor.execute(
-            target_class, oks_query, version=exec_version
+            target_class, oks_query, version=exec_version, data_file=request_data_file
         )
 
         if not exec_result.success:
@@ -429,6 +473,57 @@ class OksPipeline:
             "schema_fingerprint": oks_context.schema_fingerprint,
             "oks_context_label": oks_context.display_label,
             "ir": ir_dump,
+        }
+
+    @staticmethod
+    def _requests_all_objects(question: str) -> bool:
+        """Identify an unqualified request spanning every OKS class."""
+        return bool(re.search(r"\b(?:all|every)\s+(?:OKS\s+)?objects?\b", question, re.IGNORECASE))
+
+    def _answer_all_objects(self, *, intent_info: IntentResult, oks_context: OksContext,
+                            version: Optional[str], run_number: Optional[int],
+                            partition: str, data_file: str) -> Dict:
+        """Enumerate every concrete class for an explicit all-objects request."""
+        query = '(all (object-id "" !=))'
+        class_names = self.schema_retriever.get_class_list()
+        objects, failures, total_count = [], [], 0
+        display_limit = 1000
+        for class_name in class_names:
+            result = self.executor.execute(
+                class_name, query, version=oks_context.version_tag or version,
+                data_file=data_file,
+            )
+            if not result.success:
+                failures.append(class_name)
+                continue
+            total_count += result.count
+            for obj in result.objects:
+                if len(objects) >= display_limit:
+                    break
+                obj = dict(obj)
+                obj["class"] = class_name
+                objects.append(obj)
+
+        shown = len(objects)
+        answer = f"Found {total_count} objects across {len(class_names) - len(failures)} OKS classes."
+        if total_count > shown:
+            answer += f" Showing the first {shown} objects."
+        if failures:
+            answer += f" {len(failures)} classes could not be queried."
+        if run_number is not None:
+            answer = f"Run Number: {run_number}\nPartition: {partition}\n\n" + answer
+        else:
+            answer = "Configuration: Current / Default (HEAD)\n\n" + answer
+
+        return {
+            "status": "success", "answer": answer, "oks_query": query,
+            "target_class": "*", "result_count": total_count, "results": objects,
+            "attempts": 0, "message": "", "intent": intent_info.intent.value,
+            "run_number": run_number, "partition": partition if run_number else None,
+            "version": version or "current", "version_used": version or "current",
+            "schema_fingerprint": oks_context.schema_fingerprint,
+            "oks_context_label": oks_context.display_label,
+            "ir": None,
         }
 
     def translate_only(self, question: str, version: Optional[str] = None) -> Dict:
