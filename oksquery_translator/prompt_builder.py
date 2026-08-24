@@ -88,7 +88,7 @@ HARD RULES you MUST obey:
 """
 
 # ---------------------------------------------------------------------------
-# Output format instructions
+# Output format instructions (Legacy & JSON IR)
 # ---------------------------------------------------------------------------
 OUTPUT_FORMAT_INSTRUCTIONS = """\
 === Output Format ===
@@ -108,6 +108,41 @@ Do NOT add explanations, markdown formatting, code fences, or any other text.
 Only the CLASS: and QUERY: lines.
 """
 
+IR_SCHEMA_DESCRIPTION = """\
+=== Output Format (JSON IR) ===
+
+You MUST output ONLY a valid JSON object matching the following QueryIR schema:
+
+{
+  "target_class": "<ClassName>",
+  "scope": "all" | "this",
+  "expression": <Expression>,
+  "explanation": "brief explanation"
+}
+
+Where <Expression> is EXACTLY ONE of:
+1. Attribute comparison:
+   {"type": "attribute_compare", "attribute": "<attr_name>", "operator": "<op>", "value": "<val>"}
+   Operators: "=", "!=", "~=", "<", "<=", ">", ">="
+   IMPORTANT: "value" MUST ALWAYS be a string (e.g. "2", "30", "test").
+2. Object ID match:
+   {"type": "object_id", "operator": "=", "object_id": "<id>"}
+3. Relationship traversal:
+   {"type": "relationship", "name": "<rel_name>", "quantifier": "some" | "all", "expression": <Expression>}
+   NOTE: Nested expression is evaluated against the relationship's TARGET CLASS.
+4. Logical AND:
+   {"type": "and", "operands": [<Expression>, <Expression>, ...]}  (minimum 2 operands)
+5. Logical OR:
+   {"type": "or", "operands": [<Expression>, <Expression>, ...]}   (minimum 2 operands)
+6. Logical NOT:
+   {"type": "not", "operand": <Expression>}
+
+CRITICAL RULES:
+- Output ONLY valid JSON. Do NOT include markdown code fences (no ```json), commentary, or extra text.
+- Use EXACT case-sensitive class, attribute, and relationship names from 'Relevant OKS Schema Context'.
+- Scope "all" or "this" appears ONLY at the top level of QueryIR, NEVER inside expressions.
+"""
+
 
 class PromptBuilder:
     """
@@ -125,7 +160,8 @@ class PromptBuilder:
         self.few_shot_manager = few_shot_manager
 
     def build(self, question: str, max_schema_classes: int = 3,
-              max_few_shot: int = 5) -> tuple:
+              max_few_shot: int = 5, oks_context=None,
+              retrieval_query: str = None) -> tuple:
         """
         Build the (system_prompt, user_prompt) pair for the translation LLM.
 
@@ -137,14 +173,19 @@ class PromptBuilder:
             Maximum number of classes to include in the schema slice.
         max_few_shot : int
             Maximum number of few-shot examples to include.
+        oks_context : OksContext, optional
+            Resolved context metadata block.
+        retrieval_query : str, optional
+            Enriched query token string for schema retrieval.
 
         Returns
         -------
         (system_prompt, user_prompt) : tuple of str
         """
         # 1. Retrieve schema context
+        lookup_q = retrieval_query or question
         schema_context = self.schema_retriever.get_schema_context(
-            question, max_classes=max_schema_classes
+            lookup_q, max_classes=max_schema_classes
         )
 
         # 2. Retrieve few-shot examples
@@ -152,18 +193,26 @@ class PromptBuilder:
             question, top_k=max_few_shot
         )
 
-        # 3. Assemble system prompt
-        system_prompt = (
-            "You are an expert OKS query translator for the ATLAS TDAQ "
-            "configuration system. Your task is to translate a natural-language "
-            "question into a valid OksQuery string.\n\n"
-            f"{OKSQUERY_SYNTAX_RULES}\n\n"
-            f"{schema_context}\n\n"
-            f"{few_shot_context}\n\n"
-            f"{OUTPUT_FORMAT_INSTRUCTIONS}"
-        )
+        # 3. Context metadata block
+        context_meta = oks_context.to_prompt_metadata() if (oks_context and hasattr(oks_context, "to_prompt_metadata")) else ""
 
-        # 4. User prompt is simply the question
+        # 4. Assemble system prompt
+        prompt_parts = [
+            "You are an expert OKS query translator for the ATLAS TDAQ configuration system.\n"
+            "Your task is to translate a natural-language question into a strictly formatted JSON Intermediate Representation (IR).",
+            OKSQUERY_SYNTAX_RULES,
+        ]
+        if context_meta:
+            prompt_parts.append(context_meta)
+        if schema_context:
+            prompt_parts.append(schema_context)
+        if few_shot_context:
+            prompt_parts.append(few_shot_context)
+        prompt_parts.append(IR_SCHEMA_DESCRIPTION)
+
+        system_prompt = "\n\n".join(prompt_parts)
+
+        # 5. User prompt is the question
         user_prompt = question
 
         return system_prompt, user_prompt

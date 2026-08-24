@@ -104,7 +104,8 @@ class TestPipelineIntentIntegration:
         assert res["run_number"] is None
         assert res["version_used"] == "current"
         assert "Configuration: Current / Default (HEAD)" in res["answer"]
-        mock_pipeline.translator.translate.assert_called_once_with("List all computers.")
+        mock_pipeline.translator.translate.assert_called_once()
+        assert mock_pipeline.translator.translate.call_args[0][0] == "List all computers."
         mock_pipeline.executor.execute.assert_called_once()
         assert mock_pipeline.executor.execute.call_args[1]["version"] is None
 

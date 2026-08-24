@@ -20,6 +20,9 @@ from .prompt_builder import PromptBuilder
 from .translator import Translator
 from .executor import Executor
 from .interpreter import Interpreter
+from .context import OksContext, OksContextBuilder
+from .preprocessing import QueryPreprocessor
+from .retrieval import SchemaSearchIndex
 from .intent import (
     Intent,
     IntentResult,
@@ -87,6 +90,14 @@ class OksPipeline:
             repo_root=repo_root,
         )
 
+        self.context_builder = OksContextBuilder(
+            data_file=data_file,
+            schema_dir=schema_dir,
+        )
+
+        self.query_preprocessor = QueryPreprocessor()
+        self.schema_index = SchemaSearchIndex()
+
         self.schema_retriever = SchemaRetriever(
             data_file=data_file,
             schema_dir=schema_dir,
@@ -147,6 +158,9 @@ class OksPipeline:
             partition : str or None
             version : str or None
             version_used : str or None
+            schema_fingerprint : str
+            oks_context_label : str
+            ir : dict or None
         """
         # ------ Step 0: Intent Classification & Pre-Filtering ------
         intent_info = self.intent_classifier.classify(question)
@@ -173,6 +187,8 @@ class OksPipeline:
                 "partition": None,
                 "version": None,
                 "version_used": None,
+                "schema_fingerprint": "",
+                "oks_context_label": "",
             }
 
         # 0b. Out-of-scope early exit: CERN_OUT_OF_SCOPE
@@ -192,6 +208,8 @@ class OksPipeline:
                 "partition": None,
                 "version": None,
                 "version_used": None,
+                "schema_fingerprint": "",
+                "oks_context_label": "",
             }
 
         # 0c. Historical run resolution and version precedence
@@ -226,6 +244,8 @@ class OksPipeline:
                             "partition": partition,
                             "version": version,
                             "version_used": version,
+                            "schema_fingerprint": "",
+                            "oks_context_label": "",
                         }
                 else:
                     # Recover run_number from explicit version string if possible
@@ -255,6 +275,8 @@ class OksPipeline:
                         "partition": partition,
                         "version": None,
                         "version_used": None,
+                        "schema_fingerprint": "",
+                        "oks_context_label": "",
                     }
 
                 # Validate run number with RunResolver
@@ -278,6 +300,8 @@ class OksPipeline:
                         "partition": partition,
                         "version": None,
                         "version_used": None,
+                        "schema_fingerprint": "",
+                        "oks_context_label": "",
                     }
 
                 logger.info(f"Run Validation: success (Run Number {extracted_run})")
@@ -291,8 +315,30 @@ class OksPipeline:
                 extracted_run = ver_run
                 partition = ver_part or partition
 
-        # ------ Step 1: Translate NL → OksQuery ------
-        translation = self.translator.translate(question)
+        # ------ Step 0d: Build immutable OksContext ------
+        oks_context = self.context_builder.build(version_tag=effective_version)
+        logger.info(
+            f"OksContext: identifier={oks_context.schema_identifier!r}, "
+            f"fingerprint={oks_context.schema_fingerprint!r}"
+        )
+
+        # Index schema under this fingerprint if not already cached
+        if not self.schema_index.has_fingerprint(oks_context.schema_fingerprint):
+            from .schema import OksSchemaProvider
+            schema_dir = getattr(self.schema_retriever, "schema_dir", None)
+            sp = OksSchemaProvider(oks_context=oks_context, data_file=self.data_file, schema_dir=schema_dir)
+            self.schema_index.build_from_schema_provider(sp)
+
+        # ------ Step 0e: Query Preprocessing (Tokens & Hints) ------
+        query_analysis = self.query_preprocessor.analyze(question)
+        retrieval_query = query_analysis.to_retrieval_query()
+
+        # ------ Step 1: Translate NL → OksQuery via AST Pipeline ------
+        translation = self.translator.translate(
+            question,
+            oks_context=oks_context,
+            retrieval_query=retrieval_query,
+        )
 
         if translation["status"] != "success":
             return {
@@ -309,15 +355,20 @@ class OksPipeline:
                 "partition": partition if extracted_run else None,
                 "version": effective_version or "current",
                 "version_used": effective_version or "current",
+                "schema_fingerprint": oks_context.schema_fingerprint,
+                "oks_context_label": oks_context.display_label,
+                "ir": None,
             }
 
         target_class = translation["target_class"]
         oks_query = translation["oks_query"]
         attempts = translation.get("attempts", 1)
+        ir_dump = translation.get("ir")
 
-        # ------ Step 2: Execute the query ------
+        # ------ Step 2: Execute the query via preserved Executor ------
+        exec_version = oks_context.version_tag or effective_version
         exec_result = self.executor.execute(
-            target_class, oks_query, version=effective_version
+            target_class, oks_query, version=exec_version
         )
 
         if not exec_result.success:
@@ -335,6 +386,9 @@ class OksPipeline:
                 "partition": partition if extracted_run else None,
                 "version": effective_version or "current",
                 "version_used": effective_version or "current",
+                "schema_fingerprint": oks_context.schema_fingerprint,
+                "oks_context_label": oks_context.display_label,
+                "ir": ir_dump,
             }
 
         # ------ Step 3: Interpret the results ------
@@ -372,16 +426,26 @@ class OksPipeline:
             "partition": partition if extracted_run else None,
             "version": version_label,
             "version_used": version_label,
+            "schema_fingerprint": oks_context.schema_fingerprint,
+            "oks_context_label": oks_context.display_label,
+            "ir": ir_dump,
         }
 
-    def translate_only(self, question: str) -> Dict:
+    def translate_only(self, question: str, version: Optional[str] = None) -> Dict:
         """
         Translate without executing or interpreting.
         Useful for testing the translation layer alone.
 
         Returns the same dict as Translator.translate().
         """
-        return self.translator.translate(question)
+        oks_context = self.context_builder.build(version_tag=version)
+        query_analysis = self.query_preprocessor.analyze(question)
+        retrieval_query = query_analysis.to_retrieval_query()
+        return self.translator.translate(
+            question,
+            oks_context=oks_context,
+            retrieval_query=retrieval_query,
+        )
 
 
 def answer(question: str, version: str = None, **kwargs) -> str:
