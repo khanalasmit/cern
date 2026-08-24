@@ -124,7 +124,19 @@ class Executor:
             if os.path.exists(candidate):
                 selected_data_file = candidate
 
-        # Strategy 1 (preferred): oks_dump CLI.
+        # Strategy 1 (preferred): Python config module.
+        if self._config_available and not release:
+            env_backup = self._set_version_env(version, release_data_path)
+            try:
+                return self._execute_config(
+                    target_class, query, max_objects, version_label, selected_data_file
+                )
+            except Exception as e:
+                logger.warning(f"Executor: Python config backend failed ({e}); falling back to oks_dump CLI.")
+            finally:
+                self._restore_env(env_backup)
+
+        # Strategy 2 (fallback): oks_dump CLI.
         if oks_dump_path:
             return self._execute_oks_dump(
                 target_class, query, max_objects, version_label, selected_data_file,
@@ -133,23 +145,13 @@ class Executor:
                 release_data_path=release_data_path,
             )
 
-        # Strategy 2 (fallback): Python config module.
-        if self._config_available and not release:
-            env_backup = self._set_version_env(version, release_data_path)
-            try:
-                return self._execute_config(
-                    target_class, query, max_objects, version_label, selected_data_file
-                )
-            finally:
-                self._restore_env(env_backup)
-
-
         return ExecutionResult(
             success=False,
             message=(
                 "No execution backend available. "
                 "Ensure the TDAQ release is sourced "
-                "(source .../setup.sh) so that 'oks_dump' is on PATH."
+                "(source .../setup.sh) so that the Python 'config' module "
+                "and/or 'oks_dump' are available."
             ),
         )
 
