@@ -35,7 +35,8 @@ cd cern
 
 ### 3. Create Virtual Environment (`venv`)
 
-Create an isolated Python 3.10+ virtual environment:
+Create an isolated Python 3.10+ virtual environment (the MCP Python SDK does
+not support Python 3.9):
 
 ```bash
 python3 -m venv .venv
@@ -143,4 +144,30 @@ Run the test suite with `pytest`:
 
 ```bash
 python -m pytest oksquery_translator/tests -v
+```
+
+#### D. Running the stateless MCP server
+
+The MCP server exposes the OKS capability to an external agent. The agent
+owns conversation memory and must send complete questions; this server does
+not persist chat history.
+
+From the repository root, after sourcing one TDAQ release:
+
+```bash
+source /cvmfs/atlas.cern.ch/repo/sw/tdaq/tdaq/tdaq-14-00-00/installed/setup.sh
+oksquery_translator/venv/bin/python -m oksquery_translator.mcp_server
+```
+
+The default transport is MCP stdio. The same startup sequence is available as
+`deploy/run_mcp.sh`; it uses the project virtualenv's absolute Python path so
+TDAQ setup cannot select an incompatible global `openai` package.
+
+On LXPLUS, if `python3 --version` reports 3.9, create the virtualenv with an
+available Python 3.10+ interpreter and point the launcher at it:
+
+```bash
+python3.11 -m venv oksquery_translator/venv
+oksquery_translator/venv/bin/python -m pip install -r oksquery_translator/requirements.txt
+OKS_QUERY_PYTHON="$PWD/oksquery_translator/venv/bin/python" deploy/run_mcp.sh
 ```

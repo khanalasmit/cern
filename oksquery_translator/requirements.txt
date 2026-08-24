@@ -2,3 +2,4 @@ openai>=1.0
 python-dotenv
 rank_bm25
 pytest
+mcp>=1.12,<2

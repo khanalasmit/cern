@@ -109,6 +109,15 @@ class TestPipelineIntentIntegration:
         mock_pipeline.executor.execute.assert_called_once()
         assert mock_pipeline.executor.execute.call_args[1]["version"] is None
 
+    def test_structured_result_skips_interpretation(self, mock_pipeline):
+        """MCP mode returns structured results without a second LLM call."""
+        res = mock_pipeline.answer("List all computers.", interpret=False)
+        assert res["status"] == "success"
+        assert res["answer"] == ""
+        assert res["version_used"] == "current"
+        assert res["results"] == [{"id": "lxplus001", "attributes": {}}]
+        mock_pipeline.interpreter.interpret.assert_not_called()
+
     def test_historical_query_with_run_number(self, mock_pipeline):
         """OKS_HISTORICAL_QUERY with valid run number resolves version and executes."""
         mock_pipeline.run_resolver.validate_run_number = MagicMock(return_value=True)

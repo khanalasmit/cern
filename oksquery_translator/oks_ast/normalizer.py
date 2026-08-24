@@ -1,5 +1,5 @@
 """
-ast/normalizer.py — Module 9: AST Normalizer
+oks_ast/normalizer.py — Module 9: AST Normalizer
 ==============================================
 
 Normalizes a raw LLM-produced IR dictionary before Pydantic validation.

@@ -132,7 +132,8 @@ class OksPipeline:
 
         self.data_file = data_file
 
-    def answer(self, question: str, version: str = None) -> Dict:
+    def answer(self, question: str, version: str = None,
+               interpret: bool = True) -> Dict:
         """
         Full pipeline: natural-language question → clean answer.
 
@@ -143,6 +144,10 @@ class OksPipeline:
         version : str, optional
             Temporal version specifier (e.g. "hash:abc123",
             "date:2024-03-15", "tdaq-13-00-00", "tag:r380689@all_hosts").
+        interpret : bool
+            When true, make the second LLM call that turns results into prose.
+            MCP callers should normally set this to false and let the host
+            agent interpret the structured result.
 
         Returns
         -------
@@ -461,9 +466,35 @@ class OksPipeline:
             f"Returned {exec_result.count} object(s)"
         )
 
+        version_label = effective_version or "current"
+        if not interpret:
+            total_elapsed = time.perf_counter() - t_pipeline_start
+            logger.info(
+                f"=== [PIPELINE COMPLETE] Structured result in {total_elapsed:.3f}s "
+                f"(Intent={t0_elapsed:.2f}s, Context={t1_elapsed:.2f}s, "
+                f"Translation={t_trans_elapsed:.2f}s, Execution={t_exec_elapsed:.2f}s) ==="
+            )
+            return {
+                "status": "success",
+                "answer": "",
+                "oks_query": oks_query,
+                "target_class": target_class,
+                "result_count": exec_result.count,
+                "results": exec_result.objects,
+                "attempts": attempts,
+                "message": "",
+                "intent": intent_info.intent.value,
+                "run_number": extracted_run,
+                "partition": partition if extracted_run else None,
+                "version": version_label,
+                "version_used": version_label,
+                "schema_fingerprint": oks_context.schema_fingerprint,
+                "oks_context_label": oks_context.display_label,
+                "ir": ir_dump,
+            }
+
         # ------ Step 3: Interpret the results ------
         t_interp = time.perf_counter()
-        version_label = effective_version or "current"
         logger.info(
             f"[LAYER 5 - Interpretation Started] Generating natural-language summary for {exec_result.count} object(s)..."
         )

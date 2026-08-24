@@ -21,7 +21,7 @@ from unittest.mock import MagicMock, patch
 from oksquery_translator.context import OksContext, OksContextBuilder, compute_fingerprint
 from oksquery_translator.preprocessing import QueryPreprocessor, QueryAnalysis
 from oksquery_translator.schema import OksSchemaProvider, ClassDefinition, AttributeDefinition, RelationshipDefinition
-from oksquery_translator.ast import (
+from oksquery_translator.oks_ast import (
     QueryIR,
     AttributeCompare,
     ObjectIdCompare,

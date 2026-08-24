@@ -27,7 +27,7 @@ from .executor import Executor, ExecutionResult
 from .context import OksContext, compute_fingerprint, OksContextBuilder
 from .preprocessing import QueryPreprocessor, QueryAnalysis
 from .schema import OksSchemaProvider, ClassDefinition, AttributeDefinition, RelationshipDefinition
-from .ast import (
+from .oks_ast import (
     QueryIR,
     Expression,
     AttributeCompare,
@@ -81,4 +81,3 @@ __all__ = [
     "SchemaSearchIndex",
     "ClassSearchDocument",
 ]
-

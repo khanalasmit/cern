@@ -1,5 +1,5 @@
 """
-ast/models.py — Strongly-Typed Pydantic V2 OKSQuery IR Models
+oks_ast/models.py — Strongly-Typed Pydantic V2 OKSQuery IR Models
 =============================================================
 
 Defines the Intermediate Representation (IR) schema for OKS queries.
