@@ -218,6 +218,7 @@ class OksPipeline:
         extracted_run = intent_info.run_number
         partition = intent_info.partition or "all_hosts"
         request_data_file = self.data_file
+        request_release = None
 
         if intent_info.intent == Intent.OKS_HISTORICAL_QUERY:
             if version:
@@ -314,6 +315,7 @@ class OksPipeline:
                     # partition and top-level configuration file.
                     partition = run_info.get("partition") or partition
                     request_data_file = run_info.get("config_name") or request_data_file
+                    request_release = run_info.get("release") or None
 
                 if effective_version is None:
                     archive_revision = (run_info or {}).get("version", "unknown")
@@ -371,6 +373,7 @@ class OksPipeline:
                 run_number=extracted_run,
                 partition=partition,
                 data_file=request_data_file,
+                release=request_release,
             )
 
         # ------ Step 0e: Query Preprocessing (Tokens & Hints) ------
@@ -412,7 +415,8 @@ class OksPipeline:
         # ------ Step 2: Execute the query via preserved Executor ------
         exec_version = oks_context.version_tag or effective_version
         exec_result = self.executor.execute(
-            target_class, oks_query, version=exec_version, data_file=request_data_file
+            target_class, oks_query, version=exec_version, data_file=request_data_file,
+            release=request_release,
         )
 
         if not exec_result.success:
@@ -482,7 +486,8 @@ class OksPipeline:
 
     def _answer_all_objects(self, *, intent_info: IntentResult, oks_context: OksContext,
                             version: Optional[str], run_number: Optional[int],
-                            partition: str, data_file: str) -> Dict:
+                            partition: str, data_file: str,
+                            release: Optional[str] = None) -> Dict:
         """Enumerate every concrete class for an explicit all-objects request."""
         query = '(all (object-id "" !=))'
         class_names = self.schema_retriever.get_class_list()
@@ -491,7 +496,7 @@ class OksPipeline:
         for class_name in class_names:
             result = self.executor.execute(
                 class_name, query, version=oks_context.version_tag or version,
-                data_file=data_file,
+                data_file=data_file, release=release,
             )
             if not result.success:
                 failures.append(class_name)

@@ -722,6 +722,14 @@ class TestInvariant13_ExecutorPreservation:
         params = inspect.signature(Executor.execute).parameters
         assert "target_class" in params or "class_name" in params or len(params) >= 3
 
+    def test_executor_rejects_invalid_historical_release(self):
+        from oksquery_translator.executor import Executor
+        result = Executor().execute(
+            "Computer", '(all (object-id "" !=))', release="not-a-release"
+        )
+        assert not result.success
+        assert "not available in CVMFS" in result.message
+
 
 # ===========================================================================
 # Out-of-Scope Early Exit — Empty Fingerprints

@@ -14,6 +14,7 @@ Supports temporal version access via:
   - TDAQ_DB_VERSION (git hash/date, works on online nodes)
 """
 
+import glob
 import os
 import re
 import shutil
@@ -63,7 +64,8 @@ class Executor:
     def execute(self, target_class: str, query: str,
                 version: str = None,
                 max_objects: int = 200,
-                data_file: Optional[str] = None) -> ExecutionResult:
+                data_file: Optional[str] = None,
+                release: Optional[str] = None) -> ExecutionResult:
         """
         Execute a query and return matching objects.
 
@@ -89,13 +91,31 @@ class Executor:
         # Keep the instance default for ordinary/current queries.
         selected_data_file = data_file or self.data_file
 
+        # A historical run may have been recorded with a different TDAQ
+        # release.  Do not run its data file through the caller's current
+        # release: locate that release's own oks_dump and data repository.
+        oks_dump_path = self._oks_dump_path
+        if release:
+            release_info = self._release_info(release)
+            if release_info is None:
+                return ExecutionResult(
+                    success=False,
+                    message=(
+                        f"Recorded TDAQ release '{release}' is not available in CVMFS. "
+                        "Cannot load this historical configuration."
+                    ),
+                )
+            oks_dump_path, release_data_path = release_info
+        else:
+            release_data_path = None
+
         # Set up temporal environment if needed
-        env_backup = self._set_version_env(version)
+        env_backup = self._set_version_env(version, release_data_path)
         version_label = version or "current"
 
         try:
             # Strategy 1: Python config module
-            if self._config_available:
+            if self._config_available and not release:
                 try:
                     return self._execute_config(
                         target_class, query, max_objects, version_label, selected_data_file
@@ -105,9 +125,10 @@ class Executor:
                     pass
 
             # Strategy 2: oks_dump CLI
-            if self._oks_dump_path:
+            if oks_dump_path:
                 return self._execute_oks_dump(
-                    target_class, query, max_objects, version_label, selected_data_file
+                    target_class, query, max_objects, version_label, selected_data_file,
+                    oks_dump_path,
                 )
 
             return ExecutionResult(
@@ -185,9 +206,9 @@ class Executor:
 
     def _execute_oks_dump(self, target_class: str, query: str,
                           max_objects: int, version_label: str,
-                          data_file: str) -> ExecutionResult:
+                          data_file: str, oks_dump_path: str) -> ExecutionResult:
         """Execute via oks_dump CLI and parse the output."""
-        cmd = [self._oks_dump_path, "-c", target_class, "-q", query,
+        cmd = [oks_dump_path, "-c", target_class, "-q", query,
                data_file]
 
         try:
@@ -266,12 +287,17 @@ class Executor:
     # ------------------------------------------------------------------
 
     @staticmethod
-    def _set_version_env(version: str) -> Dict[str, Optional[str]]:
+    def _set_version_env(version: str,
+                         release_data_path: Optional[str] = None) -> Dict[str, Optional[str]]:
         """
         Set environment variables for temporal access.
         Returns backup of original values for restoration.
         """
         backup = {}
+        if release_data_path:
+            backup["TDAQ_DB_PATH"] = os.environ.get("TDAQ_DB_PATH")
+            os.environ["TDAQ_DB_PATH"] = release_data_path
+
         if not version:
             return backup
 
@@ -291,7 +317,8 @@ class Executor:
                 f"/cvmfs/atlas.cern.ch/repo/sw/tdaq/tdaq/{version}"
                 f"/installed/share/data"
             )
-            backup["TDAQ_DB_PATH"] = os.environ.get("TDAQ_DB_PATH")
+            if "TDAQ_DB_PATH" not in backup:
+                backup["TDAQ_DB_PATH"] = os.environ.get("TDAQ_DB_PATH")
             os.environ["TDAQ_DB_PATH"] = snapshot_path
 
         return backup
@@ -304,6 +331,23 @@ class Executor:
                 os.environ.pop(key, None)
             else:
                 os.environ[key] = value
+
+    @staticmethod
+    def _release_info(release: str) -> Optional[tuple[str, str]]:
+        """Return the release-specific ``oks_dump`` and data directory.
+
+        TDAQ installations put the binary under an architecture-specific
+        directory, while data is shared under ``installed/share/data``.
+        """
+        if not re.fullmatch(r"tdaq-\d{2}-\d{2}-\d{2}", release or ""):
+            return None
+
+        installed = f"/cvmfs/atlas.cern.ch/repo/sw/tdaq/tdaq/{release}/installed"
+        data_dir = os.path.join(installed, "share", "data")
+        candidates = sorted(glob.glob(os.path.join(installed, "*", "bin", "oks_dump")))
+        if not os.path.isdir(data_dir) or not candidates:
+            return None
+        return candidates[0], data_dir
 
     # ------------------------------------------------------------------
     # Helpers

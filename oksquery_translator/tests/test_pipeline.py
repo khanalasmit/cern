@@ -122,6 +122,26 @@ class TestPipelineIntentIntegration:
         mock_pipeline.executor.execute.assert_called_once()
         assert mock_pipeline.executor.execute.call_args[1]["version"] == "tag:r380689@all_hosts"
 
+    def test_historical_query_uses_recorded_release_and_data_file(self, mock_pipeline):
+        mock_pipeline.run_resolver.validate_run_number = MagicMock(return_value=True)
+        mock_pipeline.run_resolver.resolve_version = MagicMock(
+            return_value="hash:c85894a53e0e17911015fbefdfce33679f41e2ff"
+        )
+        mock_pipeline.run_resolver.get_run_info = MagicMock(return_value={
+            "partition": "part_TGC_FillTest",
+            "release": "tdaq-11-02-01",
+            "version": "hash:c85894a53e0e17911015fbefdfce33679f41e2ff",
+            "config_name": "muons/partitions/part_TGC_FillTest.data.xml",
+        })
+
+        res = mock_pipeline.answer("List all Computer objects in run no 468836")
+
+        assert res["status"] == "success"
+        kwargs = mock_pipeline.executor.execute.call_args.kwargs
+        assert kwargs["release"] == "tdaq-11-02-01"
+        assert kwargs["data_file"] == "muons/partitions/part_TGC_FillTest.data.xml"
+
+
     def test_legacy_run_stops_before_translation_or_execution(self, mock_pipeline):
         """Unsupported archive revisions must never fall through to HEAD."""
         mock_pipeline.run_resolver.validate_run_number = MagicMock(return_value=True)
@@ -248,4 +268,3 @@ class TestPipelineIntentIntegration:
         assert res["version_used"] is None
         mock_pipeline.translator.translate.assert_not_called()
         mock_pipeline.executor.execute.assert_not_called()
-
