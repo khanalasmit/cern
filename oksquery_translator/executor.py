@@ -326,31 +326,28 @@ class Executor:
 
         t_start = time.perf_counter()
         try:
-            if setup_script:
+            # 1. Try DIRECT binary execution first (instant, bypasses slow CVMFS setup script & git clone hooks)
+            logger.info(f"Executor: Executing direct oks_dump binary:\n  $ {cmd_display}")
+            result = subprocess.run(
+                cmd, capture_output=True, text=True, timeout=60, env=env
+            )
+
+            # 2. If direct execution failed and a setup script is available, fallback to sourcing setup script
+            if result.returncode not in (0, 5) and setup_script:
+                logger.info(f"Executor: Direct binary execution returned exit {result.returncode}; retrying via setup script...")
                 env_exports = ""
                 if arch_name and arch_name != "installed":
                     env_exports = f"export CMTCONFIG={shlex.quote(arch_name)}; export BINARY_TAG={shlex.quote(arch_name)}; "
                 shell_cmd = f"{env_exports}source {shlex.quote(setup_script)} && {cmd_display}"
-                logger.info(f"Executor: Executing via oks_dump CLI shell script:\n  $ {shell_cmd}")
                 result = subprocess.run(
                     ["bash", "-c", shell_cmd],
-                    capture_output=True, text=True, timeout=120, env=env
-                )
-                if result.returncode not in (0, 5):
-                    logger.warning(f"Executor: Shell setup script execution failed (exit {result.returncode}); retrying direct binary execution...")
-                    result = subprocess.run(
-                        cmd, capture_output=True, text=True, timeout=120, env=env
-                    )
-            else:
-                logger.info(f"Executor: Executing via oks_dump CLI binary:\n  $ {cmd_display}")
-                result = subprocess.run(
-                    cmd, capture_output=True, text=True, timeout=120, env=env
+                    capture_output=True, text=True, timeout=60, env=env
                 )
         except subprocess.TimeoutExpired:
-            logger.error("Executor: oks_dump CLI timed out after 120s.")
+            logger.error("Executor: oks_dump CLI timed out after 60s.")
             return ExecutionResult(
                 success=False,
-                message="oks_dump timed out after 120s.",
+                message="oks_dump timed out after 60s.",
             )
         except OSError as exc:
             logger.error(f"Executor: Unable to start oks_dump: {exc}")
