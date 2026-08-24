@@ -114,39 +114,43 @@ class Executor:
         else:
             release_data_path = None
 
-        # Set up temporal environment if needed
-        env_backup = self._set_version_env(version, release_data_path)
         version_label = version or "current"
 
-        try:
-            # Strategy 1: Python config module
-            if self._config_available and not release:
-                try:
-                    return self._execute_config(
-                        target_class, query, max_objects, version_label, selected_data_file
-                    )
-                except Exception as e:
-                    # Fall through to oks_dump
-                    pass
-
-            # Strategy 2: oks_dump CLI
-            if oks_dump_path:
-                return self._execute_oks_dump(
-                    target_class, query, max_objects, version_label, selected_data_file,
-                    oks_dump_path,
-                )
-
-            return ExecutionResult(
-                success=False,
-                message=(
-                    "No execution backend available. "
-                    "Ensure the TDAQ release is sourced "
-                    "(source .../setup.sh) so that 'oks_dump' and/or "
-                    "the Python 'config' module are available."
-                ),
+        # Strategy 1 (preferred): oks_dump CLI.
+        # oks_dump is always tried first because:
+        #   a) The Python config module triggers a full OKS kernel load which is
+        #      equally slow and provides no additional caching benefit.
+        #   b) oks_dump inherits TDAQ_DB_USER_REPOSITORY from the caller's shell,
+        #      so when a local checkout already exists it completes instantly.
+        #   c) TDAQ_DB_VERSION is injected into the subprocess env dict only,
+        #      never mutated in os.environ, avoiding races and stale state.
+        if oks_dump_path:
+            return self._execute_oks_dump(
+                target_class, query, max_objects, version_label, selected_data_file,
+                oks_dump_path,
+                version=version,
+                release_data_path=release_data_path,
             )
-        finally:
-            self._restore_env(env_backup)
+
+        # Strategy 2 (fallback): Python config module.
+        # Only used when oks_dump is not on PATH.
+        if self._config_available and not release:
+            env_backup = self._set_version_env(version, release_data_path)
+            try:
+                return self._execute_config(
+                    target_class, query, max_objects, version_label, selected_data_file
+                )
+            finally:
+                self._restore_env(env_backup)
+
+        return ExecutionResult(
+            success=False,
+            message=(
+                "No execution backend available. "
+                "Ensure the TDAQ release is sourced "
+                "(source .../setup.sh) so that 'oks_dump' is on PATH."
+            ),
+        )
 
     # ------------------------------------------------------------------
     # Config module execution
@@ -252,12 +256,43 @@ class Executor:
 
     def _execute_oks_dump(self, target_class: str, query: str,
                           max_objects: int, version_label: str,
-                          data_file: str, oks_dump_path: str) -> ExecutionResult:
+                          data_file: str, oks_dump_path: str,
+                          version: str = None,
+                          release_data_path: str = None) -> ExecutionResult:
         """Execute via oks_dump CLI and parse the output."""
         import shlex
 
-        # Prepare environment with enriched LD_LIBRARY_PATH and architecture specifiers
+        # Prepare environment — start from caller's full environment so that
+        # TDAQ_DB_USER_REPOSITORY, TDAQ_DB_REPOSITORY etc. are inherited.
+        # Then inject version selectors directly into the dict (never os.environ).
         env = os.environ.copy()
+
+        # Inject version selector into subprocess env directly (not os.environ)
+        if release_data_path:
+            env["TDAQ_DB_PATH"] = release_data_path
+            logger.info(f"Executor: Setting TDAQ_DB_PATH={release_data_path!r} in subprocess env")
+
+        if version:
+            if version.startswith(("hash:", "date:", "tag:")):
+                env["TDAQ_DB_VERSION"] = version
+                logger.info(f"Executor: Setting TDAQ_DB_VERSION={version!r} in subprocess env")
+            elif version.startswith("run:") or (version.startswith("r") and version[1:].isdigit()):
+                run_num = version.split(":")[-1].lstrip("r")
+                tag_name = f"tag:r{run_num}@ATLAS"
+                env["TDAQ_DB_VERSION"] = tag_name
+                logger.info(f"Executor: Setting TDAQ_DB_VERSION={tag_name!r} in subprocess env (from {version!r})")
+
+        # Log whether TDAQ_DB_USER_REPOSITORY is present (instant checkout path)
+        user_repo = env.get("TDAQ_DB_USER_REPOSITORY", "")
+        if user_repo:
+            logger.info(f"Executor: TDAQ_DB_USER_REPOSITORY={user_repo!r} — will use existing checkout (fast path)")
+        elif env.get("TDAQ_DB_VERSION"):
+            logger.warning(
+                "Executor: TDAQ_DB_USER_REPOSITORY is NOT set — oks_dump will run oks-checkout.sh "
+                "to Git-clone the OKS repository for this version. This can take minutes. "
+                "For faster execution, export TDAQ_DB_USER_REPOSITORY pointing to a local checkout."
+            )
+
         extra_ld_paths = self._get_release_ld_paths(oks_dump_path)
         if extra_ld_paths:
             existing_ld = env.get("LD_LIBRARY_PATH", "")
@@ -299,23 +334,23 @@ class Executor:
                 logger.info(f"Executor: Executing via oks_dump CLI shell script:\n  $ {shell_cmd}")
                 result = subprocess.run(
                     ["bash", "-c", shell_cmd],
-                    capture_output=True, text=True, timeout=60, env=env
+                    capture_output=True, text=True, timeout=120, env=env
                 )
                 if result.returncode not in (0, 5):
                     logger.warning(f"Executor: Shell setup script execution failed (exit {result.returncode}); retrying direct binary execution...")
                     result = subprocess.run(
-                        cmd, capture_output=True, text=True, timeout=60, env=env
+                        cmd, capture_output=True, text=True, timeout=120, env=env
                     )
             else:
                 logger.info(f"Executor: Executing via oks_dump CLI binary:\n  $ {cmd_display}")
                 result = subprocess.run(
-                    cmd, capture_output=True, text=True, timeout=60, env=env
+                    cmd, capture_output=True, text=True, timeout=120, env=env
                 )
         except subprocess.TimeoutExpired:
-            logger.error("Executor: oks_dump CLI timed out after 60s.")
+            logger.error("Executor: oks_dump CLI timed out after 120s.")
             return ExecutionResult(
                 success=False,
-                message="oks_dump timed out after 60s.",
+                message="oks_dump timed out after 120s.",
             )
         except OSError as exc:
             logger.error(f"Executor: Unable to start oks_dump: {exc}")
