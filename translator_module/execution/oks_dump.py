@@ -19,6 +19,24 @@ class OksDumpResult:
     stdout: str
     stderr: str
     returncode: int
+    repository: str = ""
+    schema_paths: tuple[str, ...] = ()
+    data_paths: tuple[str, ...] = ()
+
+    def to_dict(self) -> dict:
+        """Return a JSON-safe result without interpreting native output."""
+
+        return {
+            "revision": self.revision,
+            "repository": self.repository,
+            "target_class": self.target_class,
+            "command": list(self.command),
+            "stdout": self.stdout,
+            "stderr": self.stderr,
+            "returncode": self.returncode,
+            "schema_paths": list(self.schema_paths),
+            "data_paths": list(self.data_paths),
+        }
 
 
 class OksDumpExecutor:
@@ -91,6 +109,9 @@ class OksDumpExecutor:
             stdout=stdout,
             stderr=stderr,
             returncode=completed.returncode,
+            repository=str(snapshot.revision.repository),
+            schema_paths=tuple(snapshot.schema_paths),
+            data_paths=tuple(snapshot.data_paths),
         )
         if completed.returncode != 0:
             meaning = self.EXIT_CODE_MEANINGS.get(

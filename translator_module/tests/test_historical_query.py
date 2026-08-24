@@ -350,6 +350,11 @@ class HistoricalSnapshotTests(unittest.TestCase):
 
         self.assertEqual(result.stdout, "app-1\n")
         self.assertEqual(result.revision, "a" * 40)
+        self.assertEqual(result.repository, str(self.root.resolve()))
+        self.assertEqual(result.schema_paths, snapshot.schema_paths)
+        self.assertEqual(result.data_paths, snapshot.data_paths)
+        self.assertEqual(result.to_dict()["command"], list(result.command))
+        self.assertEqual(result.to_dict()["stdout"], "app-1\n")
         command = run.call_args.args[0]
         self.assertEqual(
             command[:5],

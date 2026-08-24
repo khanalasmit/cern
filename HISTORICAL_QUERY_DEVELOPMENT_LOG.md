@@ -861,3 +861,17 @@ Verification after this slice: CLI tests passed 10/10; the full suite passed 68 
 - CLI tests: 11 passed.
 - Full suite: 69 passed, 2 skipped because `rank_bm25`, `sentence_transformers`, and `faiss` are not installed in the local environment. Installing all three may pull heavyweight ML dependencies, so the RAG tests remain explicitly skipped rather than changing the project environment implicitly.
 - The native `oks_dump` runtime is not installed locally; mocked adapter coverage remains the safe verification path.
+
+## Structured native execution result envelope — 2026-08-24
+
+### Implementation
+
+- Extended `OksDumpResult` with repository, schema-path, and data-path provenance.
+- Added `OksDumpResult.to_dict()` for JSON-safe consumers while preserving native `stdout` and `stderr` unchanged.
+- Kept output interpretation out of the adapter because `oks_dump` emits deployment-specific human-readable text and the repository has no stable row-format contract.
+
+### Verification
+
+- Focused historical suite: 43 tests passed, 2 RAG dependency-based tests skipped.
+- Full suite: 69 tests passed, 2 RAG dependency-based tests skipped.
+- Compilation passed for the execution adapter and historical tests.
