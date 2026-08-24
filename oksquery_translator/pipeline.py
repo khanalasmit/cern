@@ -463,6 +463,9 @@ class OksPipeline:
         # ------ Step 3: Interpret the results ------
         t_interp = time.perf_counter()
         version_label = effective_version or "current"
+        logger.info(
+            f"[LAYER 5 - Interpretation Started] Generating natural-language summary for {exec_result.count} object(s)..."
+        )
         interpretation = self.interpreter.interpret(
             question=question,
             target_class=target_class,
@@ -472,6 +475,9 @@ class OksPipeline:
             version=version_label,
         )
         t_interp_elapsed = time.perf_counter() - t_interp
+        logger.info(
+            f"[LAYER 5 - Interpretation Complete] ({t_interp_elapsed:.3f}s)"
+        )
 
         if (intent_info.intent == Intent.OKS_HISTORICAL_QUERY or effective_version not in (None, "current")) and extracted_run is not None:
             header = f"Run Number: {extracted_run}\nPartition: {partition}\n\n"

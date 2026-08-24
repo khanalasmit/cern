@@ -96,13 +96,18 @@ class Executor:
         # Keep the instance default for ordinary/current queries.
         selected_data_file = data_file or self.data_file
 
-        # A historical run may have been recorded with a different TDAQ
-        # release.  Do not run its data file through the caller's current
-        # release: locate that release's own oks_dump and data repository.
+        # Locate historical release data directory if provided
+        release_data_path = None
         oks_dump_path = self._oks_dump_path
+
         if release:
             release_info = self._release_info(release)
-            if release_info is None:
+            if release_info is not None:
+                rel_dump_path, release_data_path = release_info
+                # Prefer host's active oks_dump on PATH if available; otherwise use release binary
+                if not oks_dump_path:
+                    oks_dump_path = rel_dump_path
+            elif not oks_dump_path:
                 return ExecutionResult(
                     success=False,
                     message=(
@@ -110,20 +115,16 @@ class Executor:
                         "Cannot load this historical configuration."
                     ),
                 )
-            oks_dump_path, release_data_path = release_info
-        else:
-            release_data_path = None
 
         version_label = version or "current"
 
+        # Resolve selected_data_file against release_data_path if not found locally
+        if release_data_path and not os.path.exists(selected_data_file):
+            candidate = os.path.join(release_data_path, selected_data_file)
+            if os.path.exists(candidate):
+                selected_data_file = candidate
+
         # Strategy 1 (preferred): oks_dump CLI.
-        # oks_dump is always tried first because:
-        #   a) The Python config module triggers a full OKS kernel load which is
-        #      equally slow and provides no additional caching benefit.
-        #   b) oks_dump inherits TDAQ_DB_USER_REPOSITORY from the caller's shell,
-        #      so when a local checkout already exists it completes instantly.
-        #   c) TDAQ_DB_VERSION is injected into the subprocess env dict only,
-        #      never mutated in os.environ, avoiding races and stale state.
         if oks_dump_path:
             return self._execute_oks_dump(
                 target_class, query, max_objects, version_label, selected_data_file,
@@ -133,7 +134,6 @@ class Executor:
             )
 
         # Strategy 2 (fallback): Python config module.
-        # Only used when oks_dump is not on PATH.
         if self._config_available and not release:
             env_backup = self._set_version_env(version, release_data_path)
             try:
@@ -142,6 +142,7 @@ class Executor:
                 )
             finally:
                 self._restore_env(env_backup)
+
 
         return ExecutionResult(
             success=False,
