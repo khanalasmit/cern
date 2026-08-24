@@ -730,6 +730,20 @@ class TestInvariant13_ExecutorPreservation:
         assert not result.success
         assert "not available in CVMFS" in result.message
 
+    def test_release_binary_prefers_host_architecture(self, monkeypatch):
+        from oksquery_translator.executor import Executor
+        import oksquery_translator.executor as executor_module
+
+        monkeypatch.setattr(executor_module.os.path, "isdir", lambda _: True)
+        monkeypatch.setattr(executor_module.glob, "glob", lambda _: [
+            "/cvmfs/example/installed/aarch64-el9-gcc13-opt/bin/oks_dump",
+            "/cvmfs/example/installed/x86_64-el9-gcc13-opt/bin/oks_dump",
+        ])
+        monkeypatch.setattr(executor_module.platform, "machine", lambda: "x86_64")
+
+        binary, _ = Executor._release_info("tdaq-11-02-01")
+        assert "/x86_64-" in binary
+
 
 # ===========================================================================
 # Out-of-Scope Early Exit — Empty Fingerprints

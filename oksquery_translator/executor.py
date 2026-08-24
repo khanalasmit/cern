@@ -16,6 +16,7 @@ Supports temporal version access via:
 
 import glob
 import os
+import platform
 import re
 import shutil
 import subprocess
@@ -220,6 +221,11 @@ class Executor:
                 success=False,
                 message="oks_dump timed out after 60s.",
             )
+        except OSError as exc:
+            return ExecutionResult(
+                success=False,
+                message=f"Unable to start oks_dump '{oks_dump_path}': {exc}",
+            )
 
         if result.returncode not in (0, 5):
             return ExecutionResult(
@@ -347,7 +353,14 @@ class Executor:
         candidates = sorted(glob.glob(os.path.join(installed, "*", "bin", "oks_dump")))
         if not os.path.isdir(data_dir) or not candidates:
             return None
-        return candidates[0], data_dir
+
+        host_arch = platform.machine().lower()
+        # CVMFS releases can contain several architectures.  A lexical sort
+        # would select aarch64 before x86_64 and produces Exec format error on
+        # lxplus x86_64 nodes.
+        matching = [path for path in candidates
+                    if os.path.basename(os.path.dirname(os.path.dirname(path))).lower().startswith(host_arch + "-")]
+        return (matching[0] if matching else candidates[0]), data_dir
 
     # ------------------------------------------------------------------
     # Helpers
