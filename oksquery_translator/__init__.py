@@ -23,7 +23,27 @@ Usage::
 
 from .pipeline import OksPipeline, answer
 from .intent import Intent, IntentResult, IntentClassifier, extract_run_and_partition, RunResolver
+from .executor import Executor, ExecutionResult
 from .context import OksContext, compute_fingerprint, OksContextBuilder
+from .preprocessing import QueryPreprocessor, QueryAnalysis
+from .schema import OksSchemaProvider, ClassDefinition, AttributeDefinition, RelationshipDefinition
+from .ast import (
+    QueryIR,
+    Expression,
+    AttributeCompare,
+    ObjectIdCompare,
+    RelationshipCompare,
+    AndExpression,
+    OrExpression,
+    NotExpression,
+    ValidationResult,
+    normalize_ir,
+    NormalizerError,
+    OksCompiler,
+    serialize_ir_to_oks,
+    ASTValidator,
+)
+from .retrieval import SchemaSearchIndex, ClassSearchDocument
 
 __all__ = [
     "OksPipeline",
@@ -33,8 +53,32 @@ __all__ = [
     "IntentClassifier",
     "extract_run_and_partition",
     "RunResolver",
+    "Executor",
+    "ExecutionResult",
     "OksContext",
     "compute_fingerprint",
     "OksContextBuilder",
+    "QueryPreprocessor",
+    "QueryAnalysis",
+    "OksSchemaProvider",
+    "ClassDefinition",
+    "AttributeDefinition",
+    "RelationshipDefinition",
+    "QueryIR",
+    "Expression",
+    "AttributeCompare",
+    "ObjectIdCompare",
+    "RelationshipCompare",
+    "AndExpression",
+    "OrExpression",
+    "NotExpression",
+    "ValidationResult",
+    "normalize_ir",
+    "NormalizerError",
+    "OksCompiler",
+    "serialize_ir_to_oks",
+    "ASTValidator",
+    "SchemaSearchIndex",
+    "ClassSearchDocument",
 ]
 

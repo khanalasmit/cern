@@ -205,17 +205,85 @@ class Executor:
     # oks_dump CLI execution
     # ------------------------------------------------------------------
 
+    @staticmethod
+    def _get_release_ld_paths(oks_dump_path: str) -> List[str]:
+        """
+        Discover library paths required by an oks_dump binary in CVMFS,
+        including architecture-specific lib directories and OpenSSL 1.0 (libssl.so.10)
+        fallback locations in CVMFS.
+        """
+        ld_paths = []
+        if oks_dump_path:
+            bin_dir = os.path.dirname(oks_dump_path)
+            arch_dir = os.path.dirname(bin_dir)
+            arch_lib = os.path.join(arch_dir, "lib")
+            if os.path.isdir(arch_lib):
+                ld_paths.append(arch_lib)
+
+        # Search CVMFS for OpenSSL 1.0 (libssl.so.10) directories
+        cvmfs_ssl_patterns = [
+            "/cvmfs/sft.cern.ch/lcg/external/OpenSSL/*/x86_64-*/lib",
+            "/cvmfs/sft.cern.ch/lcg/releases/LCG_*/OpenSSL/*/x86_64-*/lib",
+            "/cvmfs/sft.cern.ch/lcg/contrib/openssl/*/lib",
+            "/cvmfs/sft.cern.ch/lcg/views/*/x86_64-*/lib",
+            "/cvmfs/atlas.cern.ch/repo/sw/software/*/lib",
+            "/cvmfs/atlas.cern.ch/repo/sw/tdaq/tdaq/*/installed/x86_64-*/lib",
+        ]
+        for pattern in cvmfs_ssl_patterns:
+            for p in glob.glob(pattern):
+                if os.path.isdir(p) and (
+                    os.path.exists(os.path.join(p, "libssl.so.10")) or
+                    os.path.exists(os.path.join(p, "libssl.so.1.0.0"))
+                ):
+                    if p not in ld_paths:
+                        ld_paths.append(p)
+                        break
+
+        return ld_paths
+
     def _execute_oks_dump(self, target_class: str, query: str,
                           max_objects: int, version_label: str,
                           data_file: str, oks_dump_path: str) -> ExecutionResult:
         """Execute via oks_dump CLI and parse the output."""
-        cmd = [oks_dump_path, "-c", target_class, "-q", query,
-               data_file]
+        import shlex
+
+        # Prepare environment with enriched LD_LIBRARY_PATH
+        env = os.environ.copy()
+        extra_ld_paths = self._get_release_ld_paths(oks_dump_path)
+        if extra_ld_paths:
+            existing_ld = env.get("LD_LIBRARY_PATH", "")
+            all_ld_paths = extra_ld_paths + ([existing_ld] if existing_ld else [])
+            env["LD_LIBRARY_PATH"] = ":".join(all_ld_paths)
+
+        # Check if a setup script exists for the release
+        bin_dir = os.path.dirname(oks_dump_path)
+        arch_dir = os.path.dirname(bin_dir)
+        installed_dir = os.path.dirname(arch_dir)
+
+        setup_script = None
+        for candidate in [
+            os.path.join(arch_dir, "setup.sh"),
+            os.path.join(installed_dir, "setup.sh"),
+            os.path.join(os.path.dirname(installed_dir), "setup.sh"),
+        ]:
+            if os.path.isfile(candidate):
+                setup_script = candidate
+                break
+
+        cmd = [oks_dump_path, "-c", target_class, "-q", query, data_file]
 
         try:
-            result = subprocess.run(
-                cmd, capture_output=True, text=True, timeout=60
-            )
+            if setup_script:
+                cmd_str = " ".join(shlex.quote(arg) for arg in cmd)
+                shell_cmd = f"source {shlex.quote(setup_script)} && {cmd_str}"
+                result = subprocess.run(
+                    ["bash", "-c", shell_cmd],
+                    capture_output=True, text=True, timeout=60, env=env
+                )
+            else:
+                result = subprocess.run(
+                    cmd, capture_output=True, text=True, timeout=60, env=env
+                )
         except subprocess.TimeoutExpired:
             return ExecutionResult(
                 success=False,
@@ -242,6 +310,7 @@ class Executor:
             count=len(objects),
             version_used=version_label,
         )
+
 
     @staticmethod
     def _parse_oks_dump_output(output: str, target_class: str) -> List[Dict]:
