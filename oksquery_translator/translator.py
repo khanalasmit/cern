@@ -1,34 +1,53 @@
 """
-translator.py — LLM Call #1 + Validate/Repair Loop
-====================================================
+translator.py — LLM Translation with Structured AST & Context-Bound Repair Loop
+================================================================================
 
-Orchestrates:
-  1. Prompt construction (via prompt_builder)
-  2. LLM call to generate CLASS + OksQuery string
-  3. Response parsing
-  4. Two-layer validation (via validator)
-  5. Repair loop: feed error back to LLM and retry on failure
+Translates natural language questions into validated OKSQuery strings via a
+robust, structured JSON Intermediate Representation (IR) pipeline:
+
+  NL Question → PromptBuilder (with OksContext metadata) → LLM Call
+  → Extract JSON → normalize_ir → QueryIR (Pydantic V2)
+  → ASTValidator (Semantic & Case Check against OksSchemaProvider)
+  → OksCompiler (Deterministic AST → OKSQuery S-expression)
+  → Repair Loop on any validation failure
 """
+from __future__ import annotations
 
+import json
+import logging
 import os
 import re
-from typing import Dict, Optional, Tuple
+import time
+from typing import Any, Dict, Optional, Tuple
 
 from openai import OpenAI, APIStatusError, APIConnectionError
+from pydantic import ValidationError
 
+from .ast import (
+    ASTValidator,
+    NormalizerError,
+    OksCompiler,
+    QueryIR,
+    SemanticValidationError,
+    ValidationResult,
+    normalize_ir,
+)
+from .context import OksContext, OksContextBuilder
 from .prompt_builder import PromptBuilder
+from .schema import OksSchemaProvider
 from .schema_retrieval import SchemaRetriever
-from .validator import validate_query, syntax_precheck, align_query_to_schema
+
+logger = logging.getLogger("oksquery_translator.translator")
 
 
 class Translator:
     """
-    Manages LLM Call #1 (NL → OksQuery) with a validate/repair retry loop.
+    Manages LLM Call #1 (NL → JSON IR → AST → OksQuery) with a context-bound repair loop.
 
     Usage::
 
         translator = Translator(prompt_builder, data_file="daq/segments/setup.data.xml")
-        result = translator.translate("Which executables have InitTimeout > 2?")
+        result = translator.translate("Which executables have InitTimeout > 2?", oks_context=ctx)
         if result["status"] == "success":
             print(result["oks_query"])
     """
@@ -46,11 +65,11 @@ class Translator:
         prompt_builder : PromptBuilder
             Builds system + user prompts.
         schema_retriever : SchemaRetriever, optional
-            Used to generate schema hints in repair prompts.
+            Used for schema context retrieval.
         data_file : str
-            OKS data file path (for oks_dump validation).
+            OKS data file path.
         llm_api_key, llm_base_url, llm_model : str, optional
-            LLM provider configuration.  Falls back to environment variables.
+            LLM provider configuration.
         max_retries : int
             Maximum number of repair attempts after the first try.
         """
@@ -58,16 +77,28 @@ class Translator:
         self.schema_retriever = schema_retriever
         self.data_file = data_file
         self.max_retries = max_retries
+        self.compiler = OksCompiler()
 
         self.llm_model = llm_model or os.environ.get("LLM_MODEL", "mimo-v2.5-pro")
         api_key = llm_api_key or os.environ.get("LLM_API_KEY", "dummy")
-        base_url = llm_base_url or os.environ.get("LLM_BASE_URL",
-                                                    "https://api.xiaomimimo.com/v1")
+        base_url = llm_base_url or os.environ.get("LLM_BASE_URL", "https://api.xiaomimimo.com/v1")
         self.client = OpenAI(api_key=api_key, base_url=base_url)
 
-    def translate(self, question: str) -> Dict:
+    def translate(self, question: str,
+                  oks_context: Optional[OksContext] = None,
+                  retrieval_query: Optional[str] = None,
+                  data_file: Optional[str] = None) -> Dict[str, Any]:
         """
-        Translate a natural-language question into a validated OksQuery.
+        Translate a natural-language question into a validated OksQuery via the AST pipeline.
+
+        Parameters
+        ----------
+        question : str
+            User query.
+        oks_context : OksContext, optional
+            Bound context object for this request.
+        retrieval_query : str, optional
+            Enriched token query for schema retrieval.
 
         Returns
         -------
@@ -75,11 +106,34 @@ class Translator:
             status : "success" | "error"
             target_class : str (on success)
             oks_query : str (on success)
+            ir : dict (on success)
             attempts : int
             message : str (on error)
+            explanation : str (optional)
         """
-        # Build the initial prompt
-        system_prompt, user_prompt = self.prompt_builder.build(question)
+        # Resolve effective data file (caller may supply a run-specific path)
+        effective_data_file = data_file or self.data_file
+
+        # Ensure an OksContext exists for this translation call
+        if oks_context is None:
+            schema_dir = getattr(self.schema_retriever, "schema_dir", None) if self.schema_retriever else None
+            builder = OksContextBuilder(data_file=effective_data_file, schema_dir=schema_dir)
+            oks_context = builder.build()
+
+        schema_dir = getattr(self.schema_retriever, "schema_dir", None) if self.schema_retriever else None
+        schema_provider = OksSchemaProvider(
+            oks_context=oks_context,
+            data_file=effective_data_file,
+            schema_dir=schema_dir,
+        )
+        validator = ASTValidator(schema_provider)
+
+        # 1. Build initial prompt
+        system_prompt, user_prompt = self.prompt_builder.build(
+            question,
+            oks_context=oks_context,
+            retrieval_query=retrieval_query or question,
+        )
 
         messages = [
             {"role": "system", "content": system_prompt},
@@ -87,10 +141,16 @@ class Translator:
         ]
 
         last_error = None
+
+        # 2. Generation & Repair Loop
         for attempt in range(1 + self.max_retries):
-            # --- LLM Call ---
+            t_start = time.perf_counter()
+            logger.info(f"Translator: Calling LLM attempt {attempt + 1}/{1 + self.max_retries} (model={self.llm_model})...")
             llm_result = self._call_llm(messages)
+            llm_elapsed = time.perf_counter() - t_start
+
             if llm_result.get("error"):
+                logger.error(f"Translator: LLM call error: {llm_result['error']}")
                 return {
                     "status": "error",
                     "message": llm_result["error"],
@@ -98,90 +158,118 @@ class Translator:
                 }
 
             raw_response = llm_result["content"]
+            logger.info(f"Translator: LLM response received in {llm_elapsed:.2f}s:\n{raw_response}")
+            clean_json_str = self._strip_markdown_fences(raw_response)
 
-            # --- Parse response ---
-            target_class, oks_query = self._parse_response(raw_response)
+            try:
+                # Step A: Parse raw JSON
+                parsed_dict = self._extract_json_dict(clean_json_str)
 
-            if not target_class or not oks_query:
-                last_error = (
-                    f"Could not parse CLASS/QUERY from LLM response. "
-                    f"Raw output: {raw_response[:300]}"
-                )
-                if attempt < self.max_retries:
-                    repair_msg = (
-                        f"Your response could not be parsed. "
-                        f"Raw output: {raw_response[:300]}\n\n"
-                        f"Please output EXACTLY two lines:\n"
-                        f"CLASS: <ClassName>\n"
-                        f"QUERY: <OksQuery string>\n"
-                        f"Nothing else."
-                    )
-                    messages.append({"role": "assistant", "content": raw_response})
-                    messages.append({"role": "user", "content": repair_msg})
-                    continue
-                break
+                # Step B: Normalize IR
+                normalized_dict = normalize_ir(parsed_dict)
+                logger.info(f"Translator: AST Normalization successful: target_class={normalized_dict.get('target_class')!r}")
 
-            # --- Auto-align schema casing (e.g. Subdetector -> SubDetector) ---
-            if self.schema_retriever:
-                target_class, oks_query = align_query_to_schema(
-                    target_class, oks_query, self.schema_retriever
+                # Step C: Structural Validation (Pydantic V2)
+                ir = QueryIR.model_validate(normalized_dict)
+
+                # Step D: Semantic Validation (Context-Bound)
+                val_result = validator.validate(ir, oks_context)
+                if not val_result.valid:
+                    raise SemanticValidationError(val_result.message)
+                logger.info("Translator: Semantic Validation passed successfully.")
+
+                # Step E: Deterministic Compilation
+                oks_query = self.compiler.compile(ir, oks_context)
+                logger.info(
+                    f"Translator: Compilation complete (attempt {attempt + 1}) → "
+                    f"target_class={ir.target_class!r}, oks_query={oks_query!r}"
                 )
 
-            # --- Validate ---
-            val_result = validate_query(target_class, oks_query, self.data_file)
-
-            if val_result.valid:
                 return {
                     "status": "success",
-                    "target_class": target_class,
+                    "target_class": ir.target_class,
                     "oks_query": oks_query,
+                    "ir": ir.model_dump(),
                     "attempts": attempt + 1,
+                    "explanation": ir.explanation or "",
                 }
 
-            # --- Validation failed — prepare repair ---
-            last_error = val_result.message
 
-            if attempt < self.max_retries:
-                # Always build a schema hint for the repair prompt.
-                # The schema shows the LLM the EXACT attribute and
-                # relationship names so it can correct itself.
-                schema_hint = ""
-                if self.schema_retriever:
-                    info = self.schema_retriever.get_class_info(target_class)
-                    if info:
-                        schema_hint = SchemaRetriever._format_class_info(info)
+            except (json.JSONDecodeError, NormalizerError, ValidationError, SemanticValidationError, ValueError) as err:
+                last_error = str(err)
+                logger.warning(f"Translation attempt {attempt + 1} failed: {last_error}")
 
-                    # If the error mentions a specific class (e.g. inside
-                    # a relationship), fetch that class's schema too.
-                    import re
-                    err_class = re.search(
-                        r'in class "([^"]+)"', val_result.message
+                if attempt < self.max_retries:
+                    # Construct targeted repair feedback with schema context
+                    repair_feedback = self._build_repair_message(
+                        error_message=last_error,
+                        attempted_output=raw_response,
+                        oks_context=oks_context,
+                        schema_provider=schema_provider,
                     )
-                    if err_class:
-                        mentioned = err_class.group(1)
-                        if mentioned != target_class:
-                            extra = self.schema_retriever.get_class_info(mentioned)
-                            if extra:
-                                schema_hint += "\n" + SchemaRetriever._format_class_info(extra)
-
-                repair_msg = self.prompt_builder.build_repair_prompt(
-                    question, target_class, oks_query,
-                    val_result.message, schema_hint
-                )
-                messages.append({"role": "assistant",
-                                 "content": f"CLASS: {target_class}\nQUERY: {oks_query}"})
-                messages.append({"role": "user", "content": repair_msg})
-            # else: fall through to error return
+                    messages.append({"role": "assistant", "content": raw_response})
+                    messages.append({"role": "user", "content": repair_feedback})
+                    continue
 
         return {
             "status": "error",
-            "message": (f"Failed after {1 + self.max_retries} attempts. "
-                        f"Last error: {last_error}"),
+            "message": f"Failed after {1 + self.max_retries} attempts. Last error: {last_error}",
             "attempts": 1 + self.max_retries,
         }
 
     # ------------------------------------------------------------------
-    # LLM interaction
+    # Repair prompt construction
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def _build_repair_message(error_message: str, attempted_output: str,
+                              oks_context: OksContext,
+                              schema_provider: OksSchemaProvider) -> str:
+        """Construct targeted repair instructions for the LLM."""
+        lines = [
+            "YOUR PREVIOUS QUERY FAILED VALIDATION. You must fix it.",
+            f"Error diagnostic:\n  {error_message}",
+            "",
+            f"Schema Fingerprint: {oks_context.schema_fingerprint}",
+            "Requirements for your correction:",
+            "1. Output ONLY valid JSON matching the QueryIR schema.",
+            "2. Do NOT use markdown code fences (no ```json blocks).",
+            "3. Ensure all class, attribute, and relationship names match the exact case in the schema.",
+            "4. Ensure nested expressions inside relationships compare attributes on the relationship's TARGET class.",
+        ]
+        return "\n".join(lines)
+
+    # ------------------------------------------------------------------
+    # String & JSON cleanup utilities
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def _strip_markdown_fences(text: str) -> str:
+        """Remove markdown code fences that LLMs wrap around responses."""
+        t = text.strip()
+        if t.startswith("```json"):
+            t = t[7:]
+        elif t.startswith("```"):
+            t = t[3:]
+        if t.endswith("```"):
+            t = t[:-3]
+        return t.strip()
+
+    @staticmethod
+    def _extract_json_dict(text: str) -> dict:
+        """Extract and parse the outer JSON object from text."""
+        t = text.strip()
+        try:
+            return json.loads(t)
+        except json.JSONDecodeError:
+            # Attempt to find outermost { ... }
+            m = re.search(r"\{.*\}", t, re.DOTALL)
+            if m:
+                return json.loads(m.group(0))
+            raise
+
+    # ------------------------------------------------------------------
+    # LLM API Client Interaction
     # ------------------------------------------------------------------
 
     def _call_llm(self, messages: list) -> dict:
@@ -194,7 +282,7 @@ class Translator:
                 messages=messages,
                 temperature=0.0,
             )
-            return {"content": response.choices[0].message.content}
+            return {"content": response.choices[0].message.content or ""}
         except APIStatusError as e:
             code = e.status_code
             if code == 404:
@@ -218,24 +306,15 @@ class Translator:
             return {"error": f"Unexpected LLM error: {e}"}
 
     # ------------------------------------------------------------------
-    # Response parsing
+    # Legacy parser helper (preserved for unit tests)
     # ------------------------------------------------------------------
 
     @staticmethod
     def _parse_response(text: str) -> Tuple[Optional[str], Optional[str]]:
         """
-        Extract CLASS and QUERY from the LLM's response.
-
-        Expected format:
-            CLASS: <ClassName>
-            QUERY: <OksQuery string>
-
-        Also handles common LLM quirks:
-          - Extra whitespace / blank lines
-          - Markdown code fences wrapping the output
-          - Slight variations in labelling
+        Extract CLASS and QUERY from legacy two-line format.
+        Preserved for test compatibility.
         """
-        # Strip markdown fences if present
         text = text.strip()
         if text.startswith("```"):
             text = re.sub(r'^```\w*\n?', '', text)
@@ -247,13 +326,11 @@ class Translator:
 
         for line in text.splitlines():
             line = line.strip()
-            # Match CLASS: or Class: or class:
             m = re.match(r'^(?:CLASS|Class|class)\s*:\s*(.+)', line)
             if m:
                 target_class = m.group(1).strip().strip('"').strip("'")
                 continue
 
-            # Match QUERY: or Query: or query:
             m = re.match(r'^(?:QUERY|Query|query)\s*:\s*(.+)', line)
             if m:
                 query = m.group(1).strip()

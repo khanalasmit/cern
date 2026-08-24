@@ -104,7 +104,8 @@ class TestPipelineIntentIntegration:
         assert res["run_number"] is None
         assert res["version_used"] == "current"
         assert "Configuration: Current / Default (HEAD)" in res["answer"]
-        mock_pipeline.translator.translate.assert_called_once_with("List all computers.")
+        mock_pipeline.translator.translate.assert_called_once()
+        assert mock_pipeline.translator.translate.call_args[0][0] == "List all computers."
         mock_pipeline.executor.execute.assert_called_once()
         assert mock_pipeline.executor.execute.call_args[1]["version"] is None
 
@@ -120,6 +121,60 @@ class TestPipelineIntentIntegration:
         mock_pipeline.translator.translate.assert_called_once()
         mock_pipeline.executor.execute.assert_called_once()
         assert mock_pipeline.executor.execute.call_args[1]["version"] == "tag:r380689@all_hosts"
+
+    def test_historical_query_uses_recorded_release_and_data_file(self, mock_pipeline):
+        mock_pipeline.run_resolver.validate_run_number = MagicMock(return_value=True)
+        mock_pipeline.run_resolver.resolve_version = MagicMock(
+            return_value="hash:c85894a53e0e17911015fbefdfce33679f41e2ff"
+        )
+        mock_pipeline.run_resolver.get_run_info = MagicMock(return_value={
+            "partition": "part_TGC_FillTest",
+            "release": "tdaq-11-02-01",
+            "version": "hash:c85894a53e0e17911015fbefdfce33679f41e2ff",
+            "config_name": "muons/partitions/part_TGC_FillTest.data.xml",
+        })
+
+        res = mock_pipeline.answer("List all Computer objects in run no 468836")
+
+        assert res["status"] == "success"
+        kwargs = mock_pipeline.executor.execute.call_args.kwargs
+        assert kwargs["release"] == "tdaq-11-02-01"
+        assert kwargs["data_file"] == "muons/partitions/part_TGC_FillTest.data.xml"
+
+
+    def test_legacy_run_stops_before_translation_or_execution(self, mock_pipeline):
+        """Unsupported archive revisions must never fall through to HEAD."""
+        mock_pipeline.run_resolver.validate_run_number = MagicMock(return_value=True)
+        mock_pipeline.run_resolver.resolve_version = MagicMock(return_value=None)
+        mock_pipeline.run_resolver.get_run_info = MagicMock(return_value={
+            "version": "46.97", "partition": "all_hosts",
+            "config_name": "daq/segments/setup.data.xml",
+        })
+
+        res = mock_pipeline.answer("give me all objects of run no 45567")
+
+        assert res["status"] == "error"
+        assert "legacy archive revision '46.97'" in res["answer"]
+        mock_pipeline.translator.translate.assert_not_called()
+        mock_pipeline.executor.execute.assert_not_called()
+
+    def test_all_objects_enumerates_classes_without_llm_class_guess(self, mock_pipeline):
+        mock_pipeline.schema_retriever.get_class_list = MagicMock(
+            return_value=["Computer", "Application"]
+        )
+        mock_pipeline.executor.execute = MagicMock(side_effect=[
+            MagicMock(success=True, count=1, objects=[{"id": "pc01", "class": "Computer", "attributes": {}}]),
+            MagicMock(success=True, count=1, objects=[{"id": "app01", "class": "Application", "attributes": {}}]),
+        ])
+
+        res = mock_pipeline.answer("give me all objects")
+
+        assert res["status"] == "success"
+        assert res["target_class"] == "*"
+        assert res["result_count"] == 2
+        assert {obj["class"] for obj in res["results"]} == {"Computer", "Application"}
+        mock_pipeline.translator.translate.assert_not_called()
+        assert mock_pipeline.executor.execute.call_count == 2
 
     def test_historical_query_missing_run_number(self, mock_pipeline):
         """OKS_HISTORICAL_QUERY with missing run stops before translation/execution."""
@@ -213,5 +268,3 @@ class TestPipelineIntentIntegration:
         assert res["version_used"] is None
         mock_pipeline.translator.translate.assert_not_called()
         mock_pipeline.executor.execute.assert_not_called()
-
-

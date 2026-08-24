@@ -14,11 +14,17 @@ Supports temporal version access via:
   - TDAQ_DB_VERSION (git hash/date, works on online nodes)
 """
 
+import glob
+import logging
 import os
+import platform
 import re
 import shutil
 import subprocess
+import time
 from typing import Any, Dict, List, Optional
+
+logger = logging.getLogger("oksquery_translator.executor")
 
 
 class ExecutionResult:
@@ -55,14 +61,17 @@ class Executor:
             print(obj["id"], obj["attributes"])
     """
 
-    def __init__(self, data_file: str = "daq/segments/setup.data.xml"):
+    def __init__(self, data_file: str = "daq/segments/setup.data.xml", repo_root: Optional[str] = None):
         self.data_file = data_file
+        self.repo_root = repo_root or os.getcwd()
         self._config_available = self._check_config()
         self._oks_dump_path = shutil.which("oks_dump")
 
     def execute(self, target_class: str, query: str,
                 version: str = None,
-                max_objects: int = 200) -> ExecutionResult:
+                max_objects: int = 200,
+                data_file: Optional[str] = None,
+                release: Optional[str] = None) -> ExecutionResult:
         """
         Execute a query and return matching objects.
 
@@ -84,49 +93,94 @@ class Executor:
         -------
         ExecutionResult
         """
-        # Set up temporal environment if needed
-        env_backup = self._set_version_env(version)
-        version_label = version or "current"
+        # A run-number DB record may identify a different top-level data file.
+        # Keep the instance default for ordinary/current queries.
+        selected_data_file = data_file or self.data_file
 
-        try:
-            # Strategy 1: Python config module
-            if self._config_available:
-                try:
-                    return self._execute_config(
-                        target_class, query, max_objects, version_label
-                    )
-                except Exception as e:
-                    # Fall through to oks_dump
-                    pass
+        # Locate historical release data directory if provided
+        release_data_path = None
+        oks_dump_path = self._oks_dump_path
 
-            # Strategy 2: oks_dump CLI
-            if self._oks_dump_path:
-                return self._execute_oks_dump(
-                    target_class, query, max_objects, version_label
+        if release:
+            release_info = self._release_info(release)
+            if release_info is not None:
+                rel_dump_path, release_data_path = release_info
+                # Prefer host's active oks_dump on PATH if available; otherwise use release binary
+                if not oks_dump_path:
+                    oks_dump_path = rel_dump_path
+            elif not oks_dump_path:
+                return ExecutionResult(
+                    success=False,
+                    message=(
+                        f"Recorded TDAQ release '{release}' is not available in CVMFS. "
+                        "Cannot load this historical configuration."
+                    ),
                 )
 
-            return ExecutionResult(
-                success=False,
-                message=(
-                    "No execution backend available. "
-                    "Ensure the TDAQ release is sourced "
-                    "(source .../setup.sh) so that 'oks_dump' and/or "
-                    "the Python 'config' module are available."
-                ),
+        version_label = version or "current"
+
+        # Resolve selected_data_file against release_data_path if not found locally
+        if release_data_path and not os.path.exists(selected_data_file):
+            candidate = os.path.join(release_data_path, selected_data_file)
+            if os.path.exists(candidate):
+                selected_data_file = candidate
+
+        # Strategy 1 (preferred): Python config module.
+        if self._config_available:
+            env_backup = self._set_version_env(version, release_data_path)
+            try:
+                return self._execute_config(
+                    target_class, query, max_objects, version_label, selected_data_file
+                )
+            except Exception as e:
+                logger.warning(f"Executor: Python config backend failed ({e}); falling back to oks_dump CLI.")
+            finally:
+                self._restore_env(env_backup)
+
+        # Strategy 2 (fallback): oks_dump CLI.
+        if oks_dump_path:
+            return self._execute_oks_dump(
+                target_class, query, max_objects, version_label, selected_data_file,
+                oks_dump_path,
+                version=version,
+                release_data_path=release_data_path,
             )
-        finally:
-            self._restore_env(env_backup)
+
+        return ExecutionResult(
+            success=False,
+            message=(
+                "No execution backend available. "
+                "Ensure the TDAQ release is sourced "
+                "(source .../setup.sh) so that the Python 'config' module "
+                "and/or 'oks_dump' are available."
+            ),
+        )
 
     # ------------------------------------------------------------------
     # Config module execution
     # ------------------------------------------------------------------
 
     def _execute_config(self, target_class: str, query: str,
-                        max_objects: int, version_label: str) -> ExecutionResult:
+                        max_objects: int, version_label: str,
+                        data_file: str) -> ExecutionResult:
         """Execute via the Python config module."""
         import config as oks_config
 
-        db = oks_config.Configuration("oksconflibs:" + self.data_file)
+        logger.info(f"Executor: Executing via Python C++ config backend -> class={target_class!r}, query={query!r}, data_file={data_file!r}")
+        t_start = time.perf_counter()
+
+        db = None
+        last_err = None
+        for prefix in ("oksconfig:", "oksconflibs:"):
+            try:
+                db = oks_config.Configuration(f"{prefix}{data_file}")
+                break
+            except Exception as e:
+                last_err = e
+                continue
+        if db is None:
+            raise last_err or RuntimeError(f"Could not initialize Configuration for {data_file}")
+
         raw_objects = db.get_objs(target_class, query)
 
         objects = []
@@ -165,6 +219,8 @@ class Executor:
             objects.append(obj_dict)
 
         total_count = len(list(raw_objects)) if hasattr(raw_objects, '__len__') else len(objects)
+        elapsed = time.perf_counter() - t_start
+        logger.info(f"Executor: Python C++ config backend returned {total_count} object(s) in {elapsed:.3f}s")
 
         return ExecutionResult(
             success=True,
@@ -177,23 +233,153 @@ class Executor:
     # oks_dump CLI execution
     # ------------------------------------------------------------------
 
-    def _execute_oks_dump(self, target_class: str, query: str,
-                          max_objects: int, version_label: str) -> ExecutionResult:
-        """Execute via oks_dump CLI and parse the output."""
-        cmd = [self._oks_dump_path, "-c", target_class, "-q", query,
-               self.data_file]
+    @staticmethod
+    def _get_release_ld_paths(oks_dump_path: str) -> List[str]:
+        """
+        Discover library paths required by an oks_dump binary in CVMFS,
+        including architecture-specific lib directories and OpenSSL 1.0 (libssl.so.10)
+        fallback locations in CVMFS.
+        """
+        ld_paths = []
+        if oks_dump_path:
+            bin_dir = os.path.dirname(oks_dump_path)
+            arch_dir = os.path.dirname(bin_dir)
+            arch_lib = os.path.join(arch_dir, "lib")
+            if os.path.isdir(arch_lib):
+                ld_paths.append(arch_lib)
 
-        try:
-            result = subprocess.run(
-                cmd, capture_output=True, text=True, timeout=60
+        # Search CVMFS for OpenSSL 1.0 (libssl.so.10) directories
+        cvmfs_ssl_patterns = [
+            "/cvmfs/sft.cern.ch/lcg/external/OpenSSL/*/x86_64-*/lib",
+            "/cvmfs/sft.cern.ch/lcg/releases/LCG_*/OpenSSL/*/x86_64-*/lib",
+            "/cvmfs/sft.cern.ch/lcg/contrib/openssl/*/lib",
+            "/cvmfs/sft.cern.ch/lcg/views/*/x86_64-*/lib",
+            "/cvmfs/atlas.cern.ch/repo/sw/software/*/lib",
+            "/cvmfs/atlas.cern.ch/repo/sw/tdaq/tdaq/*/installed/x86_64-*/lib",
+        ]
+        for pattern in cvmfs_ssl_patterns:
+            for p in glob.glob(pattern):
+                if os.path.isdir(p) and (
+                    os.path.exists(os.path.join(p, "libssl.so.10")) or
+                    os.path.exists(os.path.join(p, "libssl.so.1.0.0"))
+                ):
+                    if p not in ld_paths:
+                        ld_paths.append(p)
+                        break
+
+        return ld_paths
+
+    def _execute_oks_dump(self, target_class: str, query: str,
+                          max_objects: int, version_label: str,
+                          data_file: str, oks_dump_path: str,
+                          version: str = None,
+                          release_data_path: str = None) -> ExecutionResult:
+        """Execute via oks_dump CLI and parse the output."""
+        import shlex
+
+        # Prepare environment — start from caller's full environment so that
+        # TDAQ_DB_USER_REPOSITORY, TDAQ_DB_REPOSITORY etc. are inherited.
+        # Then inject version selectors directly into the dict (never os.environ).
+        env = os.environ.copy()
+
+        # Inject version selector into subprocess env directly (not os.environ)
+        if release_data_path:
+            env["TDAQ_DB_PATH"] = release_data_path
+            logger.info(f"Executor: Setting TDAQ_DB_PATH={release_data_path!r} in subprocess env")
+
+        if version:
+            if version.startswith(("hash:", "date:", "tag:")):
+                env["TDAQ_DB_VERSION"] = version
+                logger.info(f"Executor: Setting TDAQ_DB_VERSION={version!r} in subprocess env")
+            elif version.startswith("run:") or (version.startswith("r") and version[1:].isdigit()):
+                run_num = version.split(":")[-1].lstrip("r")
+                tag_name = f"tag:r{run_num}@ATLAS"
+                env["TDAQ_DB_VERSION"] = tag_name
+                logger.info(f"Executor: Setting TDAQ_DB_VERSION={tag_name!r} in subprocess env (from {version!r})")
+
+        # Log whether TDAQ_DB_USER_REPOSITORY is present (instant checkout path)
+        user_repo = env.get("TDAQ_DB_USER_REPOSITORY", "")
+        if not user_repo and self.repo_root:
+            user_repo = self.repo_root
+            env["TDAQ_DB_USER_REPOSITORY"] = user_repo
+            logger.info(f"Executor: Auto-set TDAQ_DB_USER_REPOSITORY={user_repo!r} from repo_root (fast path)")
+        elif user_repo:
+            logger.info(f"Executor: TDAQ_DB_USER_REPOSITORY={user_repo!r} — will use existing checkout (fast path)")
+        elif env.get("TDAQ_DB_VERSION"):
+            logger.warning(
+                "Executor: TDAQ_DB_USER_REPOSITORY is NOT set — oks_dump will run oks-checkout.sh "
+                "to Git-clone the OKS repository for this version. This can take minutes. "
+                "For faster execution, export TDAQ_DB_USER_REPOSITORY pointing to a local checkout."
             )
+
+        extra_ld_paths = self._get_release_ld_paths(oks_dump_path)
+        if extra_ld_paths:
+            existing_ld = env.get("LD_LIBRARY_PATH", "")
+            all_ld_paths = extra_ld_paths + ([existing_ld] if existing_ld else [])
+            env["LD_LIBRARY_PATH"] = ":".join(all_ld_paths)
+
+        # Extract architecture directory name (e.g. x86_64-centos7-gcc11-dbg)
+        bin_dir = os.path.dirname(oks_dump_path)
+        arch_dir = os.path.dirname(bin_dir)
+        arch_name = os.path.basename(arch_dir)
+        installed_dir = os.path.dirname(arch_dir)
+
+        if arch_name and arch_name != "installed":
+            env["CMTCONFIG"] = arch_name
+            env["BINARY_TAG"] = arch_name
+            env["ATLAS_BUILD_TARGET"] = arch_name
+
+        # Check if a setup script exists for the release
+        setup_script = None
+        for candidate in [
+            os.path.join(arch_dir, "setup.sh"),
+            os.path.join(installed_dir, "setup.sh"),
+            os.path.join(os.path.dirname(installed_dir), "setup.sh"),
+        ]:
+            if os.path.isfile(candidate):
+                setup_script = candidate
+                break
+
+        cmd = [oks_dump_path, "-c", target_class, "-q", query, data_file]
+        cmd_display = " ".join(shlex.quote(arg) for arg in cmd)
+
+        t_start = time.perf_counter()
+        try:
+            # 1. Try DIRECT binary execution first (instant, bypasses slow CVMFS setup script & git clone hooks)
+            logger.info(f"Executor: Executing direct oks_dump binary:\n  $ {cmd_display}")
+            result = subprocess.run(
+                cmd, capture_output=True, text=True, timeout=60, env=env
+            )
+
+            # 2. If direct execution failed and a setup script is available, fallback to sourcing setup script
+            if result.returncode not in (0, 5) and setup_script:
+                logger.info(f"Executor: Direct binary execution returned exit {result.returncode}; retrying via setup script...")
+                env_exports = ""
+                if arch_name and arch_name != "installed":
+                    env_exports = f"export CMTCONFIG={shlex.quote(arch_name)}; export BINARY_TAG={shlex.quote(arch_name)}; "
+                shell_cmd = f"{env_exports}source {shlex.quote(setup_script)} && {cmd_display}"
+                result = subprocess.run(
+                    ["bash", "-c", shell_cmd],
+                    capture_output=True, text=True, timeout=60, env=env
+                )
         except subprocess.TimeoutExpired:
+            logger.error("Executor: oks_dump CLI timed out after 60s.")
             return ExecutionResult(
                 success=False,
                 message="oks_dump timed out after 60s.",
             )
+        except OSError as exc:
+            logger.error(f"Executor: Unable to start oks_dump: {exc}")
+            return ExecutionResult(
+                success=False,
+                message=f"Unable to start oks_dump '{oks_dump_path}': {exc}",
+            )
+
+
+        elapsed = time.perf_counter() - t_start
 
         if result.returncode not in (0, 5):
+            logger.error(f"Executor: oks_dump failed with exit code {result.returncode} in {elapsed:.3f}s:\n{result.stderr.strip()}")
             return ExecutionResult(
                 success=False,
                 message=f"oks_dump failed (exit {result.returncode}): "
@@ -201,6 +387,7 @@ class Executor:
             )
 
         objects = self._parse_oks_dump_output(result.stdout, target_class)
+        logger.info(f"Executor: oks_dump succeeded (exit {result.returncode}) in {elapsed:.3f}s. Extracted {len(objects)} matching object(s).")
 
         return ExecutionResult(
             success=True,
@@ -208,6 +395,8 @@ class Executor:
             count=len(objects),
             version_used=version_label,
         )
+
+
 
     @staticmethod
     def _parse_oks_dump_output(output: str, target_class: str) -> List[Dict]:
@@ -258,13 +447,21 @@ class Executor:
     # Temporal version environment
     # ------------------------------------------------------------------
 
-    @staticmethod
-    def _set_version_env(version: str) -> Dict[str, Optional[str]]:
+    def _set_version_env(self, version: str,
+                         release_data_path: Optional[str] = None) -> Dict[str, Optional[str]]:
         """
         Set environment variables for temporal access.
         Returns backup of original values for restoration.
         """
         backup = {}
+        if "TDAQ_DB_USER_REPOSITORY" not in os.environ and self.repo_root:
+            backup["TDAQ_DB_USER_REPOSITORY"] = None
+            os.environ["TDAQ_DB_USER_REPOSITORY"] = self.repo_root
+
+        if release_data_path:
+            backup["TDAQ_DB_PATH"] = os.environ.get("TDAQ_DB_PATH")
+            os.environ["TDAQ_DB_PATH"] = release_data_path
+
         if not version:
             return backup
 
@@ -284,7 +481,8 @@ class Executor:
                 f"/cvmfs/atlas.cern.ch/repo/sw/tdaq/tdaq/{version}"
                 f"/installed/share/data"
             )
-            backup["TDAQ_DB_PATH"] = os.environ.get("TDAQ_DB_PATH")
+            if "TDAQ_DB_PATH" not in backup:
+                backup["TDAQ_DB_PATH"] = os.environ.get("TDAQ_DB_PATH")
             os.environ["TDAQ_DB_PATH"] = snapshot_path
 
         return backup
@@ -297,6 +495,30 @@ class Executor:
                 os.environ.pop(key, None)
             else:
                 os.environ[key] = value
+
+    @staticmethod
+    def _release_info(release: str) -> Optional[tuple[str, str]]:
+        """Return the release-specific ``oks_dump`` and data directory.
+
+        TDAQ installations put the binary under an architecture-specific
+        directory, while data is shared under ``installed/share/data``.
+        """
+        if not re.fullmatch(r"tdaq-\d{2}-\d{2}-\d{2}", release or ""):
+            return None
+
+        installed = f"/cvmfs/atlas.cern.ch/repo/sw/tdaq/tdaq/{release}/installed"
+        data_dir = os.path.join(installed, "share", "data")
+        candidates = sorted(glob.glob(os.path.join(installed, "*", "bin", "oks_dump")))
+        if not os.path.isdir(data_dir) or not candidates:
+            return None
+
+        host_arch = platform.machine().lower()
+        # CVMFS releases can contain several architectures.  A lexical sort
+        # would select aarch64 before x86_64 and produces Exec format error on
+        # lxplus x86_64 nodes.
+        matching = [path for path in candidates
+                    if os.path.basename(os.path.dirname(os.path.dirname(path))).lower().startswith(host_arch + "-")]
+        return (matching[0] if matching else candidates[0]), data_dir
 
     # ------------------------------------------------------------------
     # Helpers

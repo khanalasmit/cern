@@ -173,16 +173,31 @@ class RunResolver:
 
         return None
 
-    def resolve_version(self, run_number: int, partition: str = None) -> str:
+    @staticmethod
+    def is_supported_version(version: Optional[str]) -> bool:
+        """Return whether *version* can be applied by the OKS backends."""
+        return bool(version and version.startswith(("hash:", "date:", "tag:")))
+
+    def get_run_info(self, run_number: int) -> Optional[dict]:
+        """Return Run Number DB metadata cached during validation, if available."""
+        return self._cached_runs.get(run_number)
+
+    def resolve_version(self, run_number: int, partition: str = None) -> Optional[str]:
         """
         Resolve a run number and partition into a temporal version specifier.
-        If rn_ls provided an exact version hash/tag (e.g. hash:ce4ceda7...),
-        returns that version. Otherwise returns tag:r<run_number>@<partition>.
+        If rn_ls provided an exact supported version (e.g. hash:ce4ceda7...),
+        return it.  A legacy numeric archive revision (for example ``46.97``)
+        is *not* a Git/OKS version and must never be passed through: doing so
+        would leave the OKS environment unchanged and accidentally query HEAD.
+
+        When no Run Number DB record was used (for example an explicitly
+        supplied known run), retain the tag fallback.
         """
         if run_number in self._cached_runs:
             cached_ver = self._cached_runs[run_number].get("version")
-            if cached_ver:
+            if self.is_supported_version(cached_ver):
                 return cached_ver
+            return None
 
         part = partition or self.default_partition
         return f"tag:r{run_number}@{part}"

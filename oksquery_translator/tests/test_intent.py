@@ -171,6 +171,17 @@ class TestRunResolver:
         assert resolver.resolve_version(380689, "all_hosts") == "tag:r380689@all_hosts"
         assert resolver.resolve_version(380689, "ATLAS") == "tag:r380689@ATLAS"
 
+    def test_legacy_archive_revision_is_not_used_as_a_git_version(self):
+        """A value such as 46.97 must not cause a silent HEAD query."""
+        resolver = RunResolver()
+        resolver._cached_runs[45567] = {
+            "run_number": 45567,
+            "partition": "all_hosts",
+            "version": "46.97",
+            "config_name": "daq/segments/setup.data.xml",
+        }
+        assert resolver.resolve_version(45567, "all_hosts") is None
+
 
 
 

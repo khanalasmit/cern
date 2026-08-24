@@ -12,12 +12,16 @@ Works with three backends (tried in order):
   3. Raw XML grep on schema files (class-name discovery only)
 """
 
+import logging
 import os
 import re
 import subprocess
 import shutil
 import xml.etree.ElementTree as ET
 from typing import Dict, List, Optional, Tuple
+
+
+logger = logging.getLogger("oksquery_translator.schema_retrieval")
 
 
 # ---------------------------------------------------------------------------
@@ -95,6 +99,9 @@ class SchemaRetriever:
         self.schema_dir = schema_dir or self._detect_schema_dir()
         self._class_list: Optional[List[str]] = None
         self._class_cache: Dict[str, dict] = {}
+        # Cache negative lookups too.  The schema index may ask for the same
+        # unavailable class twice (directly and through inheritance).
+        self._missing_classes: set[str] = set()
         self._config_available = self._check_config_available()
         self._oks_dump_path = shutil.which("oks_dump")
 
@@ -110,6 +117,10 @@ class SchemaRetriever:
 
         Returns a dict with environment status and class count.
         """
+        logger.info(
+            "Schema probe: data_file=%r schema_dir=%r config_module=%s oks_dump=%r",
+            self.data_file, self.schema_dir, self._config_available, self._oks_dump_path,
+        )
         probe = {
             "oks_dump": self._oks_dump_path or "NOT FOUND",
             "config_module": "available" if self._config_available else "NOT available",
@@ -137,6 +148,7 @@ class SchemaRetriever:
         classes = self.get_class_list()
         probe["class_count"] = len(classes)
         probe["classes"] = classes[:20]  # first 20 for display
+        logger.info("Schema probe complete: %d classes discovered", len(classes))
 
         return probe
 
@@ -148,7 +160,10 @@ class SchemaRetriever:
         to discover classes from the live TDAQ environment.
         """
         if self._class_list is None:
+            logger.info("Schema class list cache miss; discovering classes")
             self._class_list = self._load_class_list()
+        else:
+            logger.debug("Schema class list cache hit: %d classes", len(self._class_list))
         return self._class_list
 
     def get_class_info(self, class_name: str) -> Optional[dict]:
@@ -159,11 +174,24 @@ class SchemaRetriever:
         Returns ``None`` if the class doesn't exist.
         """
         if class_name in self._class_cache:
+            logger.debug("Schema class cache hit: %s", class_name)
             return self._class_cache[class_name]
+        if class_name in self._missing_classes:
+            logger.debug("Schema class negative-cache hit: %s", class_name)
+            return None
 
+        logger.debug("Loading schema details for class: %s", class_name)
         info = self._load_class_info(class_name)
         if info is not None:
             self._class_cache[class_name] = info
+            logger.debug(
+                "Loaded %s: %d attributes, %d relationships, %d superclasses",
+                class_name, len(info.get("attributes", [])),
+                len(info.get("relationships", [])), len(info.get("superclasses", [])),
+            )
+        else:
+            self._missing_classes.add(class_name)
+            logger.debug("Could not load schema details for class: %s", class_name)
         return info
 
     def get_schema_context(self, question: str, max_classes: int = 3) -> str:
@@ -172,6 +200,7 @@ class SchemaRetriever:
         and return a formatted schema slice for prompt injection.
         """
         candidate_classes = self._match_classes(question, max_classes)
+        logger.info("Schema slice: question=%r candidates=%s", question, candidate_classes)
         if not candidate_classes:
             return ("--- Relevant OKS Schema Context ---\n"
                     "No relevant classes could be identified from the question.\n"
@@ -301,7 +330,14 @@ class SchemaRetriever:
                         if len(expanded) >= max_classes:
                             break
 
-        return expanded[:max_classes]
+        selected = expanded[:max_classes]
+        logger.debug(
+            "Schema matching: tokens=%s scored=%s selected=%s",
+            sorted(tokens),
+            [(name, scored[name]) for name in sorted(scored, key=scored.get, reverse=True)[:10]],
+            selected,
+        )
+        return selected
 
     # ------------------------------------------------------------------
     # Class list loading
@@ -312,21 +348,37 @@ class SchemaRetriever:
         # Strategy 1: Python config module
         if self._config_available:
             try:
+                logger.debug("Class discovery backend: Python config module")
                 import config as oks_config
-                db = oks_config.Configuration("oksconflibs:" + self.data_file)
+                db = None
+                last_err = None
+                for prefix in ("oksconfig:", "oksconflibs:", ""):
+                    try:
+                        db = oks_config.Configuration(f"{prefix}{self.data_file}")
+                        break
+                    except Exception as e:
+                        last_err = e
+                        continue
+                if db is None:
+                    raise last_err or RuntimeError(f"Could not open {self.data_file}")
                 classes = sorted(db.classes())
                 if classes:
+                    logger.info("Class discovery succeeded via config module: %d classes", len(classes))
                     return classes
-            except Exception:
-                pass
+            except Exception as exc:
+                logger.debug("Class discovery via config module failed: %s", exc)
 
         # Strategy 2: grep schema XML files
         if self.schema_dir and os.path.isdir(self.schema_dir):
-            return self._grep_class_names(self.schema_dir)
+            logger.debug("Class discovery backend: schema XML (%s)", self.schema_dir)
+            classes = self._grep_class_names(self.schema_dir)
+            logger.info("Class discovery via schema XML: %d classes", len(classes))
+            return classes
 
         # Strategy 3: oks_dump (list classes from a data file)
         if self._oks_dump_path:
             try:
+                logger.debug("Class discovery backend: oks_dump (%s)", self._oks_dump_path)
                 result = subprocess.run(
                     [self._oks_dump_path, self.data_file],
                     capture_output=True, text=True, timeout=30
@@ -338,10 +390,12 @@ class SchemaRetriever:
                     if m:
                         classes.add(m.group(1))
                 if classes:
+                    logger.info("Class discovery via oks_dump: %d classes", len(classes))
                     return sorted(classes)
-            except Exception:
-                pass
+            except Exception as exc:
+                logger.debug("Class discovery via oks_dump failed: %s", exc)
 
+        logger.warning("No schema class-discovery backend returned any classes")
         return []
 
     def _grep_class_names(self, schema_dir: str) -> List[str]:
@@ -374,33 +428,65 @@ class SchemaRetriever:
 
     def _load_class_info(self, class_name: str) -> Optional[dict]:
         """Load attributes, relationships, superclasses for a class."""
+        # XML is authoritative when present: it carries superclass links that
+        # some config-module builds omit, which otherwise leaves valid
+        # inherited members out of the LLM/validator schema context.
+        if self.schema_dir:
+            try:
+                logger.debug("Schema details backend for %s: schema XML", class_name)
+                info = self._load_class_info_xml(class_name)
+                if info is not None:
+                    return info
+            except Exception as exc:
+                logger.debug("Schema details via XML failed for %s: %s", class_name, exc)
+
         # Strategy 1: Python config module
         if self._config_available:
             try:
-                return self._load_class_info_config(class_name)
-            except Exception:
-                pass
+                logger.debug("Schema details backend for %s: Python config module", class_name)
+                info = self._load_class_info_config(class_name)
+                if info is not None:
+                    return info
+                logger.debug("Config module has no details for %s; trying fallback backends", class_name)
+            except Exception as exc:
+                logger.debug("Schema details via config module failed for %s: %s", class_name, exc)
 
         # Strategy 2: oks_dump
         if self._oks_dump_path:
             try:
-                return self._load_class_info_oks_dump(class_name)
-            except Exception:
-                pass
+                logger.debug("Schema details backend for %s: oks_dump", class_name)
+                info = self._load_class_info_oks_dump(class_name)
+                if info is not None:
+                    return info
+                logger.debug("oks_dump has no details for %s; trying XML fallback", class_name)
+            except Exception as exc:
+                logger.debug("Schema details via oks_dump failed for %s: %s", class_name, exc)
 
-        # Strategy 3: XML parsing
+        # Strategy 3: XML parsing (only if the earlier XML attempt could not
+        # load the class, e.g. a schema directory appeared later at runtime).
         if self.schema_dir:
             try:
+                logger.debug("Schema details backend for %s: schema XML", class_name)
                 return self._load_class_info_xml(class_name)
-            except Exception:
-                pass
+            except Exception as exc:
+                logger.debug("Schema details via XML failed for %s: %s", class_name, exc)
 
         return None
 
     def _load_class_info_config(self, class_name: str) -> Optional[dict]:
         """Load class info via the Python config module."""
         import config as oks_config
-        db = oks_config.Configuration("oksconflibs:" + self.data_file)
+        db = None
+        last_err = None
+        for prefix in ("oksconfig:", "oksconflibs:", ""):
+            try:
+                db = oks_config.Configuration(f"{prefix}{self.data_file}")
+                break
+            except Exception as e:
+                last_err = e
+                continue
+        if db is None:
+            raise last_err or RuntimeError(f"Could not open {self.data_file}")
 
         if class_name not in db.classes():
             return None

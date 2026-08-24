@@ -6,10 +6,14 @@ Takes the filtered execution results and produces a clean,
 human-readable natural-language answer for the user.
 """
 
+import logging
 import os
+import time
 from typing import Dict, List, Optional
 
 from openai import OpenAI, APIStatusError, APIConnectionError
+
+logger = logging.getLogger("oksquery_translator.interpreter")
 
 
 INTERPRETER_SYSTEM_PROMPT = """\
@@ -85,6 +89,9 @@ class Interpreter:
             question, target_class, oks_query, objects, count, version
         )
 
+        logger.info(f"Interpreter: Generating natural-language summary (model={self.llm_model})...")
+        t_start = time.perf_counter()
+
         try:
             response = self.client.chat.completions.create(
                 model=self.llm_model,
@@ -94,12 +101,17 @@ class Interpreter:
                 ],
                 temperature=0.2,
             )
-            return response.choices[0].message.content.strip()
+            answer = response.choices[0].message.content.strip()
+            elapsed = time.perf_counter() - t_start
+            logger.info(f"Interpreter: Summary generated successfully in {elapsed:.2f}s.")
+            return answer
         except (APIStatusError, APIConnectionError, Exception) as e:
-            # If the LLM call fails, produce a basic programmatic answer
+            elapsed = time.perf_counter() - t_start
+            logger.warning(f"Interpreter: LLM call failed in {elapsed:.2f}s ({e}); using programmatic fallback.")
             return self._fallback_answer(
                 question, target_class, oks_query, objects, count, version
             )
+
 
     # ------------------------------------------------------------------
     # Prompt building

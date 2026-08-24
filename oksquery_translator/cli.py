@@ -11,6 +11,7 @@ questions and receive translated OksQuery strings and answers.
 """
 
 import json
+import logging
 import os
 import sys
 
@@ -52,9 +53,36 @@ def _load_env():
                 continue
 
 
+def _configure_debug_logging(enabled: bool = False, verbose: bool = True) -> None:
+    """Configure command line logging to display layer output and step timing."""
+    package_logger = logging.getLogger("oksquery_translator")
+    
+    if enabled:
+        package_logger.setLevel(logging.DEBUG)
+    elif verbose:
+        package_logger.setLevel(logging.INFO)
+    else:
+        package_logger.setLevel(logging.WARNING)
+
+    package_logger.propagate = False
+
+    handler = next(
+        (h for h in package_logger.handlers if getattr(h, "_oks_cli_trace", False)),
+        None,
+    )
+    if handler is None:
+        handler = logging.StreamHandler(sys.stderr)
+        handler._oks_cli_trace = True
+        handler.setFormatter(logging.Formatter("[%(levelname)s %(name)s] %(message)s"))
+        package_logger.addHandler(handler)
+
+
+
 def main():
     """Entry point for the interactive CLI."""
     _load_env()
+    debug_enabled = os.environ.get("OKS_TRANSLATOR_DEBUG", "").lower() in {"1", "true", "yes", "on"}
+    _configure_debug_logging(debug_enabled)
 
     # Check API key
     api_key = os.environ.get("LLM_API_KEY", "")
@@ -75,6 +103,7 @@ def main():
     print("  Type a question to translate and execute.")
     print("  'translate <question>' — translate only (no execution).")
     print("  'version <v>'          — set temporal version.")
+    print("  'debug on' / 'debug off' — show/hide detailed pipeline and schema traces.")
     print("  'probe'                — re-run environment probe.")
     print("  'exit' / 'quit'        — exit.")
     print("-" * 60)
@@ -120,6 +149,12 @@ def main():
         if user_input.lower() in ("exit", "quit"):
             print("Goodbye!")
             break
+
+        if user_input.lower() in ("debug on", "debug off"):
+            debug_enabled = user_input.lower() == "debug on"
+            _configure_debug_logging(debug_enabled)
+            print(f"  Debug tracing {'enabled' if debug_enabled else 'disabled'}.\n")
+            continue
 
         # Probe command
         if user_input.lower() == "probe":
