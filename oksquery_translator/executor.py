@@ -125,7 +125,7 @@ class Executor:
                 selected_data_file = candidate
 
         # Strategy 1 (preferred): Python config module.
-        if self._config_available and not release:
+        if self._config_available:
             env_backup = self._set_version_env(version, release_data_path)
             try:
                 return self._execute_config(
