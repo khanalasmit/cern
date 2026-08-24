@@ -53,10 +53,17 @@ def _load_env():
                 continue
 
 
-def _configure_debug_logging(enabled: bool) -> None:
-    """Toggle detailed translator traces without affecting normal CLI output."""
+def _configure_debug_logging(enabled: bool = False, verbose: bool = True) -> None:
+    """Configure command line logging to display layer output and step timing."""
     package_logger = logging.getLogger("oksquery_translator")
-    package_logger.setLevel(logging.DEBUG if enabled else logging.WARNING)
+    
+    if enabled:
+        package_logger.setLevel(logging.DEBUG)
+    elif verbose:
+        package_logger.setLevel(logging.INFO)
+    else:
+        package_logger.setLevel(logging.WARNING)
+
     package_logger.propagate = False
 
     handler = next(
@@ -66,8 +73,9 @@ def _configure_debug_logging(enabled: bool) -> None:
     if handler is None:
         handler = logging.StreamHandler(sys.stderr)
         handler._oks_cli_trace = True
-        handler.setFormatter(logging.Formatter("[TRACE %(name)s] %(levelname)s: %(message)s"))
+        handler.setFormatter(logging.Formatter("[%(levelname)s %(name)s] %(message)s"))
         package_logger.addHandler(handler)
+
 
 
 def main():

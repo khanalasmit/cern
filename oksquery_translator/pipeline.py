@@ -11,6 +11,7 @@ Wires together all modules into a single ``answer()`` call:
 import logging
 import os
 import re
+import time
 from typing import Dict, Optional
 
 logger = logging.getLogger("oksquery_translator.pipeline")
@@ -163,17 +164,23 @@ class OksPipeline:
             oks_context_label : str
             ir : dict or None
         """
-        # ------ Step 0: Intent Classification & Pre-Filtering ------
-        intent_info = self.intent_classifier.classify(question)
+        t_pipeline_start = time.perf_counter()
+        logger.info(f"=== [PIPELINE START] Question: {question!r} ===")
 
-        logger.info(f"Intent: {intent_info.intent.value}")
-        if intent_info.run_number:
-            logger.info(f"Run Number: {intent_info.run_number}")
-            logger.info(f"Partition: {intent_info.partition or 'all_hosts'}")
+        # ------ Step 0: Intent Classification & Pre-Filtering ------
+        t0 = time.perf_counter()
+        intent_info = self.intent_classifier.classify(question)
+        t0_elapsed = time.perf_counter() - t0
+
+        logger.info(
+            f"[LAYER 0 - Intent & Run Resolution] ({t0_elapsed:.3f}s) → "
+            f"Intent={intent_info.intent.value}, Run={intent_info.run_number}, Partition={intent_info.partition or 'all_hosts'}"
+        )
 
         # 0a. Out-of-scope early exit: GENERAL_OUT_OF_SCOPE
         if intent_info.intent == Intent.GENERAL_OUT_OF_SCOPE:
             msg = intent_info.message or MSG_GENERAL_OUT_OF_SCOPE
+            logger.info(f"[LAYER 0 - Early Exit] GENERAL_OUT_OF_SCOPE")
             return {
                 "status": "error",
                 "answer": msg,
@@ -195,6 +202,7 @@ class OksPipeline:
         # 0b. Out-of-scope early exit: CERN_OUT_OF_SCOPE
         if intent_info.intent == Intent.CERN_OUT_OF_SCOPE:
             msg = intent_info.message or MSG_CERN_OUT_OF_SCOPE
+            logger.info(f"[LAYER 0 - Early Exit] CERN_OUT_OF_SCOPE")
             return {
                 "status": "error",
                 "answer": msg,
@@ -222,8 +230,6 @@ class OksPipeline:
 
         if intent_info.intent == Intent.OKS_HISTORICAL_QUERY:
             if version:
-                # Explicit version argument provided by caller.
-                # Check for conflict if question also mentions a different run number.
                 if extracted_run is not None:
                     ver_run, _, _ = extract_run_and_partition(version)
                     if ver_run is not None and ver_run != extracted_run:
@@ -251,13 +257,11 @@ class OksPipeline:
                             "oks_context_label": "",
                         }
                 else:
-                    # Recover run_number from explicit version string if possible
                     ver_run, ver_part, _ = extract_run_and_partition(version)
                     if ver_run is not None:
                         extracted_run = ver_run
                         partition = ver_part or partition
             else:
-                # No explicit version supplied: MUST resolve from question
                 if extracted_run is None:
                     msg = (
                         "You asked for historical run configuration data, but did not specify a run number. "
@@ -282,7 +286,6 @@ class OksPipeline:
                         "oks_context_label": "",
                     }
 
-                # Validate run number with RunResolver
                 if not self.run_resolver.validate_run_number(extracted_run, partition):
                     logger.warning(f"Run Validation: failed (Run Number {extracted_run} not found)")
                     msg = (
@@ -307,12 +310,9 @@ class OksPipeline:
                         "oks_context_label": "",
                     }
 
-                logger.info(f"Run Validation: success (Run Number {extracted_run})")
                 effective_version = self.run_resolver.resolve_version(extracted_run, partition)
                 run_info = self.run_resolver.get_run_info(extracted_run)
                 if run_info:
-                    # The DB, not the CLI default, identifies the saved run's
-                    # partition and top-level configuration file.
                     partition = run_info.get("partition") or partition
                     request_data_file = run_info.get("config_name") or request_data_file
                     request_release = run_info.get("release") or None
@@ -334,9 +334,11 @@ class OksPipeline:
                         "partition": partition, "version": None, "version_used": None,
                         "schema_fingerprint": "", "oks_context_label": "",
                     }
-                logger.info(f"Resolved Version: {effective_version}")
+                logger.info(
+                    f"[LAYER 0 - Version Resolution] Run {extracted_run} resolved → "
+                    f"version={effective_version!r}, partition={partition!r}, release={request_release!r}, data_file={request_data_file!r}"
+                )
 
-        # If effective_version has a run tag, recover run_number and partition if not set
         if extracted_run is None and effective_version:
             ver_run, ver_part, _ = extract_run_and_partition(effective_version)
             if ver_run is not None:
@@ -344,6 +346,7 @@ class OksPipeline:
                 partition = ver_part or partition
 
         # ------ Step 0d: Build immutable OksContext ------
+        t1 = time.perf_counter()
         context_builder = self.context_builder
         if request_data_file != self.data_file:
             context_builder = OksContextBuilder(
@@ -351,20 +354,21 @@ class OksPipeline:
                 schema_dir=getattr(self.schema_retriever, "schema_dir", None),
             )
         oks_context = context_builder.build(version_tag=effective_version)
+        t1_elapsed = time.perf_counter() - t1
         logger.info(
-            f"OksContext: identifier={oks_context.schema_identifier!r}, "
-            f"fingerprint={oks_context.schema_fingerprint!r}"
+            f"[LAYER 1 - OksContext] ({t1_elapsed:.3f}s) → "
+            f"identifier={oks_context.schema_identifier!r}, fingerprint={oks_context.schema_fingerprint!r}"
         )
 
         # Index schema under this fingerprint if not already cached
         if not self.schema_index.has_fingerprint(oks_context.schema_fingerprint):
+            t_idx = time.perf_counter()
             from .schema import OksSchemaProvider
             schema_dir = getattr(self.schema_retriever, "schema_dir", None)
             sp = OksSchemaProvider(oks_context=oks_context, data_file=self.data_file, schema_dir=schema_dir)
             self.schema_index.build_from_schema_provider(sp)
+            logger.info(f"[LAYER 2 - Schema Indexing] Indexed fingerprint '{oks_context.schema_fingerprint}' in {time.perf_counter() - t_idx:.3f}s")
 
-        # ``oks_dump`` queries one class at a time.  Do not ask the LLM to
-        # guess a class for an explicit request for *all* objects.
         if self._requests_all_objects(question):
             return self._answer_all_objects(
                 intent_info=intent_info,
@@ -377,17 +381,22 @@ class OksPipeline:
             )
 
         # ------ Step 0e: Query Preprocessing (Tokens & Hints) ------
+        t_prep = time.perf_counter()
         query_analysis = self.query_preprocessor.analyze(question)
         retrieval_query = query_analysis.to_retrieval_query()
+        logger.info(f"[LAYER 2 - Query Preprocessor] ({time.perf_counter() - t_prep:.3f}s) → retrieval_query={retrieval_query!r}")
 
         # ------ Step 1: Translate NL → OksQuery via AST Pipeline ------
+        t_trans = time.perf_counter()
         translation = self.translator.translate(
             question,
             oks_context=oks_context,
             retrieval_query=retrieval_query,
         )
+        t_trans_elapsed = time.perf_counter() - t_trans
 
         if translation["status"] != "success":
+            logger.error(f"[LAYER 3 - Translation Failed] ({t_trans_elapsed:.3f}s): {translation.get('message')}")
             return {
                 "status": "error",
                 "answer": f"Translation failed: {translation.get('message', 'unknown error')}",
@@ -411,15 +420,22 @@ class OksPipeline:
         oks_query = translation["oks_query"]
         attempts = translation.get("attempts", 1)
         ir_dump = translation.get("ir")
+        logger.info(
+            f"[LAYER 3 - Translation Complete] ({t_trans_elapsed:.3f}s, {attempts} attempt(s)) → "
+            f"target_class={target_class!r}, oks_query={oks_query!r}"
+        )
 
         # ------ Step 2: Execute the query via preserved Executor ------
+        t_exec = time.perf_counter()
         exec_version = oks_context.version_tag or effective_version
         exec_result = self.executor.execute(
             target_class, oks_query, version=exec_version, data_file=request_data_file,
             release=request_release,
         )
+        t_exec_elapsed = time.perf_counter() - t_exec
 
         if not exec_result.success:
+            logger.error(f"[LAYER 4 - Execution Failed] ({t_exec_elapsed:.3f}s): {exec_result.message}")
             return {
                 "status": "error",
                 "answer": f"Query execution failed: {exec_result.message}",
@@ -439,7 +455,13 @@ class OksPipeline:
                 "ir": ir_dump,
             }
 
+        logger.info(
+            f"[LAYER 4 - Execution Complete] ({t_exec_elapsed:.3f}s) → "
+            f"Returned {exec_result.count} object(s)"
+        )
+
         # ------ Step 3: Interpret the results ------
+        t_interp = time.perf_counter()
         version_label = effective_version or "current"
         interpretation = self.interpreter.interpret(
             question=question,
@@ -449,8 +471,8 @@ class OksPipeline:
             count=exec_result.count,
             version=version_label,
         )
+        t_interp_elapsed = time.perf_counter() - t_interp
 
-        # Ensure user-facing answer has the required configuration / run header
         if (intent_info.intent == Intent.OKS_HISTORICAL_QUERY or effective_version not in (None, "current")) and extracted_run is not None:
             header = f"Run Number: {extracted_run}\nPartition: {partition}\n\n"
             if not interpretation.startswith("Run Number:"):
@@ -459,6 +481,13 @@ class OksPipeline:
             header = "Configuration: Current / Default (HEAD)\n\n"
             if not interpretation.startswith("Configuration:"):
                 interpretation = header + interpretation
+
+        total_elapsed = time.perf_counter() - t_pipeline_start
+        logger.info(
+            f"=== [PIPELINE COMPLETE] Total time elapsed: {total_elapsed:.3f}s "
+            f"(Intent={t0_elapsed:.2f}s, Context={t1_elapsed:.2f}s, Translation={t_trans_elapsed:.2f}s, "
+            f"Execution={t_exec_elapsed:.2f}s, Interpretation={t_interp_elapsed:.2f}s) ==="
+        )
 
         return {
             "status": "success",
@@ -478,6 +507,7 @@ class OksPipeline:
             "oks_context_label": oks_context.display_label,
             "ir": ir_dump,
         }
+
 
     @staticmethod
     def _requests_all_objects(question: str) -> bool:

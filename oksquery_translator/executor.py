@@ -15,12 +15,16 @@ Supports temporal version access via:
 """
 
 import glob
+import logging
 import os
 import platform
 import re
 import shutil
 import subprocess
+import time
 from typing import Any, Dict, List, Optional
+
+logger = logging.getLogger("oksquery_translator.executor")
 
 
 class ExecutionResult:
@@ -154,6 +158,9 @@ class Executor:
         """Execute via the Python config module."""
         import config as oks_config
 
+        logger.info(f"Executor: Executing via Python C++ config backend -> class={target_class!r}, query={query!r}, data_file={data_file!r}")
+        t_start = time.perf_counter()
+
         db = oks_config.Configuration("oksconflibs:" + data_file)
         raw_objects = db.get_objs(target_class, query)
 
@@ -193,6 +200,8 @@ class Executor:
             objects.append(obj_dict)
 
         total_count = len(list(raw_objects)) if hasattr(raw_objects, '__len__') else len(objects)
+        elapsed = time.perf_counter() - t_start
+        logger.info(f"Executor: Python C++ config backend returned {total_count} object(s) in {elapsed:.3f}s")
 
         return ExecutionResult(
             success=True,
@@ -271,31 +280,39 @@ class Executor:
                 break
 
         cmd = [oks_dump_path, "-c", target_class, "-q", query, data_file]
+        cmd_display = " ".join(shlex.quote(arg) for arg in cmd)
 
+        t_start = time.perf_counter()
         try:
             if setup_script:
-                cmd_str = " ".join(shlex.quote(arg) for arg in cmd)
-                shell_cmd = f"source {shlex.quote(setup_script)} && {cmd_str}"
+                shell_cmd = f"source {shlex.quote(setup_script)} && {cmd_display}"
+                logger.info(f"Executor: Executing via oks_dump CLI shell script:\n  $ {shell_cmd}")
                 result = subprocess.run(
                     ["bash", "-c", shell_cmd],
                     capture_output=True, text=True, timeout=60, env=env
                 )
             else:
+                logger.info(f"Executor: Executing via oks_dump CLI binary:\n  $ {cmd_display}")
                 result = subprocess.run(
                     cmd, capture_output=True, text=True, timeout=60, env=env
                 )
         except subprocess.TimeoutExpired:
+            logger.error("Executor: oks_dump CLI timed out after 60s.")
             return ExecutionResult(
                 success=False,
                 message="oks_dump timed out after 60s.",
             )
         except OSError as exc:
+            logger.error(f"Executor: Unable to start oks_dump: {exc}")
             return ExecutionResult(
                 success=False,
                 message=f"Unable to start oks_dump '{oks_dump_path}': {exc}",
             )
 
+        elapsed = time.perf_counter() - t_start
+
         if result.returncode not in (0, 5):
+            logger.error(f"Executor: oks_dump failed with exit code {result.returncode} in {elapsed:.3f}s:\n{result.stderr.strip()}")
             return ExecutionResult(
                 success=False,
                 message=f"oks_dump failed (exit {result.returncode}): "
@@ -303,6 +320,7 @@ class Executor:
             )
 
         objects = self._parse_oks_dump_output(result.stdout, target_class)
+        logger.info(f"Executor: oks_dump succeeded (exit {result.returncode}) in {elapsed:.3f}s. Extracted {len(objects)} matching object(s).")
 
         return ExecutionResult(
             success=True,
@@ -310,6 +328,7 @@ class Executor:
             count=len(objects),
             version_used=version_label,
         )
+
 
 
     @staticmethod

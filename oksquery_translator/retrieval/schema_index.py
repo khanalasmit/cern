@@ -103,7 +103,8 @@ class SchemaSearchIndex:
 
         self._index[fingerprint] = documents
         logger.info(
-            f"Indexed {len(documents)} classes for schema fingerprint '{fingerprint}'."
+            f"SchemaSearchIndex: Indexed fingerprint '{fingerprint}' "
+            f"({len(documents)} classes)."
         )
         return fingerprint
 
@@ -152,7 +153,13 @@ class SchemaSearchIndex:
 
         # Sort descending by score
         scored_docs.sort(key=lambda item: item[0], reverse=True)
-        return [doc for score, doc in scored_docs[:top_k]]
+        results = [doc for score, doc in scored_docs[:top_k]]
+        match_summary = [f"{item[1].class_name} (score={item[0]:.1f})" for item in scored_docs[:top_k]]
+        logger.info(
+            f"SchemaSearchIndex: query={query!r}, fingerprint={schema_fingerprint!r} → "
+            f"Top matches: [{', '.join(match_summary)}]"
+        )
+        return results
 
     def get_document(self, class_name: str, schema_fingerprint: str) -> Optional[ClassSearchDocument]:
         """Lookup a specific document by class name and fingerprint."""

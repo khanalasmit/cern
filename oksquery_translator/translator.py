@@ -17,6 +17,7 @@ import json
 import logging
 import os
 import re
+import time
 from typing import Any, Dict, Optional, Tuple
 
 from openai import OpenAI, APIStatusError, APIConnectionError
@@ -139,8 +140,13 @@ class Translator:
 
         # 2. Generation & Repair Loop
         for attempt in range(1 + self.max_retries):
+            t_start = time.perf_counter()
+            logger.info(f"Translator: Calling LLM attempt {attempt + 1}/{1 + self.max_retries} (model={self.llm_model})...")
             llm_result = self._call_llm(messages)
+            llm_elapsed = time.perf_counter() - t_start
+
             if llm_result.get("error"):
+                logger.error(f"Translator: LLM call error: {llm_result['error']}")
                 return {
                     "status": "error",
                     "message": llm_result["error"],
@@ -148,6 +154,7 @@ class Translator:
                 }
 
             raw_response = llm_result["content"]
+            logger.info(f"Translator: LLM response received in {llm_elapsed:.2f}s:\n{raw_response}")
             clean_json_str = self._strip_markdown_fences(raw_response)
 
             try:
@@ -156,6 +163,7 @@ class Translator:
 
                 # Step B: Normalize IR
                 normalized_dict = normalize_ir(parsed_dict)
+                logger.info(f"Translator: AST Normalization successful: target_class={normalized_dict.get('target_class')!r}")
 
                 # Step C: Structural Validation (Pydantic V2)
                 ir = QueryIR.model_validate(normalized_dict)
@@ -164,9 +172,14 @@ class Translator:
                 val_result = validator.validate(ir, oks_context)
                 if not val_result.valid:
                     raise SemanticValidationError(val_result.message)
+                logger.info("Translator: Semantic Validation passed successfully.")
 
                 # Step E: Deterministic Compilation
                 oks_query = self.compiler.compile(ir, oks_context)
+                logger.info(
+                    f"Translator: Compilation complete (attempt {attempt + 1}) → "
+                    f"target_class={ir.target_class!r}, oks_query={oks_query!r}"
+                )
 
                 return {
                     "status": "success",
@@ -176,6 +189,7 @@ class Translator:
                     "attempts": attempt + 1,
                     "explanation": ir.explanation or "",
                 }
+
 
             except (json.JSONDecodeError, NormalizerError, ValidationError, SemanticValidationError, ValueError) as err:
                 last_error = str(err)

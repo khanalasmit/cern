@@ -13,9 +13,12 @@ The QueryAnalysis output feeds schema retrieval with prioritized entity & class 
 """
 from __future__ import annotations
 
+import logging
 import re
 from dataclasses import dataclass, field
 from typing import List, Optional
+
+logger = logging.getLogger("oksquery_translator.preprocessing")
 
 # OKS-domain stop words
 _STOP_WORDS = {
@@ -175,7 +178,7 @@ class QueryPreprocessor:
         constraints = self._extract_constraints(q)
         numerics = self._extract_numerics(q)
 
-        return QueryAnalysis(
+        analysis = QueryAnalysis(
             original_query=q,
             normalized_query=normalized,
             meaningful_tokens=[t.lower() for t in meaningful],
@@ -184,6 +187,13 @@ class QueryPreprocessor:
             constraint_hints=constraints,
             numeric_values=numerics,
         )
+        logger.info(
+            f"QueryPreprocessor: tokens={analysis.meaningful_tokens!r}, "
+            f"class_hints={analysis.candidate_class_hints!r}, "
+            f"entities={analysis.candidate_entities!r}, "
+            f"retrieval_query={analysis.to_retrieval_query()!r}"
+        )
+        return analysis
 
     @staticmethod
     def _extract_entities(question: str) -> List[str]:
