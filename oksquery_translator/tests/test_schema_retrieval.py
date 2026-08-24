@@ -4,6 +4,7 @@ test_schema_retrieval.py — Unit tests for schema_retrieval module
 import os
 import sys
 import pytest
+from unittest.mock import MagicMock
 
 # Ensure the package is importable
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
@@ -74,6 +75,22 @@ class TestSchemaRetrieverWithXml:
         """An unknown class name should return None."""
         info = retriever.get_class_info("NonExistentClass12345")
         assert info is None
+
+    def test_xml_schema_is_authoritative_for_class_details(self, retriever):
+        """Schema XML preserves superclass links needed for inherited members."""
+
+        info = retriever.get_class_info("IPCServiceApplication")
+
+        assert info is not None
+        assert "IPCServiceApplicationBase" in info["superclasses"]
+
+    def test_missing_class_is_negative_cached(self, retriever, monkeypatch):
+        loader = MagicMock(return_value=None)
+        monkeypatch.setattr(retriever, "_load_class_info", loader)
+
+        assert retriever.get_class_info("DefinitelyMissing") is None
+        assert retriever.get_class_info("DefinitelyMissing") is None
+        loader.assert_called_once_with("DefinitelyMissing")
 
     def test_format_class_info(self, retriever):
         """Formatted class info should be a readable text block."""

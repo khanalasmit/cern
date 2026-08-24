@@ -37,6 +37,10 @@ class TestSExpressionTokenizer:
         assert 'object-id' in tokens
         assert '"test_dummy"' in tokens
 
+    def test_empty_object_id_not_equal_is_valid_match_all_syntax(self):
+        result = syntax_precheck('(all (object-id "" !=))')
+        assert result.valid
+
     def test_relationship(self):
         tokens = SExpressionTokenizer().tokenize(
             '(all ("RunsOn" some (object-id "lxplus001.cern.ch" =)))'
@@ -186,4 +190,3 @@ class TestAlignQueryToSchema:
 
         assert target_cls == "ReadoutApplication"
         assert aligned_q == '(all ("SubDetector" "PMT" =))'
-

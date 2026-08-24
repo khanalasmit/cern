@@ -23,7 +23,8 @@ class AttributeCompare(BaseModel):
 class ObjectIdCompare(BaseModel):
     """Expression filtering by object identifier."""
     type: Literal["object_id"] = "object_id"
-    operator: Literal["="] = "="
+    # ``object-id "" !=`` is the documented OKS match-all expression.
+    operator: Literal["=", "!="] = "="
     object_id: str
 
 

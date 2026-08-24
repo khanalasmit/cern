@@ -58,9 +58,9 @@ class OksCompiler:
             return f'("{expr.attribute}" "{safe_val}" {expr.operator})'
 
         elif isinstance(expr, ObjectIdCompare):
-            # Format: (object-id "<id>" =)
+            # Format: (object-id "<id>" =|!=)
             safe_id = expr.object_id.replace('"', '\\"')
-            return f'(object-id "{safe_id}" =)'
+            return f'(object-id "{safe_id}" {expr.operator})'
 
         elif isinstance(expr, RelationshipCompare):
             # Format: ("<rel-name>" <some|all> <nested-expression>)

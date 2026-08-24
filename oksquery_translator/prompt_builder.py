@@ -77,7 +77,8 @@ HARD RULES you MUST obey:
   6. The attribute MUST exist on the target class (check the schema below).
      NEVER invent attributes like "Name" or "name" unless "Name" is explicitly listed under Attributes for that class.
      To match or filter on an object's identifier, use (object-id "..." =) or (object-id "" !=).
-  7. object-id only supports '=' comparator.
+  7. object-id supports '='; use '!=' only for the documented match-all
+     pattern: (object-id "" !=).
   8. Tokens like #this.UID are compared literally (stored verbatim).
   9. Inside a relationship expression, attributes are evaluated against
      the RELATIONSHIP'S TARGET CLASS, not the outer class.

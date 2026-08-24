@@ -99,6 +99,9 @@ class SchemaRetriever:
         self.schema_dir = schema_dir or self._detect_schema_dir()
         self._class_list: Optional[List[str]] = None
         self._class_cache: Dict[str, dict] = {}
+        # Cache negative lookups too.  The schema index may ask for the same
+        # unavailable class twice (directly and through inheritance).
+        self._missing_classes: set[str] = set()
         self._config_available = self._check_config_available()
         self._oks_dump_path = shutil.which("oks_dump")
 
@@ -173,6 +176,9 @@ class SchemaRetriever:
         if class_name in self._class_cache:
             logger.debug("Schema class cache hit: %s", class_name)
             return self._class_cache[class_name]
+        if class_name in self._missing_classes:
+            logger.debug("Schema class negative-cache hit: %s", class_name)
+            return None
 
         logger.debug("Loading schema details for class: %s", class_name)
         info = self._load_class_info(class_name)
@@ -184,7 +190,8 @@ class SchemaRetriever:
                 len(info.get("relationships", [])), len(info.get("superclasses", [])),
             )
         else:
-            logger.warning("Could not load schema details for class: %s", class_name)
+            self._missing_classes.add(class_name)
+            logger.debug("Could not load schema details for class: %s", class_name)
         return info
 
     def get_schema_context(self, question: str, max_classes: int = 3) -> str:
@@ -411,11 +418,26 @@ class SchemaRetriever:
 
     def _load_class_info(self, class_name: str) -> Optional[dict]:
         """Load attributes, relationships, superclasses for a class."""
+        # XML is authoritative when present: it carries superclass links that
+        # some config-module builds omit, which otherwise leaves valid
+        # inherited members out of the LLM/validator schema context.
+        if self.schema_dir:
+            try:
+                logger.debug("Schema details backend for %s: schema XML", class_name)
+                info = self._load_class_info_xml(class_name)
+                if info is not None:
+                    return info
+            except Exception as exc:
+                logger.debug("Schema details via XML failed for %s: %s", class_name, exc)
+
         # Strategy 1: Python config module
         if self._config_available:
             try:
                 logger.debug("Schema details backend for %s: Python config module", class_name)
-                return self._load_class_info_config(class_name)
+                info = self._load_class_info_config(class_name)
+                if info is not None:
+                    return info
+                logger.debug("Config module has no details for %s; trying fallback backends", class_name)
             except Exception as exc:
                 logger.debug("Schema details via config module failed for %s: %s", class_name, exc)
 
@@ -423,11 +445,15 @@ class SchemaRetriever:
         if self._oks_dump_path:
             try:
                 logger.debug("Schema details backend for %s: oks_dump", class_name)
-                return self._load_class_info_oks_dump(class_name)
+                info = self._load_class_info_oks_dump(class_name)
+                if info is not None:
+                    return info
+                logger.debug("oks_dump has no details for %s; trying XML fallback", class_name)
             except Exception as exc:
                 logger.debug("Schema details via oks_dump failed for %s: %s", class_name, exc)
 
-        # Strategy 3: XML parsing
+        # Strategy 3: XML parsing (only if the earlier XML attempt could not
+        # load the class, e.g. a schema directory appeared later at runtime).
         if self.schema_dir:
             try:
                 logger.debug("Schema details backend for %s: schema XML", class_name)

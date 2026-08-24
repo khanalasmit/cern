@@ -519,6 +519,14 @@ class TestInvariant11_OksCompilerDeterminism:
         result = compiler.compile(ir)
         assert result == '(all (object-id "pc01" =))'
 
+    def test_empty_object_id_not_equal_compiles_as_match_all(self):
+        ir = QueryIR(
+            target_class="Computer",
+            scope="all",
+            expression=ObjectIdCompare(object_id="", operator="!="),
+        )
+        assert OksCompiler().compile(ir) == '(all (object-id "" !=))'
+
     def test_relationship_compare(self):
         ir = QueryIR(
             target_class="Executable",
