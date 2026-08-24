@@ -256,7 +256,7 @@ class Executor:
         """Execute via oks_dump CLI and parse the output."""
         import shlex
 
-        # Prepare environment with enriched LD_LIBRARY_PATH
+        # Prepare environment with enriched LD_LIBRARY_PATH and architecture specifiers
         env = os.environ.copy()
         extra_ld_paths = self._get_release_ld_paths(oks_dump_path)
         if extra_ld_paths:
@@ -264,11 +264,18 @@ class Executor:
             all_ld_paths = extra_ld_paths + ([existing_ld] if existing_ld else [])
             env["LD_LIBRARY_PATH"] = ":".join(all_ld_paths)
 
-        # Check if a setup script exists for the release
+        # Extract architecture directory name (e.g. x86_64-centos7-gcc11-dbg)
         bin_dir = os.path.dirname(oks_dump_path)
         arch_dir = os.path.dirname(bin_dir)
+        arch_name = os.path.basename(arch_dir)
         installed_dir = os.path.dirname(arch_dir)
 
+        if arch_name and arch_name != "installed":
+            env["CMTCONFIG"] = arch_name
+            env["BINARY_TAG"] = arch_name
+            env["ATLAS_BUILD_TARGET"] = arch_name
+
+        # Check if a setup script exists for the release
         setup_script = None
         for candidate in [
             os.path.join(arch_dir, "setup.sh"),
@@ -285,12 +292,20 @@ class Executor:
         t_start = time.perf_counter()
         try:
             if setup_script:
-                shell_cmd = f"source {shlex.quote(setup_script)} && {cmd_display}"
+                env_exports = ""
+                if arch_name and arch_name != "installed":
+                    env_exports = f"export CMTCONFIG={shlex.quote(arch_name)}; export BINARY_TAG={shlex.quote(arch_name)}; "
+                shell_cmd = f"{env_exports}source {shlex.quote(setup_script)} && {cmd_display}"
                 logger.info(f"Executor: Executing via oks_dump CLI shell script:\n  $ {shell_cmd}")
                 result = subprocess.run(
                     ["bash", "-c", shell_cmd],
                     capture_output=True, text=True, timeout=60, env=env
                 )
+                if result.returncode not in (0, 5):
+                    logger.warning(f"Executor: Shell setup script execution failed (exit {result.returncode}); retrying direct binary execution...")
+                    result = subprocess.run(
+                        cmd, capture_output=True, text=True, timeout=60, env=env
+                    )
             else:
                 logger.info(f"Executor: Executing via oks_dump CLI binary:\n  $ {cmd_display}")
                 result = subprocess.run(
@@ -308,6 +323,7 @@ class Executor:
                 success=False,
                 message=f"Unable to start oks_dump '{oks_dump_path}': {exc}",
             )
+
 
         elapsed = time.perf_counter() - t_start
 
