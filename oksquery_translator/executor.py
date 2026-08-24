@@ -168,7 +168,18 @@ class Executor:
         logger.info(f"Executor: Executing via Python C++ config backend -> class={target_class!r}, query={query!r}, data_file={data_file!r}")
         t_start = time.perf_counter()
 
-        db = oks_config.Configuration("oksconflibs:" + data_file)
+        db = None
+        last_err = None
+        for prefix in ("oksconfig:", "oksconflibs:", ""):
+            try:
+                db = oks_config.Configuration(f"{prefix}{data_file}")
+                break
+            except Exception as e:
+                last_err = e
+                continue
+        if db is None:
+            raise last_err or RuntimeError(f"Could not initialize Configuration for {data_file}")
+
         raw_objects = db.get_objs(target_class, query)
 
         objects = []
