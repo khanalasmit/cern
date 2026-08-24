@@ -86,7 +86,8 @@ class Translator:
 
     def translate(self, question: str,
                   oks_context: Optional[OksContext] = None,
-                  retrieval_query: Optional[str] = None) -> Dict[str, Any]:
+                  retrieval_query: Optional[str] = None,
+                  data_file: Optional[str] = None) -> Dict[str, Any]:
         """
         Translate a natural-language question into a validated OksQuery via the AST pipeline.
 
@@ -110,16 +111,19 @@ class Translator:
             message : str (on error)
             explanation : str (optional)
         """
+        # Resolve effective data file (caller may supply a run-specific path)
+        effective_data_file = data_file or self.data_file
+
         # Ensure an OksContext exists for this translation call
         if oks_context is None:
             schema_dir = getattr(self.schema_retriever, "schema_dir", None) if self.schema_retriever else None
-            builder = OksContextBuilder(data_file=self.data_file, schema_dir=schema_dir)
+            builder = OksContextBuilder(data_file=effective_data_file, schema_dir=schema_dir)
             oks_context = builder.build()
 
         schema_dir = getattr(self.schema_retriever, "schema_dir", None) if self.schema_retriever else None
         schema_provider = OksSchemaProvider(
             oks_context=oks_context,
-            data_file=self.data_file,
+            data_file=effective_data_file,
             schema_dir=schema_dir,
         )
         validator = ASTValidator(schema_provider)

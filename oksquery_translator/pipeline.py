@@ -122,7 +122,7 @@ class OksPipeline:
             max_retries=max_retries,
         )
 
-        self.executor = Executor(data_file=data_file)
+        self.executor = Executor(data_file=data_file, repo_root=repo_root)
 
         self.interpreter = Interpreter(
             llm_api_key=llm_api_key,
@@ -365,7 +365,7 @@ class OksPipeline:
             t_idx = time.perf_counter()
             from .schema import OksSchemaProvider
             schema_dir = getattr(self.schema_retriever, "schema_dir", None)
-            sp = OksSchemaProvider(oks_context=oks_context, data_file=self.data_file, schema_dir=schema_dir)
+            sp = OksSchemaProvider(oks_context=oks_context, data_file=request_data_file, schema_dir=schema_dir)
             self.schema_index.build_from_schema_provider(sp)
             logger.info(f"[LAYER 2 - Schema Indexing] Indexed fingerprint '{oks_context.schema_fingerprint}' in {time.perf_counter() - t_idx:.3f}s")
 
@@ -392,6 +392,7 @@ class OksPipeline:
             question,
             oks_context=oks_context,
             retrieval_query=retrieval_query,
+            data_file=request_data_file,
         )
         t_trans_elapsed = time.perf_counter() - t_trans
 

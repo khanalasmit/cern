@@ -350,7 +350,17 @@ class SchemaRetriever:
             try:
                 logger.debug("Class discovery backend: Python config module")
                 import config as oks_config
-                db = oks_config.Configuration("oksconflibs:" + self.data_file)
+                db = None
+                last_err = None
+                for prefix in ("oksconfig:", "oksconflibs:", ""):
+                    try:
+                        db = oks_config.Configuration(f"{prefix}{self.data_file}")
+                        break
+                    except Exception as e:
+                        last_err = e
+                        continue
+                if db is None:
+                    raise last_err or RuntimeError(f"Could not open {self.data_file}")
                 classes = sorted(db.classes())
                 if classes:
                     logger.info("Class discovery succeeded via config module: %d classes", len(classes))
@@ -466,7 +476,17 @@ class SchemaRetriever:
     def _load_class_info_config(self, class_name: str) -> Optional[dict]:
         """Load class info via the Python config module."""
         import config as oks_config
-        db = oks_config.Configuration("oksconflibs:" + self.data_file)
+        db = None
+        last_err = None
+        for prefix in ("oksconfig:", "oksconflibs:", ""):
+            try:
+                db = oks_config.Configuration(f"{prefix}{self.data_file}")
+                break
+            except Exception as e:
+                last_err = e
+                continue
+        if db is None:
+            raise last_err or RuntimeError(f"Could not open {self.data_file}")
 
         if class_name not in db.classes():
             return None

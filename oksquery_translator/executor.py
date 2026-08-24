@@ -61,8 +61,9 @@ class Executor:
             print(obj["id"], obj["attributes"])
     """
 
-    def __init__(self, data_file: str = "daq/segments/setup.data.xml"):
+    def __init__(self, data_file: str = "daq/segments/setup.data.xml", repo_root: Optional[str] = None):
         self.data_file = data_file
+        self.repo_root = repo_root or os.getcwd()
         self._config_available = self._check_config()
         self._oks_dump_path = shutil.which("oks_dump")
 
@@ -170,7 +171,7 @@ class Executor:
 
         db = None
         last_err = None
-        for prefix in ("oksconfig:", "oksconflibs:", ""):
+        for prefix in ("oksconfig:", "oksconflibs:"):
             try:
                 db = oks_config.Configuration(f"{prefix}{data_file}")
                 break
@@ -298,7 +299,11 @@ class Executor:
 
         # Log whether TDAQ_DB_USER_REPOSITORY is present (instant checkout path)
         user_repo = env.get("TDAQ_DB_USER_REPOSITORY", "")
-        if user_repo:
+        if not user_repo and self.repo_root:
+            user_repo = self.repo_root
+            env["TDAQ_DB_USER_REPOSITORY"] = user_repo
+            logger.info(f"Executor: Auto-set TDAQ_DB_USER_REPOSITORY={user_repo!r} from repo_root (fast path)")
+        elif user_repo:
             logger.info(f"Executor: TDAQ_DB_USER_REPOSITORY={user_repo!r} — will use existing checkout (fast path)")
         elif env.get("TDAQ_DB_VERSION"):
             logger.warning(
@@ -442,14 +447,17 @@ class Executor:
     # Temporal version environment
     # ------------------------------------------------------------------
 
-    @staticmethod
-    def _set_version_env(version: str,
+    def _set_version_env(self, version: str,
                          release_data_path: Optional[str] = None) -> Dict[str, Optional[str]]:
         """
         Set environment variables for temporal access.
         Returns backup of original values for restoration.
         """
         backup = {}
+        if "TDAQ_DB_USER_REPOSITORY" not in os.environ and self.repo_root:
+            backup["TDAQ_DB_USER_REPOSITORY"] = None
+            os.environ["TDAQ_DB_USER_REPOSITORY"] = self.repo_root
+
         if release_data_path:
             backup["TDAQ_DB_PATH"] = os.environ.get("TDAQ_DB_PATH")
             os.environ["TDAQ_DB_PATH"] = release_data_path
