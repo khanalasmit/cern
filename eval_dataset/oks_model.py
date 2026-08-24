@@ -339,7 +339,7 @@ class IRError(ValueError):
 def serialize(ir: Dict[str, Any]) -> str:
     """Serialise a QueryIR dict to an OksQuery string.
 
-    Byte-for-byte identical to ``translator_module/agent/serializer.py`` so the
+    Byte-for-byte identical to ``oksquery_translator/ast/compiler.py`` so the
     dataset's ``query_oks`` field can be compared to pipeline output directly.
     """
     scope = ir["scope"]

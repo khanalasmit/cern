@@ -1,8 +1,0 @@
-pydantic>=2.0
-rank_bm25
-sentence-transformers
-numpy
-faiss-cpu
-openai
-python-dotenv
-networkx

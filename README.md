@@ -167,4 +167,4 @@ Regenerate evaluation datasets with:
 python eval_dataset/build_dataset.py
 ```
 
-See [`eval_dataset/README.md`](eval_dataset/README.md) for field reference and metric definitions, and [`rag.md`](rag.md) for the retrieval architecture.
+See [`eval_dataset/README.md`](eval_dataset/README.md) for field reference and metric definitions, and [`docs/guides/rag.md`](docs/guides/rag.md) for the retrieval architecture.
