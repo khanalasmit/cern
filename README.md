@@ -48,13 +48,16 @@ python translator_module/cli.py \
   --execute \
   --target-class Application \
   --data-path test_data/application.data.xml \
-  --oks-dump-executable /path/to/oks_dump
+  --oks-dump-executable /path/to/oks_dump \
+  --execution-format json
 ```
 
 Repeat `--data-path` for multiple files. If omitted, the CLI discovers
 `test_data/**/*.data.xml` in the selected revision. Execution is opt-in and
 requires the native `oks_dump` executable; without it, the CLI still supports
-historical translation and reports a clear execution error.
+historical translation and reports a clear execution error. The `json` format
+emits revision, repository, schema/data paths, command arguments, return code,
+and the native stdout/stderr without attempting to reinterpret native output.
 
 ## Configuration
 

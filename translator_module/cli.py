@@ -111,6 +111,12 @@ def build_argument_parser() -> argparse.ArgumentParser:
         default=60.0,
         help="maximum seconds allowed for one oks_dump call (default: 60)",
     )
+    parser.add_argument(
+        "--execution-format",
+        choices=("text", "json"),
+        default="text",
+        help="historical execution output format (default: text)",
+    )
     return parser
 
 
@@ -328,18 +334,21 @@ def main(argv=None):
                     except Exception as exc:
                         print(f"\n  Historical execution failed: {exc}")
                     else:
-                        print("-" * 60)
-                        print(
-                            "\n  Historical execution output "
-                            f"(revision {execution_result.revision}):"
-                        )
-                        print(
-                            execution_result.stdout
-                            or "  (oks_dump returned no output)"
-                        )
-                        if execution_result.stderr:
-                            print("\n  oks_dump diagnostics:")
-                            print(execution_result.stderr)
+                        if args.execution_format == "json":
+                            print(json.dumps(execution_result.to_dict(), indent=2))
+                        else:
+                            print("-" * 60)
+                            print(
+                                "\n  Historical execution output "
+                                f"(revision {execution_result.revision}):"
+                            )
+                            print(
+                                execution_result.stdout
+                                or "  (oks_dump returned no output)"
+                            )
+                            if execution_result.stderr:
+                                print("\n  oks_dump diagnostics:")
+                                print(execution_result.stderr)
             else:
                 print(f"  Error: {result.get('message')}")
             print("=" * 60 + "\n")

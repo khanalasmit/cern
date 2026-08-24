@@ -77,6 +77,8 @@ class CliArgumentTests(unittest.TestCase):
                 "C:/oks/bin/oks_dump",
                 "--execution-timeout",
                 "12.5",
+                "--execution-format",
+                "json",
             ]
         )
 
@@ -88,6 +90,7 @@ class CliArgumentTests(unittest.TestCase):
         self.assertEqual(args.target_class, "Application")
         self.assertEqual(args.oks_dump_executable, "C:/oks/bin/oks_dump")
         self.assertEqual(args.execution_timeout, 12.5)
+        self.assertEqual(args.execution_format, "json")
 
     def test_execution_requires_historical_selector(self):
         self.assertEqual(cli.main(["--execute"]), 2)

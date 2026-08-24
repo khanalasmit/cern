@@ -875,3 +875,9 @@ Verification after this slice: CLI tests passed 10/10; the full suite passed 68 
 - Focused historical suite: 43 tests passed, 2 RAG dependency-based tests skipped.
 - Full suite: 69 tests passed, 2 RAG dependency-based tests skipped.
 - Compilation passed for the execution adapter and historical tests.
+
+## JSON execution output mode — 2026-08-24
+
+Added `--execution-format {text,json}` to the historical CLI. Text remains the default interactive format. JSON emits the complete `OksDumpResult.to_dict()` envelope, including revision, repository, schema/data paths, command arguments, return code, and unchanged native stdout/stderr.
+
+CLI usage documentation now includes the JSON mode. Verification passed with 11 CLI tests and 69 full-suite tests; 2 RAG tests remain skipped because their optional dependencies are not installed locally.
