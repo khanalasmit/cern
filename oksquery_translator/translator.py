@@ -23,7 +23,7 @@ from typing import Any, Dict, Optional, Tuple
 from openai import OpenAI, APIStatusError, APIConnectionError
 from pydantic import ValidationError
 
-from .ast import (
+from .oks_ast import (
     ASTValidator,
     NormalizerError,
     OksCompiler,

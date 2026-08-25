@@ -37,7 +37,8 @@ Expression types:
 
   Object ID comparison:
     ( object-id "object-identifier" = )
-    Note: object-id supports '=' operator ONLY.
+    Exact IDs use '='. The special match-all form uses:
+    ( object-id "" != )
 
   Logical AND (requires >= 2 operands):
     ( and <expr1> <expr2> ... )
@@ -77,7 +78,8 @@ HARD RULES you MUST obey:
   6. The attribute MUST exist on the target class (check the schema below).
      NEVER invent attributes like "Name" or "name" unless "Name" is explicitly listed under Attributes for that class.
      To match or filter on an object's identifier, use (object-id "..." =) or (object-id "" !=).
-  7. object-id supports '='; use '!=' only for the documented match-all
+  7. object-id supports '=' for an exact ID. For an unqualified request to
+     list every object in the target class, use ONLY the documented match-all
      pattern: (object-id "" !=).
   8. Tokens like #this.UID are compared literally (stored verbatim).
   9. Inside a relationship expression, attributes are evaluated against
@@ -129,6 +131,7 @@ Where <Expression> is EXACTLY ONE of:
    IMPORTANT: "value" MUST ALWAYS be a string (e.g. "2", "30", "test").
 2. Object ID match:
    {"type": "object_id", "operator": "=", "object_id": "<id>"}
+   For a match-all request, use {"type": "object_id", "operator": "!=", "object_id": ""}.
 3. Relationship traversal:
    {"type": "relationship", "name": "<rel_name>", "quantifier": "some" | "all", "expression": <Expression>}
    NOTE: Nested expression is evaluated against the relationship's TARGET CLASS.

@@ -1,5 +1,5 @@
 """
-ast/compiler.py — Module 12: Deterministic OKSQuery Compiler
+oks_ast/compiler.py — Module 12: Deterministic OKSQuery Compiler
 =============================================================
 
 Deterministically compiles a validated QueryIR AST into a canonical

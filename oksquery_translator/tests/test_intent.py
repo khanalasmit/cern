@@ -195,7 +195,12 @@ class TestIntentClassifierWithMockLLM:
     def _mock_llm_response(self, intent: str, run_number=None, partition=None):
         mock_resp = MagicMock()
         mock_choice = MagicMock()
-        mock_choice.message.content = f'{{"intent": "{intent}", "run_number": {("null" if run_number is None else run_number)}, "partition": {("\"" + partition + "\"" if partition else "null")}}}'
+        run_number_json = "null" if run_number is None else str(run_number)
+        partition_json = "null" if partition is None else f'"{partition}"'
+        mock_choice.message.content = (
+            f'{{"intent": "{intent}", "run_number": {run_number_json}, '
+            f'"partition": {partition_json}}}'
+        )
         mock_resp.choices = [mock_choice]
         return mock_resp
 
