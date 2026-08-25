@@ -573,6 +573,24 @@ class Executor:
         elapsed = time.perf_counter() - t_start
 
         if result.returncode not in (0, 5):
+            # If the release-specific binary failed due to missing host shared libraries
+            # (e.g. libssl.so.10 on EL9 nodes), fallback to host system's native oks_dump binary.
+            host_dump = self._oks_dump_path or shutil.which("oks_dump")
+            if host_dump and host_dump != oks_dump_path and (result.returncode == 127 or "cannot open shared object file" in result.stderr):
+                logger.warning(
+                    f"Executor: Release-specific oks_dump binary '{oks_dump_path}' failed due to missing host shared libraries:\n"
+                    f"  {result.stderr.strip()}\n"
+                    f"Retrying using host runtime binary '{host_dump}'..."
+                )
+                return self._execute_oks_dump(
+                    target_class, query, max_objects, version_label, data_file,
+                    host_dump,
+                    version=version,
+                    release=release,
+                    partition=partition,
+                    repository=repository,
+                )
+
             logger.error(f"Executor: oks_dump failed with exit code {result.returncode} in {elapsed:.3f}s:\n{result.stderr.strip()}")
             return ExecutionResult(
                 success=False,
