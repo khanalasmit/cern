@@ -1,5 +1,5 @@
 """
-ast/normalizer.py — Module 9: AST Normalizer
+oks_ast/normalizer.py — Module 9: AST Normalizer
 ==============================================
 
 Normalizes a raw LLM-produced IR dictionary before Pydantic validation.
@@ -103,7 +103,18 @@ def _normalize_expression(expr: Any) -> Dict[str, Any]:
             result["value"] = str(result["value"]).strip().strip('"').strip("'") if isinstance(result["value"], str) else str(result["value"]).strip()
 
     elif expr_type == "object_id":
-        result["operator"] = "="
+        # Exact IDs use "="; the documented match-all expression uses
+        # object-id "" !=. Preserve the operator supplied by the LLM so the
+        # deterministic compiler does not silently turn match-all into an
+        # empty result set.
+        if "operator" in result:
+            result["operator"] = _normalize_operator(str(result["operator"]))
+        else:
+            result["operator"] = "="
+        if result["operator"] not in {"=", "!="}:
+            raise NormalizerError(
+                f"object_id operator must be '=' or '!=', got {result['operator']!r}"
+            )
         if "object_id" in result:
             result["object_id"] = str(result["object_id"]).strip().strip('"').strip("'")
 

@@ -21,7 +21,7 @@ from unittest.mock import MagicMock, patch
 from oksquery_translator.context import OksContext, OksContextBuilder, compute_fingerprint
 from oksquery_translator.preprocessing import QueryPreprocessor, QueryAnalysis
 from oksquery_translator.schema import OksSchemaProvider, ClassDefinition, AttributeDefinition, RelationshipDefinition
-from oksquery_translator.ast import (
+from oksquery_translator.oks_ast import (
     QueryIR,
     AttributeCompare,
     ObjectIdCompare,
@@ -448,6 +448,19 @@ class TestInvariant8And9_NormalizeIrDeterminism:
         raw = self._wrap_attribute("T", ">", 20)
         result = normalize_ir(raw)
         assert result["expression"]["value"] == "20"
+
+    def test_match_all_object_id_operator_is_preserved(self):
+        raw = {
+            "target_class": "Computer",
+            "scope": "all",
+            "expression": {
+                "type": "object_id",
+                "operator": "!=",
+                "object_id": "",
+            },
+        }
+        result = normalize_ir(raw)
+        assert result["expression"]["operator"] == "!="
 
     def test_float_value_coerced_to_string(self):
         raw = self._wrap_attribute("T", ">", 3.14)

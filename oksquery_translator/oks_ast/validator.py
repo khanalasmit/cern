@@ -1,5 +1,5 @@
 """
-ast/validator.py — Module 10: Version-Aware Deterministic AST Validator
+oks_ast/validator.py — Module 10: Version-Aware Deterministic AST Validator
 =========================================================================
 
 Validates a QueryIR AST against the OksSchemaProvider bound to the exact OksContext.
@@ -34,7 +34,7 @@ from .models import (
 from ..context.oks_context import OksContext
 from ..schema.oks_schema_provider import OksSchemaProvider
 
-logger = logging.getLogger("oksquery_translator.ast.validator")
+logger = logging.getLogger("oksquery_translator.oks_ast.validator")
 
 
 class ASTValidator:

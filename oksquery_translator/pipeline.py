@@ -132,7 +132,8 @@ class OksPipeline:
 
         self.data_file = data_file
 
-    def answer(self, question: str, version: str = None) -> Dict:
+    def answer(self, question: str, version: str = None,
+               interpret: bool = True) -> Dict:
         """
         Full pipeline: natural-language question → clean answer.
 
@@ -143,6 +144,10 @@ class OksPipeline:
         version : str, optional
             Temporal version specifier (e.g. "hash:abc123",
             "date:2024-03-15", "tdaq-13-00-00", "tag:r380689@all_hosts").
+        interpret : bool
+            When true, make the second LLM call that turns results into prose.
+            MCP callers should normally set this to false and let the host
+            agent interpret the structured result.
 
         Returns
         -------
@@ -227,6 +232,7 @@ class OksPipeline:
         partition = intent_info.partition or "all_hosts"
         request_data_file = self.data_file
         request_release = None
+        request_repository = None
 
         if intent_info.intent == Intent.OKS_HISTORICAL_QUERY:
             if version:
@@ -316,6 +322,9 @@ class OksPipeline:
                     partition = run_info.get("partition") or partition
                     request_data_file = run_info.get("config_name") or request_data_file
                     request_release = run_info.get("release") or None
+                    # Some RNDB integrations provide the exact Git URL.  Keep
+                    # it intact; it is more authoritative than a family guess.
+                    request_repository = run_info.get("repository") or None
 
                 if effective_version is None:
                     archive_revision = (run_info or {}).get("version", "unknown")
@@ -378,6 +387,7 @@ class OksPipeline:
                 partition=partition,
                 data_file=request_data_file,
                 release=request_release,
+                repository=request_repository,
             )
 
         # ------ Step 0e: Query Preprocessing (Tokens & Hints) ------
@@ -431,7 +441,7 @@ class OksPipeline:
         exec_version = oks_context.version_tag or effective_version
         exec_result = self.executor.execute(
             target_class, oks_query, version=exec_version, data_file=request_data_file,
-            release=request_release,
+            release=request_release, partition=partition, repository=request_repository,
         )
         t_exec_elapsed = time.perf_counter() - t_exec
 
@@ -461,9 +471,35 @@ class OksPipeline:
             f"Returned {exec_result.count} object(s)"
         )
 
+        version_label = effective_version or "current"
+        if not interpret:
+            total_elapsed = time.perf_counter() - t_pipeline_start
+            logger.info(
+                f"=== [PIPELINE COMPLETE] Structured result in {total_elapsed:.3f}s "
+                f"(Intent={t0_elapsed:.2f}s, Context={t1_elapsed:.2f}s, "
+                f"Translation={t_trans_elapsed:.2f}s, Execution={t_exec_elapsed:.2f}s) ==="
+            )
+            return {
+                "status": "success",
+                "answer": "",
+                "oks_query": oks_query,
+                "target_class": target_class,
+                "result_count": exec_result.count,
+                "results": exec_result.objects,
+                "attempts": attempts,
+                "message": "",
+                "intent": intent_info.intent.value,
+                "run_number": extracted_run,
+                "partition": partition if extracted_run else None,
+                "version": version_label,
+                "version_used": version_label,
+                "schema_fingerprint": oks_context.schema_fingerprint,
+                "oks_context_label": oks_context.display_label,
+                "ir": ir_dump,
+            }
+
         # ------ Step 3: Interpret the results ------
         t_interp = time.perf_counter()
-        version_label = effective_version or "current"
         logger.info(
             f"[LAYER 5 - Interpretation Started] Generating natural-language summary for {exec_result.count} object(s)..."
         )
@@ -524,7 +560,8 @@ class OksPipeline:
     def _answer_all_objects(self, *, intent_info: IntentResult, oks_context: OksContext,
                             version: Optional[str], run_number: Optional[int],
                             partition: str, data_file: str,
-                            release: Optional[str] = None) -> Dict:
+                            release: Optional[str] = None,
+                            repository: Optional[str] = None) -> Dict:
         """Enumerate every concrete class for an explicit all-objects request."""
         query = '(all (object-id "" !=))'
         class_names = self.schema_retriever.get_class_list()
@@ -533,7 +570,8 @@ class OksPipeline:
         for class_name in class_names:
             result = self.executor.execute(
                 class_name, query, version=oks_context.version_tag or version,
-                data_file=data_file, release=release,
+                data_file=data_file, release=release, partition=partition,
+                repository=repository,
             )
             if not result.success:
                 failures.append(class_name)

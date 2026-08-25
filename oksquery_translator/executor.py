@@ -21,6 +21,7 @@ import platform
 import re
 import shutil
 import subprocess
+import tempfile
 import time
 from typing import Any, Dict, List, Optional
 
@@ -71,7 +72,9 @@ class Executor:
                 version: str = None,
                 max_objects: int = 200,
                 data_file: Optional[str] = None,
-                release: Optional[str] = None) -> ExecutionResult:
+                release: Optional[str] = None,
+                partition: Optional[str] = None,
+                repository: Optional[str] = None) -> ExecutionResult:
         """
         Execute a query and return matching objects.
 
@@ -82,33 +85,94 @@ class Executor:
         query : str
             Validated OksQuery string.
         version : str, optional
-            Temporal version specifier:
-              - "hash:<commit>"  → sets TDAQ_DB_VERSION
-              - "date:<date>"    → sets TDAQ_DB_VERSION
-              - "tdaq-XX-YY-ZZ"  → sets TDAQ_DB_PATH to CVMFS snapshot
+            Temporal version specifier (e.g. "hash:<sha>", "tag:r380689@all_hosts").
         max_objects : int
             Cap the number of returned objects.
+        data_file : str, optional
+            Data file path relative to OKS configuration repository.
+        release : str, optional
+            Target TDAQ release (e.g. "tdaq-11-02-01").
+        partition : str, optional
+            Partition name (e.g. "part_TGC_FillTest", "all_hosts").
+        repository : str, optional
+            Repository recorded with the run metadata.  This takes precedence
+            over TDAQ_DB_REPOSITORY and over a URL derived from ``release``.
 
         Returns
         -------
         ExecutionResult
         """
-        # A run-number DB record may identify a different top-level data file.
-        # Keep the instance default for ordinary/current queries.
         selected_data_file = data_file or self.data_file
+        version_label = version or "current"
+        is_historical = bool(version and version != "current")
 
-        # Locate historical release data directory if provided
-        release_data_path = None
+        # Check for release mismatch between active environment and requested release
+        active_release = os.environ.get("TDAQ_RELEASE")
+        if release and active_release and release != active_release:
+            logger.warning(
+                f"Executor: Active TDAQ release is '{active_release}', but run specifies release '{release}'. "
+                f"Query execution will proceed using active runtime '{active_release}' against historical revision '{version}'."
+            )
+
+        if is_historical:
+            tdaq_repo = self._resolve_repository_url(release, partition, repository)
+            if not tdaq_repo:
+                msg = (
+                    "Cannot load historical OKS configuration: "
+                    "TDAQ_DB_REPOSITORY is not configured in the environment and could not be derived. "
+                    "Historical configuration access requires TDAQ_DB_REPOSITORY to point to "
+                    "the actual ATLAS OKS configuration Git repository."
+                )
+                logger.error(f"Executor: {msg}")
+                return ExecutionResult(success=False, message=msg)
+
+            if not selected_data_file:
+                msg = "Cannot load historical OKS configuration: data_file path is missing."
+                logger.error(f"Executor: {msg}")
+                return ExecutionResult(success=False, message=msg)
+
+            validation_error = self._validate_historical_configuration(
+                repository=tdaq_repo, version=version, data_file=selected_data_file,
+                release=release, partition=partition,
+            )
+            if validation_error:
+                logger.error("Executor: historical configuration validation failed: %s", validation_error)
+                return ExecutionResult(success=False, message=validation_error)
+
+            logger.info(
+                f"Executor: Historical configuration access:\n"
+                f"  release: {release or 'unspecified'}\n"
+                f"  partition: {partition or 'unspecified'}\n"
+                f"  version: {version}\n"
+                f"  data_file: {selected_data_file}\n"
+                f"  TDAQ_DB_REPOSITORY: {tdaq_repo}\n"
+                f"  OKS_GIT_PROTOCOL: ssh\n"
+                f"  mode: historical Git-backed configuration"
+            )
+        else:
+            user_repo = os.environ.get("TDAQ_DB_USER_REPOSITORY")
+            if not user_repo and self.repo_root and os.path.exists(os.path.join(self.repo_root, selected_data_file)):
+                user_repo = self.repo_root
+            logger.info(
+                f"Executor: Current configuration access:\n"
+                f"  data_file: {selected_data_file}\n"
+                f"  TDAQ_DB_USER_REPOSITORY: {user_repo or 'unset (using TDAQ_DB_PATH/release)'}\n"
+                f"  mode: static/local current configuration"
+            )
+
         oks_dump_path = self._oks_dump_path
-
         if release:
             release_info = self._release_info(release)
             if release_info is not None:
-                rel_dump_path, release_data_path = release_info
-                # Prefer host's active oks_dump on PATH if available; otherwise use release binary
-                if not oks_dump_path:
+                rel_dump_path, _ = release_info
+                if is_historical:
+                    # For historical queries, prefer the release-specific binary
+                    # from CVMFS over the currently-sourced one.  Cross-release
+                    # oks_dump can mishandle schema differences.
+                    oks_dump_path = rel_dump_path or oks_dump_path
+                elif not oks_dump_path:
                     oks_dump_path = rel_dump_path
-            elif not oks_dump_path:
+            elif not oks_dump_path and not self._config_available:
                 return ExecutionResult(
                     success=False,
                     message=(
@@ -117,33 +181,35 @@ class Executor:
                     ),
                 )
 
-        version_label = version or "current"
-
-        # Resolve selected_data_file against release_data_path if not found locally
-        if release_data_path and not os.path.exists(selected_data_file):
-            candidate = os.path.join(release_data_path, selected_data_file)
-            if os.path.exists(candidate):
-                selected_data_file = candidate
-
-        # Strategy 1 (preferred): Python config module.
-        if self._config_available:
-            env_backup = self._set_version_env(version, release_data_path)
+        # Strategy 1 (preferred): Python config module — for CURRENT queries only.
+        # For historical queries the Python config module is skipped because:
+        #   a) It is imported once and caches env at import time, so
+        #      os.environ changes (TDAQ_DB_REPOSITORY, TDAQ_DB_VERSION) made
+        #      after import have no effect on the C++ layer.
+        #   b) Cross-release access (e.g. tdaq-12-00-00 config module against a
+        #      tdaq-11-02-01 git repository) is unreliable.
+        if self._config_available and not is_historical:
+            env_backup = self._set_version_env(
+                version, release=release, partition=partition, repository=repository
+            )
             try:
                 return self._execute_config(
-                    target_class, query, max_objects, version_label, selected_data_file
+                    target_class, query, max_objects, version_label, selected_data_file, version=version
                 )
             except Exception as e:
                 logger.warning(f"Executor: Python config backend failed ({e}); falling back to oks_dump CLI.")
             finally:
                 self._restore_env(env_backup)
 
-        # Strategy 2 (fallback): oks_dump CLI.
+        # Strategy 2 (fallback for current; primary path for historical): oks_dump CLI.
         if oks_dump_path:
             return self._execute_oks_dump(
                 target_class, query, max_objects, version_label, selected_data_file,
                 oks_dump_path,
                 version=version,
-                release_data_path=release_data_path,
+                release=release,
+                partition=partition,
+                repository=repository,
             )
 
         return ExecutionResult(
@@ -162,28 +228,38 @@ class Executor:
 
     def _execute_config(self, target_class: str, query: str,
                         max_objects: int, version_label: str,
-                        data_file: str) -> ExecutionResult:
+                        data_file: str,
+                        oks_dump_path: Optional[str] = None,
+                        version: Optional[str] = None) -> ExecutionResult:
         """Execute via the Python config module."""
         import config as oks_config
 
-        logger.info(f"Executor: Executing via Python C++ config backend -> class={target_class!r}, query={query!r}, data_file={data_file!r}")
+        logger.info(f"Executor: Executing via Python C++ config backend -> class={target_class!r}, query={query!r}, data_file={data_file!r}, version={version!r}")
         t_start = time.perf_counter()
+
+        conn_spec = data_file
+        if version and version != "current" and "&version=" not in conn_spec:
+            conn_spec = f"{data_file}&version={version}"
 
         db = None
         last_err = None
         for prefix in ("oksconfig:", "oksconflibs:"):
             try:
-                db = oks_config.Configuration(f"{prefix}{data_file}")
+                db = oks_config.Configuration(f"{prefix}{conn_spec}")
                 break
             except Exception as e:
+                logger.warning(f"Executor: Configuration('{prefix}{conn_spec}') failed: {e}")
                 last_err = e
                 continue
         if db is None:
-            raise last_err or RuntimeError(f"Could not initialize Configuration for {data_file}")
+            raise last_err or RuntimeError(f"Could not initialize Configuration for {conn_spec}")
 
-        raw_objects = db.get_objs(target_class, query)
+        # Materialise this once.  Some config implementations return a proxy
+        # collection whose iterator is consumed by the first loop.
+        raw_objects = list(db.get_objs(target_class, query))
 
         objects = []
+        attribute_names = self._config_attribute_names(db, target_class)
         for obj in raw_objects:
             if len(objects) >= max_objects:
                 break
@@ -192,33 +268,56 @@ class Executor:
                 "class": target_class,
                 "attributes": {},
             }
-            # Try to read common attributes
-            try:
-                attrs = db.attributes(target_class)
-                if isinstance(attrs, dict):
-                    for aname in attrs:
-                        try:
-                            obj_dict["attributes"][aname] = str(
-                                getattr(obj, aname, "")
-                            )
-                        except Exception:
-                            pass
-                elif isinstance(attrs, (list, tuple)):
-                    for a in attrs:
-                        aname = a if isinstance(a, str) else a.get("name", "")
-                        if aname:
-                            try:
-                                obj_dict["attributes"][aname] = str(
-                                    getattr(obj, aname, "")
-                                )
-                            except Exception:
-                                pass
-            except Exception:
-                pass
+            for aname in attribute_names:
+                value = self._read_config_attribute(obj, aname)
+                if value is not None:
+                    obj_dict["attributes"][aname] = value
 
             objects.append(obj_dict)
 
-        total_count = len(list(raw_objects)) if hasattr(raw_objects, '__len__') else len(objects)
+        total_count = len(raw_objects)
+
+        # The Python config proxy is excellent for selecting objects, but on
+        # some TDAQ/Python combinations its object proxy does not expose data
+        # attributes through ``getattr``.  That produces a successful query
+        # with misleading empty attribute values.  If that happens, use the
+        # native formatter/parser as a narrow fallback for the same query.
+        if (objects and oks_dump_path and
+                self._has_missing_attribute_values(objects)):
+            native_result = self._execute_oks_dump(
+                target_class,
+                query,
+                max_objects,
+                version_label,
+                data_file,
+                oks_dump_path,
+                version=version,
+                release=release,
+                partition=partition,
+                repository=repository,
+                
+            )
+            if native_result.success and native_result.objects:
+                native_by_id = {
+                    item.get("id"): item
+                    for item in native_result.objects
+                    if item.get("id")
+                }
+                for item in objects:
+                    native_item = native_by_id.get(item.get("id"))
+                    if native_item and native_item.get("attributes"):
+                        item["attributes"] = native_item["attributes"]
+                logger.info(
+                    "Executor: filled missing config-proxy attributes from "
+                    "native oks_dump output"
+                )
+            else:
+                logger.warning(
+                    "Executor: config query succeeded but attribute values were "
+                    "unavailable; native oks_dump fallback also failed: %s",
+                    native_result.message,
+                )
+
         elapsed = time.perf_counter() - t_start
         logger.info(f"Executor: Python C++ config backend returned {total_count} object(s) in {elapsed:.3f}s")
 
@@ -229,6 +328,77 @@ class Executor:
             version_used=version_label,
         )
 
+    @staticmethod
+    def _config_attribute_names(db: Any, target_class: str) -> List[str]:
+        """Return attribute names from the several config APIs in use."""
+        try:
+            attrs = db.attributes(target_class)
+        except Exception:
+            return []
+
+        if isinstance(attrs, dict):
+            candidates = list(attrs.keys())
+        elif isinstance(attrs, (list, tuple)):
+            candidates = []
+            for attr in attrs:
+                if isinstance(attr, str):
+                    candidates.append(attr)
+                elif isinstance(attr, dict):
+                    candidates.append(attr.get("name", ""))
+                else:
+                    candidates.append(getattr(attr, "name", ""))
+        else:
+            candidates = []
+
+        return [str(name) for name in candidates if name]
+
+    @staticmethod
+    def _read_config_attribute(obj: Any, name: str) -> Optional[str]:
+        """Read one value without treating an absent proxy member as empty.
+
+        TDAQ releases expose object data through different Python proxy shapes.
+        In particular, ``getattr(obj, name, "")`` can hide an unsupported
+        access path by returning the default value.  Try the common accessors
+        and return ``None`` only when no accessor can provide a value.
+        """
+        sentinel = object()
+        accessors = [
+            lambda: getattr(obj, name, sentinel),
+            lambda: obj.get(name) if callable(getattr(obj, "get", None)) else sentinel,
+            lambda: obj.get_attribute(name) if callable(getattr(obj, "get_attribute", None)) else sentinel,
+            lambda: obj.getAttribute(name) if callable(getattr(obj, "getAttribute", None)) else sentinel,
+            lambda: obj.get_attr(name) if callable(getattr(obj, "get_attr", None)) else sentinel,
+            lambda: obj[name],
+        ]
+
+        for accessor in accessors:
+            try:
+                value = accessor()
+            except (AttributeError, KeyError, IndexError, TypeError):
+                continue
+            except Exception:
+                # A proxy may raise a release-specific exception for an
+                # unsupported accessor.  Continue trying the other shapes.
+                continue
+            if value is sentinel:
+                continue
+            if value is None:
+                return ""
+            if isinstance(value, bytes):
+                return value.decode(errors="replace")
+            return str(value)
+
+        return None
+
+    @staticmethod
+    def _has_missing_attribute_values(objects: List[Dict[str, Any]]) -> bool:
+        """Whether at least one returned object has only empty attributes."""
+        for obj in objects:
+            attrs = obj.get("attributes") or {}
+            if not attrs or not any(str(value).strip() for value in attrs.values()):
+                return True
+        return False
+
     # ------------------------------------------------------------------
     # oks_dump CLI execution
     # ------------------------------------------------------------------
@@ -237,8 +407,7 @@ class Executor:
     def _get_release_ld_paths(oks_dump_path: str) -> List[str]:
         """
         Discover library paths required by an oks_dump binary in CVMFS,
-        including architecture-specific lib directories and OpenSSL 1.0 (libssl.so.10)
-        fallback locations in CVMFS.
+        including architecture-specific lib directories and static OpenSSL locations.
         """
         ld_paths = []
         if oks_dump_path:
@@ -248,69 +417,191 @@ class Executor:
             if os.path.isdir(arch_lib):
                 ld_paths.append(arch_lib)
 
-        # Search CVMFS for OpenSSL 1.0 (libssl.so.10) directories
-        cvmfs_ssl_patterns = [
-            "/cvmfs/sft.cern.ch/lcg/external/OpenSSL/*/x86_64-*/lib",
-            "/cvmfs/sft.cern.ch/lcg/releases/LCG_*/OpenSSL/*/x86_64-*/lib",
-            "/cvmfs/sft.cern.ch/lcg/contrib/openssl/*/lib",
-            "/cvmfs/sft.cern.ch/lcg/views/*/x86_64-*/lib",
-            "/cvmfs/atlas.cern.ch/repo/sw/software/*/lib",
-            "/cvmfs/atlas.cern.ch/repo/sw/tdaq/tdaq/*/installed/x86_64-*/lib",
+        # Static common CVMFS SSL lib locations (avoiding expensive wildcard globbing on network filesystem)
+        static_ssl_paths = [
+            "/cvmfs/sft.cern.ch/lcg/external/OpenSSL/1.0.2o/x86_64-centos7-gcc8-opt/lib",
+            "/cvmfs/sft.cern.ch/lcg/releases/LCG_96/OpenSSL/1.0.2o/x86_64-centos7-gcc8-opt/lib",
         ]
-        for pattern in cvmfs_ssl_patterns:
-            for p in glob.glob(pattern):
-                if os.path.isdir(p) and (
-                    os.path.exists(os.path.join(p, "libssl.so.10")) or
-                    os.path.exists(os.path.join(p, "libssl.so.1.0.0"))
-                ):
-                    if p not in ld_paths:
-                        ld_paths.append(p)
-                        break
+        for p in static_ssl_paths:
+            if os.path.isdir(p) and p not in ld_paths:
+                ld_paths.append(p)
 
         return ld_paths
+
+    @staticmethod
+    def _normalize_repository_url(url: Optional[str]) -> Optional[str]:
+        """
+        Ensure CERN GitLab SSH URLs explicitly specify port 7999.
+        Preserves HTTPS URLs and non-CERN URLs.
+        """
+        if not url:
+            return url
+
+        if "gitlab.cern.ch" in url and not url.startswith("https://"):
+            if "gitlab.cern.ch:7999" not in url:
+                if url.startswith("ssh://git@gitlab.cern.ch/"):
+                    return url.replace("ssh://git@gitlab.cern.ch/", "ssh://git@gitlab.cern.ch:7999/", 1)
+                elif url.startswith("git@gitlab.cern.ch:"):
+                    return url.replace("git@gitlab.cern.ch:", "ssh://git@gitlab.cern.ch:7999/", 1)
+
+        return url
+
+    @classmethod
+    def _resolve_repository_url(cls, release: Optional[str], partition: Optional[str] = None,
+                                repository: Optional[str] = None) -> Optional[str]:
+        """
+        Resolve the official ATLAS OKS configuration Git repository URL.
+
+        Precedence:
+          1. Repository supplied by run metadata
+          2. Environment variable TDAQ_DB_REPOSITORY
+          3. Auto-derived SSH URL (with port 7999) based on OKS_GIT_PROTOCOL, family and release.
+        """
+        url = None
+        if repository:
+            url = repository
+        else:
+            env_repo = os.environ.get("TDAQ_DB_REPOSITORY")
+            if env_repo:
+                url = env_repo
+
+        if url:
+            return cls._normalize_repository_url(url)
+
+        if not release:
+            return None
+
+        part = (partition or "").lower()
+        if part in ("all_hosts", "tbed", "testbed"):
+            family = "tbed"
+        else:
+            family = "p1"
+
+        protocol = os.environ.get("OKS_GIT_PROTOCOL", "ssh").lower()
+        if protocol == "ssh":
+            return f"ssh://git@gitlab.cern.ch:7999/atlas-tdaq-oks/{family}/{release}.git"
+        else:
+            return f"https://gitlab.cern.ch/atlas-tdaq-oks/{family}/{release}.git"
+
+    @staticmethod
+    def _validate_historical_configuration(repository: str, version: str,
+                                           data_file: str, release: Optional[str],
+                                           partition: Optional[str]) -> Optional[str]:
+        """Verify the exact revision and file before the OKS kernel is opened.
+
+        A temporary Git repository is used so that validation neither relies on
+        the active TDAQ checkout nor changes a caller's Git working tree.
+        ``git fetch <revision>`` works for both ``tag:<name>`` and
+        ``hash:<sha>`` and ``git cat-file`` verifies the configuration path at
+        precisely that fetched commit.
+        """
+        if not version.startswith(("tag:", "hash:")):
+            return ("revision resolution failed: historical version must be "
+                    "'tag:<tag>' or 'hash:<sha>'; got %r" % version)
+        if not data_file or os.path.isabs(data_file) or ".." in data_file.split("/"):
+            return "data-file resolution failed: data_file must be a relative repository path"
+
+        revision = version.split(":", 1)[1]
+        if not revision:
+            return "revision resolution failed: empty tag/SHA"
+        try:
+            with tempfile.TemporaryDirectory(prefix="oks-history-validate-") as temp_dir:
+                def git(*args: str) -> subprocess.CompletedProcess:
+                    env = os.environ.copy()
+                    env["GIT_SSH_COMMAND"] = "ssh -o BatchMode=yes -o StrictHostKeyChecking=accept-new"
+                    return subprocess.run(
+                        ["git", *args], cwd=temp_dir, capture_output=True,
+                        text=True, timeout=45, env=env,
+                    )
+
+                init = git("init", "--quiet")
+                if init.returncode:
+                    return "repository resolution failed: could not initialize isolated Git validation"
+                add = git("remote", "add", "origin", repository)
+                if add.returncode:
+                    return "repository resolution failed: could not configure repository %r" % repository
+
+                if version.startswith("tag:"):
+                    fetch_ref = f"refs/tags/{revision}"
+                else:
+                    fetch_ref = revision
+
+                fetched = git("fetch", "--quiet", "--depth=1", "origin", fetch_ref)
+                if fetched.returncode:
+                    fetched = git("fetch", "--quiet", "origin", fetch_ref)
+
+                if fetched.returncode:
+                    detail = (fetched.stderr or fetched.stdout).strip()
+                    return ("revision resolution failed: %s is not available in repository %s"
+                            "%s" % (version, repository, (": " + detail) if detail else ""))
+                resolved = git("rev-parse", "--verify", "FETCH_HEAD^{commit}")
+                if resolved.returncode:
+                    return "revision resolution failed: %s did not resolve to a commit" % version
+                present = git("cat-file", "-e", "FETCH_HEAD:%s" % data_file)
+                if present.returncode:
+                    return ("data-file resolution failed: %s is absent at %s in repository %s"
+                            % (data_file, version, repository))
+        except subprocess.TimeoutExpired:
+            return "repository/revision resolution failed: Git validation timed out"
+        except OSError as exc:
+            return "repository resolution failed: unable to invoke git: %s" % exc
+        return None
 
     def _execute_oks_dump(self, target_class: str, query: str,
                           max_objects: int, version_label: str,
                           data_file: str, oks_dump_path: str,
                           version: str = None,
-                          release_data_path: str = None) -> ExecutionResult:
+                          release: str = None,
+                          partition: str = None,
+                          repository: str = None) -> ExecutionResult:
         """Execute via oks_dump CLI and parse the output."""
         import shlex
 
         # Prepare environment — start from caller's full environment so that
-        # TDAQ_DB_USER_REPOSITORY, TDAQ_DB_REPOSITORY etc. are inherited.
-        # Then inject version selectors directly into the dict (never os.environ).
+        # TDAQ_DB_REPOSITORY etc. are inherited.
         env = os.environ.copy()
 
-        # Inject version selector into subprocess env directly (not os.environ)
-        if release_data_path:
-            env["TDAQ_DB_PATH"] = release_data_path
-            logger.info(f"Executor: Setting TDAQ_DB_PATH={release_data_path!r} in subprocess env")
+        if version and version != "current":
+            repo_url = self._resolve_repository_url(release, partition, repository)
+            if repo_url:
+                env["TDAQ_DB_REPOSITORY"] = repo_url
+                env["OKS_GIT_PROTOCOL"] = os.environ.get("OKS_GIT_PROTOCOL", "ssh")
 
-        if version:
+            env.pop("TDAQ_DB_USER_REPOSITORY", None)
+            env.pop("TDAQ_DB_PATH", None)
+
+            if not env.get("TDAQ_DB_REPOSITORY"):
+                return ExecutionResult(
+                    success=False,
+                    message=(
+                        "Cannot load historical OKS configuration: "
+                        "TDAQ_DB_REPOSITORY is not configured in the environment. "
+                        "Historical configuration access requires TDAQ_DB_REPOSITORY to point to "
+                        "the actual ATLAS OKS configuration Git repository."
+                    ),
+                )
             if version.startswith(("hash:", "date:", "tag:")):
                 env["TDAQ_DB_VERSION"] = version
                 logger.info(f"Executor: Setting TDAQ_DB_VERSION={version!r} in subprocess env")
             elif version.startswith("run:") or (version.startswith("r") and version[1:].isdigit()):
                 run_num = version.split(":")[-1].lstrip("r")
-                tag_name = f"tag:r{run_num}@ATLAS"
+                part = partition or "all_hosts"
+                tag_name = f"tag:r{run_num}@{part}"
                 env["TDAQ_DB_VERSION"] = tag_name
                 logger.info(f"Executor: Setting TDAQ_DB_VERSION={tag_name!r} in subprocess env (from {version!r})")
 
-        # Log whether TDAQ_DB_USER_REPOSITORY is present (instant checkout path)
-        user_repo = env.get("TDAQ_DB_USER_REPOSITORY", "")
-        if not user_repo and self.repo_root:
-            user_repo = self.repo_root
-            env["TDAQ_DB_USER_REPOSITORY"] = user_repo
-            logger.info(f"Executor: Auto-set TDAQ_DB_USER_REPOSITORY={user_repo!r} from repo_root (fast path)")
-        elif user_repo:
-            logger.info(f"Executor: TDAQ_DB_USER_REPOSITORY={user_repo!r} — will use existing checkout (fast path)")
-        elif env.get("TDAQ_DB_VERSION"):
-            logger.warning(
-                "Executor: TDAQ_DB_USER_REPOSITORY is NOT set — oks_dump will run oks-checkout.sh "
-                "to Git-clone the OKS repository for this version. This can take minutes. "
-                "For faster execution, export TDAQ_DB_USER_REPOSITORY pointing to a local checkout."
-            )
+            # Ensure SSH git operations in the subprocess are non-interactive.
+            if "GIT_SSH_COMMAND" not in env:
+                env["GIT_SSH_COMMAND"] = "ssh -o BatchMode=yes -o StrictHostKeyChecking=accept-new"
+        else:
+            user_repo = env.get("TDAQ_DB_USER_REPOSITORY", "")
+            if not user_repo and self.repo_root:
+                local_file = os.path.join(self.repo_root, data_file)
+                if os.path.exists(local_file):
+                    env["TDAQ_DB_USER_REPOSITORY"] = self.repo_root
+                    logger.info(f"Executor: Set TDAQ_DB_USER_REPOSITORY={self.repo_root!r} for current query")
+                else:
+                    env.pop("TDAQ_DB_USER_REPOSITORY", None)
 
         extra_ld_paths = self._get_release_ld_paths(oks_dump_path)
         if extra_ld_paths:
@@ -340,18 +631,21 @@ class Executor:
                 setup_script = candidate
                 break
 
-        cmd = [oks_dump_path, "-c", target_class, "-q", query, data_file]
+        # oks_dump CLI only accepts a plain file path — the "&version=" syntax
+        # is specific to config.Configuration() and is NOT understood by the
+        # oks_dump binary.  Version selection is via TDAQ_DB_VERSION (set above).
+        conn_spec = data_file
+
+        cmd = [oks_dump_path, "-c", target_class, "-q", query, conn_spec]
         cmd_display = " ".join(shlex.quote(arg) for arg in cmd)
 
         t_start = time.perf_counter()
         try:
-            # 1. Try DIRECT binary execution first (instant, bypasses slow CVMFS setup script & git clone hooks)
             logger.info(f"Executor: Executing direct oks_dump binary:\n  $ {cmd_display}")
             result = subprocess.run(
                 cmd, capture_output=True, text=True, timeout=60, env=env
             )
 
-            # 2. If direct execution failed and a setup script is available, fallback to sourcing setup script
             if result.returncode not in (0, 5) and setup_script:
                 logger.info(f"Executor: Direct binary execution returned exit {result.returncode}; retrying via setup script...")
                 env_exports = ""
@@ -375,10 +669,27 @@ class Executor:
                 message=f"Unable to start oks_dump '{oks_dump_path}': {exc}",
             )
 
-
         elapsed = time.perf_counter() - t_start
 
         if result.returncode not in (0, 5):
+            # If the release-specific binary failed due to missing host shared libraries
+            # (e.g. libssl.so.10 on EL9 nodes), fallback to host system's native oks_dump binary.
+            host_dump = self._oks_dump_path or shutil.which("oks_dump")
+            if host_dump and host_dump != oks_dump_path and (result.returncode == 127 or "cannot open shared object file" in result.stderr):
+                logger.warning(
+                    f"Executor: Release-specific oks_dump binary '{oks_dump_path}' failed due to missing host shared libraries:\n"
+                    f"  {result.stderr.strip()}\n"
+                    f"Retrying using host runtime binary '{host_dump}'..."
+                )
+                return self._execute_oks_dump(
+                    target_class, query, max_objects, version_label, data_file,
+                    host_dump,
+                    version=version,
+                    release=release,
+                    partition=partition,
+                    repository=repository,
+                )
+
             logger.error(f"Executor: oks_dump failed with exit code {result.returncode} in {elapsed:.3f}s:\n{result.stderr.strip()}")
             return ExecutionResult(
                 success=False,
@@ -395,8 +706,6 @@ class Executor:
             count=len(objects),
             version_used=version_label,
         )
-
-
 
     @staticmethod
     def _parse_oks_dump_output(output: str, target_class: str) -> List[Dict]:
@@ -447,22 +756,39 @@ class Executor:
     # Temporal version environment
     # ------------------------------------------------------------------
 
-    def _set_version_env(self, version: str,
-                         release_data_path: Optional[str] = None) -> Dict[str, Optional[str]]:
+    def _set_version_env(self, version: Optional[str],
+                         release: Optional[str] = None,
+                         partition: Optional[str] = None,
+                         repository: Optional[str] = None) -> Dict[str, Optional[str]]:
         """
         Set environment variables for temporal access.
         Returns backup of original values for restoration.
         """
-        backup = {}
-        if "TDAQ_DB_USER_REPOSITORY" not in os.environ and self.repo_root:
-            backup["TDAQ_DB_USER_REPOSITORY"] = None
-            os.environ["TDAQ_DB_USER_REPOSITORY"] = self.repo_root
+        backup: Dict[str, Optional[str]] = {}
 
-        if release_data_path:
-            backup["TDAQ_DB_PATH"] = os.environ.get("TDAQ_DB_PATH")
-            os.environ["TDAQ_DB_PATH"] = release_data_path
+        if version and version != "current":
+            repo_url = self._resolve_repository_url(release, partition, repository)
+            if repo_url:
+                backup["TDAQ_DB_REPOSITORY"] = os.environ.get("TDAQ_DB_REPOSITORY")
+                os.environ["TDAQ_DB_REPOSITORY"] = repo_url
+                backup["OKS_GIT_PROTOCOL"] = os.environ.get("OKS_GIT_PROTOCOL")
+                os.environ["OKS_GIT_PROTOCOL"] = os.environ.get("OKS_GIT_PROTOCOL", "ssh")
 
-        if not version:
+            if "TDAQ_DB_USER_REPOSITORY" in os.environ:
+                backup["TDAQ_DB_USER_REPOSITORY"] = os.environ.get("TDAQ_DB_USER_REPOSITORY")
+                del os.environ["TDAQ_DB_USER_REPOSITORY"]
+
+            if "TDAQ_DB_PATH" in os.environ:
+                backup["TDAQ_DB_PATH"] = os.environ.get("TDAQ_DB_PATH")
+                del os.environ["TDAQ_DB_PATH"]
+        else:
+            if "TDAQ_DB_USER_REPOSITORY" not in os.environ and self.repo_root:
+                local_file = os.path.join(self.repo_root, self.data_file)
+                if os.path.exists(local_file):
+                    backup["TDAQ_DB_USER_REPOSITORY"] = None
+                    os.environ["TDAQ_DB_USER_REPOSITORY"] = self.repo_root
+
+        if not version or version == "current":
             return backup
 
         if (version.startswith("hash:") or version.startswith("date:") or 
@@ -470,21 +796,11 @@ class Executor:
             backup["TDAQ_DB_VERSION"] = os.environ.get("TDAQ_DB_VERSION")
             os.environ["TDAQ_DB_VERSION"] = version
         elif version.startswith("run:") or (version.startswith("r") and version[1:].isdigit()):
-            # Run number format, e.g. "run:454833" or "r454833" -> "tag:r454833@ATLAS"
             run_num = version.split(":")[-1].lstrip("r")
-            tag_name = f"tag:r{run_num}@ATLAS"
+            part = partition or "all_hosts"
+            tag_name = f"tag:r{run_num}@{part}"
             backup["TDAQ_DB_VERSION"] = os.environ.get("TDAQ_DB_VERSION")
             os.environ["TDAQ_DB_VERSION"] = tag_name
-        elif version.startswith("tdaq-"):
-            # CVMFS snapshot
-            snapshot_path = (
-                f"/cvmfs/atlas.cern.ch/repo/sw/tdaq/tdaq/{version}"
-                f"/installed/share/data"
-            )
-            if "TDAQ_DB_PATH" not in backup:
-                backup["TDAQ_DB_PATH"] = os.environ.get("TDAQ_DB_PATH")
-            os.environ["TDAQ_DB_PATH"] = snapshot_path
-
         return backup
 
     @staticmethod

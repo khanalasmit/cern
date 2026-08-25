@@ -352,7 +352,7 @@ class SchemaRetriever:
                 import config as oks_config
                 db = None
                 last_err = None
-                for prefix in ("oksconfig:", "oksconflibs:", ""):
+                for prefix in ("oksconfig:", "oksconflibs:"):
                     try:
                         db = oks_config.Configuration(f"{prefix}{self.data_file}")
                         break
@@ -478,7 +478,7 @@ class SchemaRetriever:
         import config as oks_config
         db = None
         last_err = None
-        for prefix in ("oksconfig:", "oksconflibs:", ""):
+        for prefix in ("oksconfig:", "oksconflibs:"):
             try:
                 db = oks_config.Configuration(f"{prefix}{self.data_file}")
                 break
