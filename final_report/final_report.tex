@@ -1,0 +1,551 @@
+%  BE Minor Project Proposal Template
+%  Tribhuvan University – Institute of Engineering
+%  Pulchowk Campus
+%  Department of Electronics & Computer Engineering
+% ============================================================
+
+\documentclass[12pt, a4paper]{report}
+
+% ── Packages ────────────────────────────────────────────────
+\usepackage[left=1.5in, right=1in, top=1in, bottom=1in]{geometry}
+\usepackage{fontspec}          % For Times New Roman via XeLaTeX/LuaLaTeX
+\usepackage{setspace}
+\usepackage{parskip}
+\usepackage{titlesec}
+\usepackage{tocloft}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{caption}
+\usepackage{booktabs}
+\usepackage{multirow}          % For multi-row table cells
+\usepackage{hyperref}
+\usepackage{cite}              % IEEE-style citations
+\usepackage{enumitem}
+\usepackage{amsmath}
+\usepackage{fancyhdr}
+\usepackage{etoolbox}
+\usepackage{pgfgantt}
+\usepackage{amssymb}
+\usepackage{tabularx}
+\usepackage{titlesec}
+\usepackage{adjustbox}         % FIX: for table overflow
+\usepackage{microtype}
+\usepackage{tocloft}
+\renewcommand{\cfttoctitlefont}{\hfill\fontsize{14}{16}\selectfont\bfseries}
+\renewcommand{\cftaftertoctitle}{\hfill}
+\renewcommand{\cftloftitlefont}{\hfill\fontsize{14}{16}\selectfont\bfseries}
+\renewcommand{\cftafterloftitle}{\hfill}
+\renewcommand{\cftlottitlefont}{\hfill\fontsize{14}{16}\selectfont\bfseries}
+\renewcommand{\cftafterlottitle}{\hfill}  
+\renewcommand{\listfigurename}{LIST OF FIGURES}
+\renewcommand{\listtablename}{LIST OF TABLES}
+\renewcommand{\contentsname}{TABLE OF CONTENTS}    % FIX: for text overflow / better justification
+\titlespacing*{\chapter}{0pt}{-30pt}{6pt}
+
+\setlength{\cftbeforetoctitleskip}{0pt}
+\setlength{\cftaftertoctitleskip}{6pt}
+\setlength{\cftbeforeloftitleskip}{0pt}
+\setlength{\cftafterloftitleskip}{6pt}
+\setlength{\cftbeforelottitleskip}{0pt}
+\setlength{\cftafterlottitleskip}{6pt}
+\titleformat{\chapter}[display]
+  {\normalfont\bfseries\centering}
+  {CHAPTER \thechapter}
+  {0pt}
+  {\fontsize{14}{16}\selectfont}
+% \titlespacing*{\chapter}{0pt}{0pt}{6pt}
+
+% ── Line / paragraph spacing ────────────────────────────────
+\setstretch{1.5}
+\setlength{\parskip}{6pt plus 2pt minus 2pt}  % 6pt between paragraphs
+\setlength{\parindent}{0pt}  % No paragraph indentation
+\setmainfont{Times New Roman}
+% Note: LaTeX justifies text by default (Guideline #3)
+
+% FIX: Prevent text/URLs/long words from overflowing right margin
+\setlength{\emergencystretch}{3em}
+\sloppy
+
+% ── Section heading sizes ───────────────────────────────────
+\titleformat{\section}[block]
+  {\fontsize{14}{16}\bfseries}{\thesection}{0.5em}{}
+\titlespacing*{\section}{0pt}{6pt}{6pt}  % 6pt before and after
+
+% Subsection → 13 pt Bold
+\titleformat{\subsection}[block]
+  {\fontsize{13}{15}\bfseries}{\thesubsection}{0.5em}{}
+\titlespacing*{\subsection}{0pt}{6pt}{6pt}
+
+% ── Figure & table captions → 10 pt bold-italic ─────────────
+\DeclareCaptionFont{tenpt}{\fontsize{10}{12}\selectfont}
+\captionsetup{font={tenpt,bf,it}, labelfont={tenpt,bf,it}, justification=centering}
+
+% ── Hyperref setup ──────────────────────────────────────────
+\hypersetup{
+  colorlinks=true,
+  linkcolor=black,
+  citecolor=black,
+  urlcolor=black
+}
+
+% ── Page numbering style (set per section below) ────────────
+\pagestyle{fancy}
+\fancyhf{}
+\renewcommand{\headrulewidth}{0pt}
+\cfoot{\fontsize{11}{13}\selectfont\thepage}
+
+% ============================================================
+\begin{document}
+
+% ── Preliminary pages use Roman numerals ────────────────────
+\pagenumbering{roman}
+
+% ============================================================
+%  COVER PAGE
+% ============================================================
+\begin{titlepage}
+  \begin{flushleft}
+    \textbf{Cluster: AIML}
+  \end{flushleft}
+  \centering
+  \vspace{0.3cm}
+  \includegraphics[width=3cm]{tu_logo.png}   % Replace with actual logo file
+
+  \vspace{0.3cm}
+  {\fontsize{12}{14} \bfseries TRIBHUVAN UNIVERSITY}
+
+  \vspace{0.2cm}
+  {\fontsize{16}{18} \bfseries INSTITUTE OF ENGINEERING}
+
+  \vspace{0.2cm}
+  {\fontsize{12}{14} \bfseries PULCHOWK CAMPUS}
+
+  \vspace{0.6cm}
+  {\fontsize{14}{16}\bfseries Agentic Retrieval and Reasoning System for Large-Scale Scientific Time-Series Data}
+
+  \vspace{0.8cm}
+  \textbf{SUBMITTED BY}
+
+  \vspace{0 cm}
+  {
+    Asmit Khanal (PUL08BCT017) \\
+    Chandan Kumar Shah (PUL080BCT023) \\
+    Aditya Kumar Shah (PUL080BCT011) \\
+    Rhythm Adhikari (PUL080BCT065)
+  }
+
+  \vspace{0.6cm}
+  A\\
+  \vspace{0.2cm}
+  \MakeUppercase{be minor project proposal} \\[2pt]
+  \MakeUppercase{submitted to the} \\[2pt]
+  \MakeUppercase{department of electronics and computer engineering} \\[2pt]
+  \MakeUppercase{in partial fulfillment of the requirements for the degree of} \\[2pt]
+  \MakeUppercase{bachelor of engineering in} \\[2pt]
+  \MakeUppercase{computer engineering}
+
+  \vfill
+  \MakeUppercase{department of electronics and computer engineering} \\
+  \MakeUppercase{lalitpur, nepal}
+
+  \vspace{0.4cm}
+  JUNE, 2026
+\end{titlepage}
+
+% ============================================================
+%  ABSTRACT
+% ============================================================
+\chapter*{ABSTRACT}
+\addcontentsline{toc}{chapter}{ABSTRACT}
+
+The rapid growth of digital technologies has led to the widespread generation of large-scale time-series data across various domains. However, accessing such data remains challenging for non-technical users, as traditional database systems require knowledge of SQL, database schemas, and domain-specific structures. Although Large Language Models (LLMs) with Retrieval-Augmented Generation (RAG) have improved natural language access to unstructured data, their application to structured time-series databases remains limited due to difficulties in handling numerical values, temporal relationships, aggregations, and hallucinations. This proposal presents an intelligent natural language question-answering system for large-scale time-series data. The system comprises six modules: Natural Language Understanding, SQL/API Query Generation, Query Validation and Data Retrieval, Data Processing and Analysis, Response Generation, and Response Verification. It converts natural language queries into verified responses by generating executable queries, retrieving relevant data, analyzing results, and producing context-aware answers. The system will be evaluated using SQL query accuracy, response correctness, response latency, and hallucination rate.
+
+\vspace{6pt}
+
+\noindent\textbf{Keywords:} Large Language Models (LLMs), Retrieval-Augmented Generation (RAG), Time-Series Databases, Natural Language Querying, SQL Query Generation, hallucinations, latency
+
+\newpage
+
+% ============================================================
+%  TABLE OF CONTENTS
+% ============================================================
+\renewcommand{\contentsname}{TABLE OF CONTENTS}
+\tableofcontents
+\newpage
+
+% ============================================================
+%  LIST OF FIGURES
+% ============================================================
+\listoffigures
+\addcontentsline{toc}{chapter}{LIST OF FIGURES}
+
+% ============================================================
+%  LIST OF TABLES
+% ============================================================
+\listoftables
+\addcontentsline{toc}{chapter}{LIST OF TABLES}
+\newpage
+
+% ============================================================
+%  ABBREVIATIONS
+% ============================================================
+\chapter*{ABBREVIATIONS}
+\addcontentsline{toc}{chapter}{ABBREVIATIONS}
+
+\begin{tabular}{ll}
+API & Application Programming Interface \\
+BIRD & Benchmark for Improved Research in Text-to-SQL \\
+CERN & European Organization for Nuclear Research \\
+CSV & Comma-Separated Values \\
+DCS & Detector Control System \\
+JSON & JavaScript Object Notation \\
+LLM & Large Language Model \\
+MAC-SQL & Multi-Agent Collaborative Framework for Text-to-SQL \\
+NLIDB & Natural Language Interface to Database \\
+RAG & Retrieval-Augmented Generation \\
+ReAct & Reasoning and Acting \\
+SQL & Structured Query Language \\
+\end{tabular}
+\newpage
+
+% ── Main body uses Arabic numerals ──────────────────────────
+\pagenumbering{arabic}
+
+% ============================================================
+%  1. INTRODUCTION
+% ============================================================
+\chapter{INTRODUCTION}
+
+The rapid advancement of digital technologies has led to an unprecedented increase in the generation of large-scale time-series data across diverse domains, including industrial automation, healthcare, finance, Internet of Things (IoT) networks, environmental monitoring, and scientific research. These datasets consist of continuously collected timestamped observations that record the behavior and status of complex systems over time. As the volume and complexity of time-series data continue to grow, efficiently retrieving meaningful information from these repositories has become increasingly challenging. Traditional database management systems require users to possess knowledge of structured query languages, database schemas, and domain-specific data representations, making information retrieval difficult for users without technical expertise.
+
+Recent advances in Large Language Models (LLMs) have transformed natural language processing by enabling users to interact with information systems using conversational queries. When combined with Retrieval-Augmented Generation (RAG), LLMs can retrieve relevant information from external knowledge sources before generating responses, thereby reducing reliance on the model's internal knowledge and improving factual accuracy. This paradigm has shown considerable success in document retrieval, knowledge-intensive question answering, and enterprise search applications by grounding generated responses in retrieved evidence.
+
+Despite these advances, applying retrieval-based language models to large-scale time-series repositories remains a significant challenge. Unlike unstructured textual documents, time-series databases primarily contain structured numerical measurements associated with timestamps and metadata. Conventional embedding-based retrieval methods are optimized for semantic similarity rather than exact numerical retrieval and temporal relationships, making them less effective for answering queries that require precise values, historical measurements, or time-dependent events. Furthermore, Large Language Models remain susceptible to hallucinations when retrieved evidence is incomplete or ambiguous, making reliability a critical concern.
+
+To address these challenges, recent studies have explored integrating retrieval frameworks with response verification mechanisms that assess whether generated answers are supported by the retrieved evidence before they are presented to users. These verification approaches have demonstrated improved reliability by reducing hallucinations and increasing user confidence in LLM-generated responses.
+
+Motivated by these developments, this project proposes an intelligent natural language question-answering system for large-scale time-series data. The proposed framework combines structured data retrieval with an open-source Large Language Model and a response verification component to generate grounded and reliable answers to user queries. Rather than requiring users to formulate complex database queries, the system enables natural language interaction with large time-series repositories through accurate SQL queries and also summarizes the data based on the pipeline. The proposed framework will be demonstrated using operational time-series data from CERN as a representative scientific dataset.
+
+% ============================================================
+%  2. PROBLEM STATEMENT
+% ============================================================
+\chapter{PROBLEM STATEMENT}
+
+The rapid growth of sensor networks, industrial monitoring systems, and scientific experiments has resulted in the continuous generation of massive volumes of time-series data. Although these datasets contain valuable operational and historical information, retrieving specific data often requires users to understand complex database structures and query languages. Recent Large Language Model (LLM)-based retrieval systems have improved natural language interaction; however, they still face challenges in accurately retrieving structured numerical time-series data and may generate hallucinated responses.  
+
+As an effort to address these challenges, a retrieval-based question-answering framework integrating structured time-series data retrieval, an open-source LLM, and a response verification mechanism can provide accurate and trustworthy natural language access to large-scale time-series repositories
+
+% ============================================================
+%  3. OBJECTIVES
+% ============================================================
+\chapter{OBJECTIVES}
+
+\section{Main Objective}
+
+The main objective of this project is to develop an intelligent natural language question-answering system that translates user queries into structured database queries and generates reliable responses from retrieved time-series data.
+\section{Specific Objectives}
+The specific objectives of this project are:
+\begin{enumerate}[label=(\roman*)]
+  \item To develop an API-based framework for accessing and retrieving information from large-scale time-series databases. 
+  \item To integrate an open-source Large Language Model (LLM) capable of translating natural language queries into SQL or API-compatible database queries. 
+  \item To develop a response generation pipeline that interprets the retrieved data and generates accurate, context aware natural language answers with the support of a response verification mechanism.
+  \item To evaluate the proposed system using appropriate performance metrics such as SQL query accuracy, response correctness, response latency, and hallucination rate.
+\end{enumerate}
+
+% ============================================================
+%  4. LITERATURE REVIEW
+% ============================================================
+\chapter{LITERATURE REVIEW}
+
+\section{Review of Related Theory}
+
+\subsection{Natural Language Interfaces and Text-to-SQL Generation}
+
+Text-to-SQL systems translate natural language questions into executable database queries. Early approaches used rule-based mappings, while modern deep learning semantic parsers are evaluated on cross-domain benchmarks such as Spider \cite{yu2018spider}. However, real-world complexity is better represented by the BIRD benchmark \cite{li2024bird}, which highlights challenges in large schemas, dirty data, and external knowledge.
+
+To handle these schemas without context window overflow, modern systems employ schema-linking and pruning. Text-to-SQL has shifted to stateful, multi-step agentic workflows that incorporate intent detection, query validation, and self-correction loops \cite{wang2024macsql}. Figure~\ref{fig:text_to_sql_evolution} illustrates the evolution of Text-to-SQL systems across rule-based, neural Seq2Seq, and agentic Large Language Model generations.
+
+\begin{figure}[H]
+    \centering
+    \vspace*{0.3cm}
+    \includegraphics[width=0.85\textwidth]{fig_text_to_sql_evolution.png}
+    \caption{Evolution of Text-to-SQL systems across three generations: rule-based NLIDBs, neural Seq2Seq models with the Spider benchmark, and Large Language Model-based agentic SQL agents with the BIRD benchmark.}
+    \label{fig:text_to_sql_evolution}
+\end{figure}
+
+\subsection{Retrieval Strategies for Large-Scale Time-Series Databases}
+
+Traditional Retrieval-Augmented Generation is designed for unstructured documents and fails for structured time-series databases \cite{lewis2020retrieval} because of three fundamental mismatches. First, temporal context is distorted by vector distance metrics because sequence and temporal order are not preserved by nearest-neighbour search. Second, aggregation queries such as means, percentiles, and trend slopes cannot be answered by retrieving raw points. Third, logging trillions of sub-second measurements makes direct document embedding computationally infeasible.
+
+Instead, architectures such as TimeRAG retrieve structured historical windows, while systems targeting large databases rely on query pushdown \cite{stonebraker1994sequoia}, delegating filtering and mathematical aggregation to the database engine. In physics telemetry, using pre-computed rollups such as minute or hourly summaries and streaming database cursors prevents memory overflow while preserving query performance \cite{liu2021timeseriesdb}. Figure~\ref{fig:rag_vs_pushdown} contrasts document-centric Retrieval-Augmented Generation with the proposed query pushdown strategy.
+
+\begin{figure}[H]
+    \centering
+    \vspace*{0.3cm}
+    \includegraphics[width=0.85\textwidth]{fig_rag_vs_pushdown.png}
+    \caption{Comparison of document-centric Retrieval-Augmented Generation, which is inadequate for large-scale time-series data, versus the proposed query pushdown strategy, which delegates filtering and aggregation to the database engine.}
+    \label{fig:rag_vs_pushdown}
+\end{figure}
+
+\subsection{AI Agent Frameworks and Stateful Multi-Agent Reasoning}
+
+Linear, stateless chains struggle with complex analytical tasks. Stateful graph execution frameworks enable cyclic loops, including self-correction after syntax errors, and human-in-the-loop validation. Utilising the ReAct pattern and standardised tool-calling application programming interfaces allows the Large Language Model to interact safely with external database schemas and data engines \cite{yao2023react}.
+
+For scientific analysis, a multi-agent structure decomposes monolithic tasks into specialised roles \cite{wang2024macsql}. A Planner Agent parses intent by identifying variables, timespans, and statistical needs. A SQL Generator Agent crafts optimised queries and handles database error-recovery loops. An Analysis Agent executes statistics such as means, percentiles, and anomaly detection on retrieved subsets. An Explainer Agent formulates a natural language summary alongside visual representations.
+
+\subsection{Explainability and Natural Language Response Generation}
+
+Scientific users require explainability in the form of natural language summaries grounded in retrieved data, accompanied by annotated visual representations. Large Language Models are highly capable of generating fluent, faithful descriptions of statistical reports when provided with structured JSON or CSV metrics as context. Pairing these explanations with interactive charts enhances visual analytics, supporting quick and trustworthy verification of anomalies and trends.
+
+Response verification mechanisms further improve reliability by checking whether generated answers are supported by retrieved evidence \cite{manakul2023selfcheckgpt}. These mechanisms are especially important for time-series question answering, where numerical precision and temporal validity are critical.
+
+\section{Review of Related Works}
+
+\subsection{Text-to-SQL Benchmarks and Agentic Systems}
+
+The Spider benchmark established a large-scale human-labelled dataset for complex and cross-domain semantic parsing and Text-to-SQL tasks \cite{yu2018spider}. The BIRD benchmark introduced a more realistic setting with large schemas, noisy values, and external knowledge requirements \cite{li2024bird}. Collaborative agentic frameworks such as MAC-SQL decompose query generation into planning, generation, and critique stages, improving execution accuracy on challenging benchmarks \cite{wang2024macsql}. The ReAct framework synergises reasoning and acting in language models, enabling safer interaction with external tools \cite{yao2023react}.
+
+\subsection{Time-Series Retrieval and Scientific Data Management}
+
+Retrieval-Augmented Generation has been widely studied for knowledge-intensive natural language processing tasks \cite{lewis2020retrieval}. However, this paradigm is designed for unstructured documents and is poorly suited to structured time-series repositories, where exact numerical values, temporal order, and aggregations are required. In physics experiments, time-series database schemas are designed for fast analytical queries through partitioning, indexing, and pre-computed rollups \cite{liu2021timeseriesdb}. Query pushdown has long been recognised as an effective strategy for delegating computation to database engines \cite{stonebraker1994sequoia}.
+
+\section{Research Gap}
+
+The literature establishes three facts. First, Text-to-SQL and agentic retrieval models are maturing rapidly in enterprise and business intelligence spaces. Second, Retrieval-Augmented Generation is effective for unstructured documents but poorly suited to structured numerical time-series repositories because vector similarity does not preserve temporal order or support aggregations. Third, response verification can reduce hallucinations and improve trust in Large Language Model outputs.
+
+Three specific gaps follow from these facts. The first gap is the limited application of Text-to-SQL and agentic retrieval to scientific time-series data. Existing work focuses on business databases or general benchmarks rather than petabyte-scale physics telemetry schemas such as the CERN Detector Control System. The second gap is the absence of a unified pipeline that combines query pushdown, post-retrieval analytical reasoning, and response verification for time-series question answering. The third gap is the lack of a conversational, explainable interface for CERN time-series repositories that can be used by researchers without deep database expertise.
+
+% ============================================================
+%  5. PROPOSED METHODOLOGY
+% ============================================================
+\chapter{PROPOSED METHODOLOGY}
+
+\section{Research Design / Approach}
+
+This project adopts a design and development research approach to develop an intelligent natural language question-answering system for large-scale time-series databases. The proposed approach combines recent advances in Large Language Models, Text-to-SQL generation, and structured database retrieval to enable users to query complex time-series repositories using natural language.
+
+The research begins with understanding the structure of the target time-series database, including its schema, metadata, and relationships among tables. Based on this information, an open-source Large Language Model is integrated to interpret user queries and translate them into SQL queries or API requests compatible with the underlying database. The generated queries are validated before execution to ensure safe and accurate database access.
+
+Instead of retrieving large portions of the database, only the records required to answer the user's query are retrieved through secure database APIs. The retrieved data then undergo appropriate statistical or time-series analysis depending on the user's request, such as aggregation, trend analysis, or threshold evaluation. Finally, the processed results are converted into a natural language response by the Large Language Model and verified against the retrieved data before being presented to the user. The completed system will then be evaluated using representative natural language queries to assess its retrieval accuracy, response correctness, execution efficiency, and reliability.
+
+\section{System Architecture / Framework}
+
+The proposed framework consists of six major modules that operate sequentially to transform a natural language query into a verified response.
+
+\subsection{Natural Language Understanding}
+
+The user submits a question in natural language. An open-source Large Language Model interprets the query by identifying the requested measurements, entities, time constraints, and analytical operations.
+
+\subsection{SQL/API Query Generation}
+
+Based on the extracted intent and database schema, the Large Language Model generates an executable SQL query or API request. This allows users to interact with the database without requiring knowledge of SQL syntax or database structures.
+
+\subsection{Query Validation and Data Retrieval}
+
+Before execution, the generated query is validated to ensure syntactic correctness and compliance with predefined access policies. The validated query is then executed through secure APIs to retrieve only the relevant time-series records from the database.
+
+\subsection{Data Processing and Analysis}
+
+The retrieved data are processed according to the user's request. Depending on the query, statistical and time-series operations such as filtering, aggregation, trend analysis, comparison, and threshold analysis are performed to obtain the required information.
+
+\subsection{Response Generation}
+
+The processed results are supplied to the Large Language Model, which generates a concise and context-aware natural language explanation rather than presenting raw numerical values.
+
+\subsection{Response Verification}
+
+Before the response is returned to the user, a verification mechanism compares the generated explanation with the retrieved data to ensure that the response is grounded in the actual database results and to reduce hallucinated information.
+
+The overall architecture of the proposed system is illustrated in Figure~\ref{fig:system_architecture}.
+
+\section{Algorithms / Models to be Used}
+The proposed system combines several techniques identified in the literature to support reliable natural language interaction with structured time-series databases.
+
+An open-source Large Language Model will be employed to perform natural language understanding, SQL/API query generation, and natural language response generation. Rather than relying solely on semantic retrieval,
+\begin{figure}[H]
+    \centering
+    \vspace*{0.3cm}
+    \includegraphics[width=0.85\textwidth]{System_architecture.png}
+    \caption{System architecture of the Agentic Retrieval and Reasoning System for large-scale scientific time-series data, showing the six sequential modules from natural language input to verified response.}
+    \label{fig:system_architecture}
+\end{figure}
+
+the system adopts a Text-to-SQL approach, enabling the Large Language Model to translate user questions into executable database queries using the database schema as contextual information.
+
+Time-series analysis will be performed on the retrieved data using deterministic statistical techniques such as mean, median, maximum, minimum, trend analysis, comparison, and threshold analysis. These computations will be carried out on the retrieved database records to ensure numerical accuracy.
+
+To improve the trustworthiness of the generated responses, a response verification mechanism will be incorporated to validate that the generated explanation is supported by the retrieved data before it is presented to the user.
+
+\section{Dataset / Data Acquisition Plan}
+
+The proposed system will utilize a large-scale time-series database accessed through secure read-only database connections or APIs. The dataset is expected to contain timestamped measurements together with the associated metadata required for analytical queries.
+
+During the initial stage of the research, the database schema, table relationships, and available APIs will be analyzed to identify the information required for SQL generation and data retrieval. Since the proposed system uses an open-source Large Language Model through prompting rather than model training, no additional training dataset is required.
+
+For system evaluation, a representative set of natural language queries covering point retrieval, aggregation, comparison, and trend analysis will be prepared. The expected outputs for these queries will be manually verified against the database to provide ground-truth references for evaluating SQL generation accuracy, response correctness, execution latency, and hallucination rate.
+
+\section{Data Acquisition}
+
+The proposed framework will be demonstrated using operational time-series data from the CERN Detector Control System as a representative scientific dataset. CERN's accelerator monitoring systems track thousands of metrics stored in Oracle databases, providing a realistic large-scale time-series repository \cite{cern2023cms}. The project will use read-only access to appropriate subsets of these data, respecting all access policies and ethical guidelines.
+
+\subsection{Data Sources}
+
+Time-series data will be obtained from publicly documented CERN Detector Control System monitoring schemas or equivalent open scientific time-series datasets if direct access is not available. The data will include timestamped numerical measurements, metadata describing the measured variables, detector identifiers, sensor types, units, and pre-computed rollups where applicable.
+
+\subsection{Preprocessing}
+
+All queries and retrieved subsets will undergo consistent preprocessing. This includes timestamp normalisation, handling of missing values, unit conversion when required, and aggregation to appropriate temporal resolutions. Query results will be formatted as structured JSON or CSV so that downstream agents can process them efficiently.
+
+\section{Evaluation Metrics}
+
+The proposed system will be assessed using metrics that capture both the correctness and the usability of the question-answering pipeline \cite{li2024bird,yu2018spider,gao2023retrieval}. The proposed evaluation metrics are:
+
+\subsection{SQL Query Accuracy}
+
+SQL query accuracy measures the proportion of natural language questions for which the generated SQL is syntactically valid, executable, and semantically equivalent to the intended query. It is computed as:
+\begin{equation}
+\text{SQL Query Accuracy} = \frac{\text{Number of correct SQL queries}}{\text{Total number of questions}}
+\label{eq:sql_accuracy}
+\end{equation}
+
+\subsection{SQL Execution Accuracy}
+
+SQL execution accuracy further requires that the generated query runs successfully against the database and returns a non-empty, schema-consistent result set when the underlying data supports an answer.
+
+\subsection{Response Correctness}
+
+Response correctness evaluates whether the natural language answer accurately reflects the retrieved data. A correct response must contain the right numerical values, temporal references, and interpretation.
+
+\subsection{Plan Validity}
+
+Plan validity measures the proportion of user queries for which the AI planning layer produces a sequence of steps that maps to available tools and successfully reaches a final answer.
+
+\subsection{Response Latency}
+
+Response latency measures the end-to-end time from question submission to answer delivery. It is important for interactive scientific analysis and will be reported in seconds or milliseconds.
+
+\subsection{Hallucination Rate}
+
+The hallucination rate measures the proportion of generated answers that contain claims unsupported by retrieved evidence, including numbers that fail the numeric grounding check. It is computed as:
+\begin{equation}
+\text{Hallucination Rate} = \frac{\text{Number of hallucinated responses}}{\text{Total number of responses}}
+\label{eq:hallucination_rate}
+\end{equation}
+
+% FIX: Wrapped table in adjustbox to prevent right-margin overflow
+\begin{table}[ht]
+  \caption{Evaluation metrics for the proposed question-answering system}
+  \label{tab:eval_metrics}
+  \centering
+  \begin{adjustbox}{max width=\textwidth}
+  \begin{tabular}{|l|l|}
+    \hline
+    \textbf{Metric} & \textbf{What it measures} \\
+    \hline
+    SQL Query Accuracy & Correctness of generated database queries \\
+    \hline
+    SQL Execution Accuracy & Successful execution and valid result-set retrieval \\
+    \hline
+    Plan Validity & Whether the planned steps can be executed end-to-end \\
+    \hline
+    Response Correctness & Accuracy of natural language answers against retrieved data \\
+    \hline
+    Response Latency & End-to-end response time \\
+    \hline
+    Hallucination Rate & Proportion of unsupported claims in generated answers \\
+    \hline
+  \end{tabular}
+  \end{adjustbox}
+\end{table}
+
+% ============================================================
+%  6. TIME SCHEDULE
+% ============================================================
+\chapter{TIME SCHEDULE}
+
+\begin{figure}[h]
+\noindent
+
+\begin{ganttchart}[
+    hgrid,
+    vgrid,
+    x unit=1.1cm,
+    y unit chart=0.7cm,
+    bar height=0.6
+]{1}{6}
+
+\gantttitle{Project Timeline (Weeks)}{6} \\
+\gantttitlelist{1,...,6}{1} \\
+
+\ganttbar{Literature Review \& Requirement Analysis}{1}{1} \\
+
+\ganttbar{Database Schema Understanding \& API Setup}{1}{2} \\
+
+\ganttbar{Natural Language Understanding Module}{2}{3} \\
+
+\ganttbar{SQL/API Query Generation Module}{2}{3} \\
+
+\ganttbar{Query Validation \& Data Retrieval Module}{3}{4} \\
+
+\ganttbar{Data Processing \& Analysis Module}{3}{5} \\
+
+\ganttbar{Response Generation \& Verification Module}{4}{5} \\
+
+\ganttbar{Testing, Evaluation \& Documentation}{5}{6}
+
+\end{ganttchart}
+
+\caption{Proposed 6-week project schedule aligned with the six-module framework}
+\label{fig:gantt}
+\end{figure}
+% ============================================================
+%  7. EXPECTED OUTCOMES
+% ============================================================
+\chapter{EXPECTED OUTCOMES}
+
+After the completion of the project, the following outcomes are expected:
+
+\begin{enumerate}[label=(\roman*)]
+  \item A functional API-based framework for efficient access to and retrieval of data from large-scale time-series databases.
+
+  \item A successfully integrated open-source Large Language Model (LLM) capable of accurately translating natural language queries into SQL or API-compatible database queries.
+  
+  \item A robust response generation pipeline that produces accurate, context-aware natural language answers from retrieved data while minimizing hallucinations through a response verification mechanism.
+
+  \item A comprehensive performance evaluation demonstrating the effectiveness of the proposed system in terms of SQL query accuracy, response correctness, response latency, and hallucination rate.
+\end{enumerate}
+
+% ============================================================
+%  REFERENCES  (IEEE style)
+% ============================================================
+\renewcommand{\bibname}{REFERENCES}
+\addcontentsline{toc}{chapter}{REFERENCES}
+\begin{thebibliography}{99}
+
+\bibitem{lewis2020retrieval} P. Lewis, E. Perez, A. Piktus \textit{et al.}, ``Retrieval-augmented generation for knowledge-intensive NLP tasks,'' \textit{Advances in Neural Information Processing Systems}, vol. 33, 2020.
+
+\bibitem{gao2023retrieval} Y. Gao, Y. Xiong, X. Gao \textit{et al.}, ``Retrieval-augmented generation for large language models: A survey,'' arXiv:2312.10997, 2023.
+
+\bibitem{manakul2023selfcheckgpt} P. Manakul, A. Liusie, and M. Gales, ``SelfCheckGPT: Zero-resource black-box hallucination detection for generative large language models,'' \textit{Proc. EMNLP}, 2023.
+
+\bibitem{yu2018spider} T. Yu, R. Zhang, K. Yang \textit{et al.}, ``Spider: A large-scale human-labeled dataset for complex and cross-domain semantic parsing and text-to-SQL task,'' \textit{Proc. EMNLP}, 2018.
+
+\bibitem{li2024bird} J. Li, B. Hui, G. Qu \textit{et al.}, ``Can LLM already serve as a database interface? A big bench for large-scale database grounded text-to-SQL,'' arXiv:2305.03111, 2024.
+
+\bibitem{wang2024macsql} B. Wang, X. Liu, and S. Liu, ``MAC-SQL: A multi-agent collaborative framework for text-to-SQL,'' arXiv:2312.11242, 2024.
+
+\bibitem{yao2023react} S. Yao, J. Zhao, D. Yu \textit{et al.}, ``ReAct: Synergizing reasoning and acting in language models,'' \textit{Proc. ICLR}, 2023.
+
+\bibitem{stonebraker1994sequoia} M. Stonebraker, J. Frew, K. Gardels, and J. Meredith, ``Sequoia 2000: A reflection on the first three years,'' \textit{IEEE Expert}, vol. 9, no. 1, pp. 62--72, 1994.
+
+\bibitem{liu2021timeseriesdb} X. Liu, H. Wu, D. Smith \textit{et al.}, ``Designing time-series database schemas for fast analytical queries in physics experiments,'' \textit{Journal of Physics: Conference Series}, vol. 2182, no. 1, p. 012014, 2021.
+
+\bibitem{arrieta2020xai} A. B. Arrieta \textit{et al.}, ``Explainable AI: Concepts, taxonomies, opportunities and challenges toward responsible AI,'' \textit{Information Fusion}, vol. 58, pp. 82--115, 2020.
+
+\bibitem{keim2010visual} D. Keim \textit{et al.}, \textit{Mastering the Information Age: Solving Problems with Visual Analytics}, Eurographics Association, 2010.
+
+\bibitem{cern2023cms} CERN CMS Collaboration, ``CMS data quality monitoring and anomaly detection using machine learning,'' CERN Technical Report, 2023.
+
+\end{thebibliography}
+
+\end{document}
