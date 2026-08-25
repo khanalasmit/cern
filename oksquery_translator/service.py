@@ -102,13 +102,31 @@ class OksQueryService:
                 "use a narrower question for the complete set."
             )
 
+        result_count = result.get("result_count", len(results))
+        message = result.get("message", "")
+        if result.get("status", "error") == "success" and result_count == 0:
+            # An empty result is a valid OKS answer, not a transport or server
+            # failure.  Make that explicit so an agent does not blindly issue
+            # speculative follow-up calls and turn one question into a retry
+            # loop.  The agent may broaden the search only when the user asks.
+            empty_result_message = (
+                "The OKS query executed successfully but matched no objects "
+                "in the configured data file/version. Treat this as a valid "
+                "empty result; do not retry or broaden the query unless the "
+                "user explicitly asks."
+            )
+            if not message:
+                message = empty_result_message
+            if empty_result_message not in warnings:
+                warnings.append(empty_result_message)
+
         normalized = {
             "status": result.get("status", "error"),
             "answer": result.get("answer", ""),
-            "message": result.get("message", ""),
+            "message": message,
             "target_class": result.get("target_class", ""),
             "oks_query": result.get("oks_query", ""),
-            "result_count": result.get("result_count", len(results)),
+            "result_count": result_count,
             "results": results,
             "attempts": result.get("attempts", 0),
             "version": result.get("version", "current"),

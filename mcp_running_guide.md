@@ -318,6 +318,51 @@ running the executor snippet. A successful tool call contains status,
 oks_query, target_class, result_count, structured results, version_used, and
 schema/context metadata.
 
+### Diagnose a zero-result question without the LLM
+
+When an agent reports zero results and starts trying speculative alternatives,
+run the direct diagnostic on LXPLUS. It does not call an LLM, MCP, SSH tunnel,
+or Claude; it tests the actual selected OKS data file with native oks_dump:
+
+~~~bash
+"$OKS_QUERY_PYTHON" deploy/diagnose_oks_query.py \
+  --data-file "$OKS_DATA_FILE" \
+  --object-id rc_trigger_1 \
+  --attribute Name \
+  --value rc_trigger_1
+~~~
+
+The diagnostic performs two checks for each candidate class:
+
+~~~text
+(all (object-id "rc_trigger_1" =))
+(all ("Name" "rc_trigger_1" =))
+~~~
+
+Interpret the output as follows:
+
+- `status: match` means the native OKS engine found the object.
+- `valid_query_no_match` means the query executed correctly but this data
+  file/version contains no matching object.
+- `query_or_class_error` means the class or attribute is not valid for that
+  live schema; inspect the printed stderr.
+- If `Name` errors but `object-id` matches, the user named an object ID and
+  the correct query is the object-id query, not the tutorial `Name` example.
+
+To search every class discoverable through the Python config binding, add
+`--all-classes`. This can take longer because it probes the selected release:
+
+~~~bash
+"$OKS_QUERY_PYTHON" deploy/diagnose_oks_query.py \
+  --data-file "$OKS_DATA_FILE" \
+  --object-id rc_trigger_1 \
+  --all-classes
+~~~
+
+The MCP response marks a successful zero-result query explicitly as a valid
+empty result. The external agent should not retry or broaden it unless the
+user asks for a broader search.
+
 ## 11. Create the private SSH tunnel
 
 Open a second terminal on your workstation. The LXPLUS server must already
@@ -570,4 +615,3 @@ without explicit approval and a backup of local work.
 
 If public-access items are not approved, stop at the private SSH-tunnel
 deployment. That is the intended safe development configuration.
-

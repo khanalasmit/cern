@@ -48,6 +48,22 @@ class FakePipeline:
         }
 
 
+class EmptyResultPipeline(FakePipeline):
+    def answer(self, question, version=None, interpret=True):
+        self.calls.append(("answer", question, version, interpret))
+        return {
+            "status": "success",
+            "answer": "",
+            "target_class": "Application",
+            "oks_query": '(all ("Name" "rc_trigger_1" =))',
+            "result_count": 0,
+            "results": [],
+            "attempts": 1,
+            "version": version or "current",
+            "version_used": version or "current",
+        }
+
+
 def test_query_is_stateless_and_skips_interpreter():
     pipeline = FakePipeline()
     service = OksQueryService(pipeline=pipeline, max_results=2)
@@ -70,6 +86,17 @@ def test_translate_does_not_execute():
     assert result["status"] == "success"
     assert result["results"] == []
     assert pipeline.calls == [("translate", "List all computers.", "tdaq-14-00-00")]
+
+
+def test_empty_success_result_is_explicit_and_not_a_server_error():
+    result = OksQueryService(pipeline=EmptyResultPipeline()).query(
+        "Which applications are named rc_trigger_1?"
+    )
+
+    assert result["status"] == "success"
+    assert result["result_count"] == 0
+    assert "matched no objects" in result["message"]
+    assert any("do not retry" in warning for warning in result["warnings"])
 
 
 @pytest.mark.parametrize("question", ["", "   ", None])

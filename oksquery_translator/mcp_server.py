@@ -77,7 +77,9 @@ def oks_query(question: str, version: Optional[str] = None) -> Dict[str, Any]:
     """Translate and execute one complete natural-language OKS question.
 
     The question must be self-contained. Follow-up context belongs to the
-    calling agent, not this stateless server.
+    calling agent, not this stateless server. A successful result with
+    result_count=0 means the query ran correctly but matched no objects; it is
+    not a reason for the server to retry or broaden the query automatically.
     """
     try:
         return get_service().query(question, version=version)
