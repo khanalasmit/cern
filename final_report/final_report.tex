@@ -279,24 +279,49 @@ OKS & Object Kernel Support \\
 \chapter{INTRODUCTION}
 
 \section{Background}
-[Content to be added...]
+
+The ATLAS experiment at CERN's Large Hadron Collider (LHC) relies on a highly complex data acquisition (DAQ) system to manage thousands of hardware and software components in real time. The configuration of this system, spanning detector electronics, readout chains, and computing farms, is managed by the Object Kernel Support (OKS) framework, a persistent in-memory object database built for the ATLAS Trigger and Data Acquisition (TDAQ) system \cite{oks_paper}. OKS provides a schema-driven, object-oriented model that represents complex topologies as interconnected object graphs \cite{oks_paper}.
+
+To meet the operational demands of successive LHC runs, ATLAS configuration management evolved from monolithic databases \cite{alexandrov2007} to a Git-based service for LHC Run 3 \cite{atlas_git}. This modern architecture provides distributed version control and full provenance tracking, ensuring every configuration state is a Git commit and the entire detector history is queryable \cite{atlas_git}.
+
+Despite this mature infrastructure, querying the OKS database remains a specialist task. The proprietary OksQuery language uses a strict, S-expression-like syntax (e.g., \texttt{(all ("InitTimeout" "2" >))}) that demands detailed knowledge of class hierarchies, relationship paths, and operator semantics. Consequently, manual query formulation by shifters is error-prone, time-consuming, and inaccessible to non-specialists.
+
+The emergence of Large Language Models (LLMs) and the Model Context Protocol (MCP) offers a new paradigm for AI-driven operations, enabling agents to interact with external databases through a standardized interface. An MCP server for the ATLAS DAQ is currently under development to allow LLMs to search the OKS database. However, a critical challenge arises: the full configuration, comprising hundreds of schema classes and thousands of objects, far exceeds any LLM's context window. Thus, the MCP server must filter data on the backend, requiring the LLM to generate syntactically perfect OksQuery strings without seeing the complete schema.
+
+This project addresses this challenge by developing a Natural Language to OksQuery translation module. Architected as a Retrieval-Augmented Generation (RAG) system, it utilizes a ``schema-RAG'' approach where the retrieval corpus is the live, version-scoped OKS schema itself. This ensures the LLM receives only the relevant schema slice (1--3 classes) rather than the full schema, which can exceed 500 classes depending on the TDAQ release and partition, satisfying both accuracy and context-window constraints. The system is deployed securely within the CERN environment via SSH-based hosting with port tunneling, exposing the MCP server to external LLM agents without requiring them to reside inside the CERN network perimeter.
 
 \section{Problem Statement}
-[Content to be added...]
+
+The Object Kernel Support (OKS) framework is a persistent in-memory object database that provides a schema-driven, object-oriented configuration model. By supporting classes, attributes, inheritance, and composite objects, it enables the precise representation of complex hardware and software topologies. However, interacting with OKS remains a highly specialized task. Users must formulate queries using the proprietary OksQuery language or low-level C++ and Python APIs, which demands detailed, manual knowledge of class hierarchies, object states, relationship paths, and strict operator semantics.
+
+While general-purpose Large Language Models (LLMs) present an opportunity to automate this process, they are fundamentally incapable of generating accurate OksQuery statements out-of-the-box. This failure is driven by a complete lack of parametric context regarding the specific classes, attributes, and objects within the OKS schema. Furthermore, the configuration is strictly version-specific, with schema definitions evolving across different software releases and Git commits. Because LLMs lack access to this dynamic, version-scoped context, they frequently hallucinate non-existent classes or invalid relationships, rendering their raw query accuracy insufficient for operational deployment.
+
+To address this, we built a query translation module hosted as an MCP server via SSH port tunneling, using a version-scoped schema-RAG pipeline that injects only the relevant OKS schema slice into the LLM prompt. A deterministic validate/repair loop then checks every generated OksQuery against the authoritative schema before execution, ensuring reliable accuracy without the full configuration entering the context window.
 
 \section{Objectives}
 
-\subsection{General Objectives}
-[Content to be added...]
+\subsection{Main Objective}
+The main objective of this project is to develop an MCP server capable of translating natural-language questions into validated OksQuery statements through a query translation module with an integrated validate/repair loop, deployable as a tool for external LLM agents.
 
 \subsection{Specific Objectives}
-[Content to be added...]
+The specific objectives of this project are:
+\begin{enumerate}[label=(\roman*)]
+  \item To develop a version-scoped pipeline that translates natural language into OksQuery strings by retrieving targeted OKS schema slices and enforcing syntactic correctness through a deterministic validate/repair loop.
+  \item To deploy the translation module as a Model Context Protocol (MCP) server within the CERN compute infrastructure, utilizing SSH port tunneling to securely expose the live TDAQ configuration to external LLM agents.
+  \item To evaluate translation accuracy by executing generated queries against the native C++ backend and analyzing performance metrics such as valid-syntax rate, result-set equivalence, and execution latency across stratified query difficulties.
+\end{enumerate}
 
 \section{Rationale}
-[Content to be added...]
+
+The ATLAS Data Acquisition (DAQ) system relies on the Object Kernel Support (OKS) framework, a complex, version-controlled object database. Querying this configuration during time-critical operations requires specialized knowledge of the proprietary OksQuery language, creating a significant bottleneck for control room operators.
+
+While Large Language Models (LLMs) could automate this querying process through natural language, raw models fail because they hallucinate syntax for undocumented, proprietary languages and cannot ingest massive, constantly evolving schemas within their context limits.
+
+This project addresses these fundamental limitations by developing a retrieval-augmented translation module deployed as a Model Context Protocol (MCP) server. By utilizing a version-scoped Schema-RAG pipeline, the system feeds the LLM only the exact schema slice it needs. Furthermore, by forcing the LLM to output an Abstract Syntax Tree (AST) that undergoes a strict validate-and-repair loop against the authoritative, version-bound OKS schema, the system eliminates syntax hallucinations before execution. Ultimately, this establishes a robust and verifiable paradigm for safely deploying generative AI within high-stakes scientific infrastructure.
 
 \section{Scope}
-[Content to be added...]
+
+The system is scoped to translating natural-language questions about the ATLAS DAQ configuration into validated OksQuery statements for read-only retrieval, processing one query at a time within a single, explicitly resolved configuration version (TDAQ release, Git revision, or run number), with schema retrieval performed dynamically per request using a version-scoped lexical pipeline (exact match, alias lookup, BM25) keyed by schema fingerprint, and the retrieval index regenerated from the OKS schema whenever the configuration changes. The module generates an intermediate AST representation rather than raw OksQuery strings, validated deterministically against the version-bound OKS schema before compilation, and is deployed as an MCP server hosted within CERN compute infrastructure and exposed to external LLM agents through SSH port tunneling, with conversational persistence and session state managed by the consuming LLM agent rather than the translation module. The system does not write, modify, or delete configuration data, does not provide operational recommendations or interpret query results beyond factual reporting, does not access live running partition memory or process telemetry data, does not handle user authentication (security relies on the CERN SSH tunnel and institutional network perimeter), and does not support non-English natural-language input or cross-version comparison queries.
 
 \section{Limitations}
 [Content to be added...]
@@ -410,8 +435,17 @@ OKS & Object Kernel Support \\
 \addcontentsline{toc}{chapter}{REFERENCES}
 \begin{thebibliography}{99}
 
-\bibitem{placeholder}
-[References to be added...]
+\bibitem{atlas_git}
+ATLAS Collaboration, ``The git based ATLAS data acquisition configuration service in LHC Run 3,'' \textit{Journal of Physics: Conference Series}.
+
+\bibitem{alexandrov2007}
+E.~Alexandrov \textit{et al.}, ``The ATLAS DAQ system online configurations database service challenge,'' \textit{Journal of Physics: Conference Series}, vol.~119, p.~022004, 2007.
+
+\bibitem{oks_paper}
+``The OKS persistent in-memory object manager,'' ATLAS TDAQ Technical Paper.
+
+\bibitem{zhu2025}
+X.~Zhu, Y.~Xie, Y.~Liu, Y.~Li, and W.~Hu, ``Knowledge Graph-Guided Retrieval Augmented Generation,'' arXiv:2502.06864, NAACL, 2025.
 
 \end{thebibliography}
 
