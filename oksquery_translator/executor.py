@@ -21,6 +21,7 @@ import platform
 import re
 import shutil
 import subprocess
+import tempfile
 import time
 from typing import Any, Dict, List, Optional
 
@@ -72,7 +73,8 @@ class Executor:
                 max_objects: int = 200,
                 data_file: Optional[str] = None,
                 release: Optional[str] = None,
-                partition: Optional[str] = None) -> ExecutionResult:
+                partition: Optional[str] = None,
+                repository: Optional[str] = None) -> ExecutionResult:
         """
         Execute a query and return matching objects.
 
@@ -92,6 +94,9 @@ class Executor:
             Target TDAQ release (e.g. "tdaq-11-02-01").
         partition : str, optional
             Partition name (e.g. "part_TGC_FillTest", "all_hosts").
+        repository : str, optional
+            Repository recorded with the run metadata.  This takes precedence
+            over TDAQ_DB_REPOSITORY and over a URL derived from ``release``.
 
         Returns
         -------
@@ -110,8 +115,7 @@ class Executor:
             )
 
         if is_historical:
-            # Resolve official ATLAS OKS configuration Git repository URL
-            tdaq_repo = self._resolve_repository_url(release, partition)
+            tdaq_repo = self._resolve_repository_url(release, partition, repository)
             if not tdaq_repo:
                 msg = (
                     "Cannot load historical OKS configuration: "
@@ -127,6 +131,14 @@ class Executor:
                 logger.error(f"Executor: {msg}")
                 return ExecutionResult(success=False, message=msg)
 
+            validation_error = self._validate_historical_configuration(
+                repository=tdaq_repo, version=version, data_file=selected_data_file,
+                release=release, partition=partition,
+            )
+            if validation_error:
+                logger.error("Executor: historical configuration validation failed: %s", validation_error)
+                return ExecutionResult(success=False, message=validation_error)
+
             logger.info(
                 f"Executor: Historical configuration access:\n"
                 f"  release: {release or 'unspecified'}\n"
@@ -134,8 +146,7 @@ class Executor:
                 f"  version: {version}\n"
                 f"  data_file: {selected_data_file}\n"
                 f"  TDAQ_DB_REPOSITORY: {tdaq_repo}\n"
-                f"  OKS_GIT_PROTOCOL: https\n"
-                f"  TDAQ_DB_VERSION: {version}\n"
+                f"  OKS_GIT_PROTOCOL: ssh\n"
                 f"  mode: historical Git-backed configuration"
             )
         else:
@@ -148,7 +159,9 @@ class Executor:
             )
 
         oks_dump_path = self._oks_dump_path
-        if release:
+        # A release-specific binary is only a fallback implementation detail.
+        # Historical data itself is always selected from the Git repository.
+        if not self._config_available and release:
             release_info = self._release_info(release)
             if release_info is not None:
                 rel_dump_path, _ = release_info
@@ -165,7 +178,9 @@ class Executor:
 
         # Strategy 1 (preferred): Python config module.
         if self._config_available:
-            env_backup = self._set_version_env(version, release=release, partition=partition)
+            env_backup = self._set_version_env(
+                version, release=release, partition=partition, repository=repository
+            )
             try:
                 return self._execute_config(
                     target_class, query, max_objects, version_label, selected_data_file, version=version
@@ -183,6 +198,7 @@ class Executor:
                 version=version,
                 release=release,
                 partition=partition,
+                repository=repository,
             )
 
         return ExecutionResult(
@@ -314,16 +330,18 @@ class Executor:
         return ld_paths
 
     @staticmethod
-    def _resolve_repository_url(release: Optional[str], partition: Optional[str] = None) -> Optional[str]:
+    def _resolve_repository_url(release: Optional[str], partition: Optional[str] = None,
+                                repository: Optional[str] = None) -> Optional[str]:
         """
         Resolve the official ATLAS OKS configuration Git repository URL.
 
         Precedence:
-          1. Environment variable TDAQ_DB_REPOSITORY (if explicitly set)
-          2. Auto-derived URL based on repository family and release:
-             - Point-1 production (e.g. ATLAS, part_*) -> https://gitlab.cern.ch/atlas-tdaq-oks/p1/<release>.git
-             - TestBed / dev (e.g. all_hosts, tbed)      -> https://gitlab.cern.ch/atlas-tdaq-oks/tbed/<release>.git
+          1. Repository supplied by run metadata
+          2. Environment variable TDAQ_DB_REPOSITORY
+          3. Auto-derived SSH URL based on repository family and release.
         """
+        if repository:
+            return repository
         env_repo = os.environ.get("TDAQ_DB_REPOSITORY")
         if env_repo:
             return env_repo
@@ -337,14 +355,68 @@ class Executor:
         else:
             family = "p1"
 
-        return f"https://gitlab.cern.ch/atlas-tdaq-oks/{family}/{release}.git"
+        return f"ssh://git@gitlab.cern.ch/atlas-tdaq-oks/{family}/{release}.git"
+
+    @staticmethod
+    def _validate_historical_configuration(repository: str, version: str,
+                                           data_file: str, release: Optional[str],
+                                           partition: Optional[str]) -> Optional[str]:
+        """Verify the exact revision and file before the OKS kernel is opened.
+
+        A temporary Git repository is used so that validation neither relies on
+        the active TDAQ checkout nor changes a caller's Git working tree.
+        ``git fetch <revision>`` works for both ``tag:<name>`` and
+        ``hash:<sha>`` and ``git cat-file`` verifies the configuration path at
+        precisely that fetched commit.
+        """
+        if not version.startswith(("tag:", "hash:")):
+            return ("revision resolution failed: historical version must be "
+                    "'tag:<tag>' or 'hash:<sha>'; got %r" % version)
+        if not data_file or os.path.isabs(data_file) or ".." in data_file.split("/"):
+            return "data-file resolution failed: data_file must be a relative repository path"
+
+        revision = version.split(":", 1)[1]
+        if not revision:
+            return "revision resolution failed: empty tag/SHA"
+        try:
+            with tempfile.TemporaryDirectory(prefix="oks-history-validate-") as temp_dir:
+                def git(*args: str) -> subprocess.CompletedProcess:
+                    return subprocess.run(
+                        ["git", *args], cwd=temp_dir, capture_output=True,
+                        text=True, timeout=45,
+                    )
+
+                init = git("init", "--quiet")
+                if init.returncode:
+                    return "repository resolution failed: could not initialize isolated Git validation"
+                add = git("remote", "add", "origin", repository)
+                if add.returncode:
+                    return "repository resolution failed: could not configure repository %r" % repository
+                fetched = git("fetch", "--quiet", "--depth=1", "origin", revision)
+                if fetched.returncode:
+                    detail = (fetched.stderr or fetched.stdout).strip()
+                    return ("revision resolution failed: %s is not available in repository %s"
+                            "%s" % (version, repository, (": " + detail) if detail else ""))
+                resolved = git("rev-parse", "--verify", "FETCH_HEAD^{commit}")
+                if resolved.returncode:
+                    return "revision resolution failed: %s did not resolve to a commit" % version
+                present = git("cat-file", "-e", "FETCH_HEAD:%s" % data_file)
+                if present.returncode:
+                    return ("data-file resolution failed: %s is absent at %s in repository %s"
+                            % (data_file, version, repository))
+        except subprocess.TimeoutExpired:
+            return "repository/revision resolution failed: Git validation timed out"
+        except OSError as exc:
+            return "repository resolution failed: unable to invoke git: %s" % exc
+        return None
 
     def _execute_oks_dump(self, target_class: str, query: str,
                           max_objects: int, version_label: str,
                           data_file: str, oks_dump_path: str,
                           version: str = None,
                           release: str = None,
-                          partition: str = None) -> ExecutionResult:
+                          partition: str = None,
+                          repository: str = None) -> ExecutionResult:
         """Execute via oks_dump CLI and parse the output."""
         import shlex
 
@@ -353,10 +425,10 @@ class Executor:
         env = os.environ.copy()
 
         if version and version != "current":
-            repo_url = self._resolve_repository_url(release, partition)
+            repo_url = self._resolve_repository_url(release, partition, repository)
             if repo_url:
                 env["TDAQ_DB_REPOSITORY"] = repo_url
-                env["OKS_GIT_PROTOCOL"] = "https"
+                env["OKS_GIT_PROTOCOL"] = "ssh"
 
             env.pop("TDAQ_DB_USER_REPOSITORY", None)
             env.pop("TDAQ_DB_PATH", None)
@@ -522,7 +594,8 @@ class Executor:
 
     def _set_version_env(self, version: Optional[str],
                          release: Optional[str] = None,
-                         partition: Optional[str] = None) -> Dict[str, Optional[str]]:
+                         partition: Optional[str] = None,
+                         repository: Optional[str] = None) -> Dict[str, Optional[str]]:
         """
         Set environment variables for temporal access.
         Returns backup of original values for restoration.
@@ -530,12 +603,12 @@ class Executor:
         backup: Dict[str, Optional[str]] = {}
 
         if version and version != "current":
-            repo_url = self._resolve_repository_url(release, partition)
+            repo_url = self._resolve_repository_url(release, partition, repository)
             if repo_url:
                 backup["TDAQ_DB_REPOSITORY"] = os.environ.get("TDAQ_DB_REPOSITORY")
                 os.environ["TDAQ_DB_REPOSITORY"] = repo_url
                 backup["OKS_GIT_PROTOCOL"] = os.environ.get("OKS_GIT_PROTOCOL")
-                os.environ["OKS_GIT_PROTOCOL"] = "https"
+                os.environ["OKS_GIT_PROTOCOL"] = "ssh"
 
             if "TDAQ_DB_USER_REPOSITORY" in os.environ:
                 backup["TDAQ_DB_USER_REPOSITORY"] = os.environ.get("TDAQ_DB_USER_REPOSITORY")
@@ -562,14 +635,6 @@ class Executor:
             tag_name = f"tag:r{run_num}@{part}"
             backup["TDAQ_DB_VERSION"] = os.environ.get("TDAQ_DB_VERSION")
             os.environ["TDAQ_DB_VERSION"] = tag_name
-        elif version.startswith("tdaq-"):
-            snapshot_path = (
-                f"/cvmfs/atlas.cern.ch/repo/sw/tdaq/tdaq/{version}"
-                f"/installed/share/data"
-            )
-            backup["TDAQ_DB_PATH"] = os.environ.get("TDAQ_DB_PATH")
-            os.environ["TDAQ_DB_PATH"] = snapshot_path
-
         return backup
 
     @staticmethod

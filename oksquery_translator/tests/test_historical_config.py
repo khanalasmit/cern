@@ -15,6 +15,8 @@ Tests the 8 required test cases for historical OKS configuration access:
 
 import logging
 import os
+import subprocess
+import tempfile
 import unittest
 from unittest.mock import MagicMock, patch
 
@@ -31,6 +33,8 @@ class TestHistoricalConfig(unittest.TestCase):
             repo_root=self.translator_repo,
         )
         self.executor._config_available = True
+        # Most tests below exercise environment wiring, not Git transport.
+        self.executor._validate_historical_configuration = MagicMock(return_value=None)
 
     @patch.dict(os.environ, {"TDAQ_DB_REPOSITORY": "/actual/config/repository"}, clear=True)
     def test_1_historical_repository_preserved(self):
@@ -203,10 +207,68 @@ class TestHistoricalConfig(unittest.TestCase):
     def test_9_auto_derived_repository_url(self):
         """Test 9: Auto-derives Point-1 (p1) vs TestBed (tbed) repository URL based on release & partition."""
         p1_url = self.executor._resolve_repository_url("tdaq-11-02-01", "part_TGC_FillTest")
-        self.assertEqual(p1_url, "https://gitlab.cern.ch/atlas-tdaq-oks/p1/tdaq-11-02-01.git")
+        self.assertEqual(p1_url, "ssh://git@gitlab.cern.ch/atlas-tdaq-oks/p1/tdaq-11-02-01.git")
 
         tbed_url = self.executor._resolve_repository_url("tdaq-11-02-01", "all_hosts")
-        self.assertEqual(tbed_url, "https://gitlab.cern.ch/atlas-tdaq-oks/tbed/tdaq-11-02-01.git")
+        self.assertEqual(tbed_url, "ssh://git@gitlab.cern.ch/atlas-tdaq-oks/tbed/tdaq-11-02-01.git")
+
+    def test_10_metadata_repository_wins_over_environment_and_uses_ssh(self):
+        """A recorded repository is never replaced by a current-release URL."""
+        with patch.dict(os.environ, {"TDAQ_DB_REPOSITORY": "ssh://git@current/repo.git"}, clear=True):
+            captured = {}
+
+            def execute(*_args, **_kwargs):
+                captured.update({
+                    "repository": os.environ.get("TDAQ_DB_REPOSITORY"),
+                    "protocol": os.environ.get("OKS_GIT_PROTOCOL"),
+                    "user_repo": os.environ.get("TDAQ_DB_USER_REPOSITORY"),
+                    "db_path": os.environ.get("TDAQ_DB_PATH"),
+                })
+                return ExecutionResult(success=True)
+
+            with patch.object(self.executor, "_execute_config", side_effect=execute):
+                result = self.executor.execute(
+                    "Application", '(all (object-id "" !=))',
+                    version="tag:run-tag", release="tdaq-99-99-99",
+                    partition="ATLAS", repository="ssh://git@recorded/history.git",
+                    data_file="combined/partitions/ATLAS.data.xml",
+                )
+            self.assertTrue(result.success)
+            self.assertEqual(captured["repository"], "ssh://git@recorded/history.git")
+            self.assertEqual(captured["protocol"], "ssh")
+            self.assertIsNone(captured["user_repo"])
+            self.assertIsNone(captured["db_path"])
+
+    def test_11_git_preflight_accepts_tag_and_hash_and_checks_file(self):
+        """Use a separate local Git repository to prove selection is revision-driven."""
+        with tempfile.TemporaryDirectory() as temp_dir:
+            work = os.path.join(temp_dir, "work")
+            remote = os.path.join(temp_dir, "history.git")
+            os.mkdir(work)
+            def run(*cmd, cwd=work):
+                return subprocess.run(cmd, cwd=cwd, check=True, capture_output=True, text=True)
+            run("git", "init", "--quiet")
+            run("git", "config", "user.email", "test@example.invalid")
+            run("git", "config", "user.name", "Test")
+            os.makedirs(os.path.join(work, "one", "partitions"))
+            path = os.path.join(work, "one", "partitions", "first.data.xml")
+            with open(path, "w", encoding="utf-8") as stream:
+                stream.write("<oks/>")
+            run("git", "add", ".")
+            run("git", "commit", "--quiet", "-m", "first")
+            first_sha = run("git", "rev-parse", "HEAD").stdout.strip()
+            run("git", "tag", "r1@first")
+            run("git", "init", "--bare", "--quiet", remote, cwd=temp_dir)
+            run("git", "remote", "add", "origin", remote)
+            run("git", "push", "--quiet", "--tags", "origin", "HEAD")
+
+            self.assertIsNone(Executor._validate_historical_configuration(
+                remote, "tag:r1@first", "one/partitions/first.data.xml", "tdaq-01-00-00", "first"))
+            self.assertIsNone(Executor._validate_historical_configuration(
+                remote, "hash:" + first_sha, "one/partitions/first.data.xml", "tdaq-01-00-00", "first"))
+            error = Executor._validate_historical_configuration(
+                remote, "tag:r1@first", "missing.data.xml", "tdaq-01-00-00", "first")
+            self.assertIn("data-file resolution failed", error)
 
 
 if __name__ == "__main__":
