@@ -1,8 +1,10 @@
 # OKS MCP System Architecture
 
 This document describes the deployed path for natural-language OKS queries.
-The companion visual is [system_architecture.png](system_architecture.png).
-The checked-in SVG/PNG keeps labels exact; the reusable AI-generation prompt
+The primary companion visual is the clean monochrome vertical flow:
+[system_architecture_clean.png](system_architecture_clean.png).
+The earlier pastel draft remains available as
+[system_architecture.png](system_architecture.png). The reusable AI-generation prompt
 for a stylistic variant is in
 [system_architecture_image_prompt.md](system_architecture_image_prompt.md).
 
