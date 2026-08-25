@@ -321,7 +321,25 @@ class Executor:
         return ld_paths
 
     @staticmethod
-    def _resolve_repository_url(release: Optional[str], partition: Optional[str] = None,
+    def _normalize_repository_url(url: Optional[str]) -> Optional[str]:
+        """
+        Ensure CERN GitLab SSH URLs explicitly specify port 7999.
+        Preserves HTTPS URLs and non-CERN URLs.
+        """
+        if not url:
+            return url
+
+        if "gitlab.cern.ch" in url and not url.startswith("https://"):
+            if "gitlab.cern.ch:7999" not in url:
+                if url.startswith("ssh://git@gitlab.cern.ch/"):
+                    return url.replace("ssh://git@gitlab.cern.ch/", "ssh://git@gitlab.cern.ch:7999/", 1)
+                elif url.startswith("git@gitlab.cern.ch:"):
+                    return url.replace("git@gitlab.cern.ch:", "ssh://git@gitlab.cern.ch:7999/", 1)
+
+        return url
+
+    @classmethod
+    def _resolve_repository_url(cls, release: Optional[str], partition: Optional[str] = None,
                                 repository: Optional[str] = None) -> Optional[str]:
         """
         Resolve the official ATLAS OKS configuration Git repository URL.
@@ -329,13 +347,18 @@ class Executor:
         Precedence:
           1. Repository supplied by run metadata
           2. Environment variable TDAQ_DB_REPOSITORY
-          3. Auto-derived URL based on OKS_GIT_PROTOCOL, family and release.
+          3. Auto-derived SSH URL (with port 7999) based on OKS_GIT_PROTOCOL, family and release.
         """
+        url = None
         if repository:
-            return repository
-        env_repo = os.environ.get("TDAQ_DB_REPOSITORY")
-        if env_repo:
-            return env_repo
+            url = repository
+        else:
+            env_repo = os.environ.get("TDAQ_DB_REPOSITORY")
+            if env_repo:
+                url = env_repo
+
+        if url:
+            return cls._normalize_repository_url(url)
 
         if not release:
             return None
@@ -348,7 +371,7 @@ class Executor:
 
         protocol = os.environ.get("OKS_GIT_PROTOCOL", "ssh").lower()
         if protocol == "ssh":
-            return f"ssh://git@gitlab.cern.ch/atlas-tdaq-oks/{family}/{release}.git"
+            return f"ssh://git@gitlab.cern.ch:7999/atlas-tdaq-oks/{family}/{release}.git"
         else:
             return f"https://gitlab.cern.ch/atlas-tdaq-oks/{family}/{release}.git"
 

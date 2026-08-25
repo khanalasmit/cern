@@ -205,12 +205,24 @@ class TestHistoricalConfig(unittest.TestCase):
 
     @patch.dict(os.environ, {}, clear=True)
     def test_9_auto_derived_repository_url(self):
-        """Test 9: Auto-derives Point-1 (p1) vs TestBed (tbed) repository URL based on release & partition."""
+        """Test 9: Auto-derives Point-1 (p1) vs TestBed (tbed) repository URL based on release & partition with port 7999."""
         p1_url = self.executor._resolve_repository_url("tdaq-11-02-01", "part_TGC_FillTest")
-        self.assertEqual(p1_url, "ssh://git@gitlab.cern.ch/atlas-tdaq-oks/p1/tdaq-11-02-01.git")
+        self.assertEqual(p1_url, "ssh://git@gitlab.cern.ch:7999/atlas-tdaq-oks/p1/tdaq-11-02-01.git")
 
         tbed_url = self.executor._resolve_repository_url("tdaq-11-02-01", "all_hosts")
-        self.assertEqual(tbed_url, "ssh://git@gitlab.cern.ch/atlas-tdaq-oks/tbed/tdaq-11-02-01.git")
+        self.assertEqual(tbed_url, "ssh://git@gitlab.cern.ch:7999/atlas-tdaq-oks/tbed/tdaq-11-02-01.git")
+
+        # Verify historical release tdaq-11-02-00
+        tdaq_11_02_00_url = self.executor._resolve_repository_url("tdaq-11-02-00", "part_TGC_FillTest")
+        self.assertEqual(tdaq_11_02_00_url, "ssh://git@gitlab.cern.ch:7999/atlas-tdaq-oks/p1/tdaq-11-02-00.git")
+
+        # Verify normalization of explicit SSH URLs lacking port 7999
+        normalized = self.executor._normalize_repository_url("ssh://git@gitlab.cern.ch/atlas-tdaq-oks/p1/tdaq-11-02-00.git")
+        self.assertEqual(normalized, "ssh://git@gitlab.cern.ch:7999/atlas-tdaq-oks/p1/tdaq-11-02-00.git")
+
+        # Verify HTTPS URL preservation (port 7999 not added to HTTPS)
+        https_url = self.executor._normalize_repository_url("https://gitlab.cern.ch/atlas-tdaq-oks/p1/tdaq-11-02-00.git")
+        self.assertEqual(https_url, "https://gitlab.cern.ch/atlas-tdaq-oks/p1/tdaq-11-02-00.git")
 
     def test_10_metadata_repository_wins_over_environment_and_uses_ssh(self):
         """A recorded repository is never replaced by a current-release URL."""
