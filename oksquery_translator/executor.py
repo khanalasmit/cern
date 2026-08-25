@@ -161,14 +161,10 @@ class Executor:
             )
 
         oks_dump_path = self._oks_dump_path
-        # A release-specific binary is only a fallback implementation detail.
-        # Historical data itself is always selected from the Git repository.
-        if not self._config_available and release:
         if release:
             release_info = self._release_info(release)
             if release_info is not None:
                 rel_dump_path, _ = release_info
-                if not oks_dump_path:
                 if is_historical:
                     # For historical queries, prefer the release-specific binary
                     # from CVMFS over the currently-sourced one.  Cross-release
@@ -176,7 +172,6 @@ class Executor:
                     oks_dump_path = rel_dump_path or oks_dump_path
                 elif not oks_dump_path:
                     oks_dump_path = rel_dump_path
-            elif not oks_dump_path:
             elif not oks_dump_path and not self._config_available:
                 return ExecutionResult(
                     success=False,
@@ -186,8 +181,6 @@ class Executor:
                     ),
                 )
 
-        # Strategy 1 (preferred): Python config module.
-        if self._config_available:
         # Strategy 1 (preferred): Python config module — for CURRENT queries only.
         # For historical queries the Python config module is skipped because:
         #   a) It is imported once and caches env at import time, so
@@ -208,7 +201,6 @@ class Executor:
             finally:
                 self._restore_env(env_backup)
 
-        # Strategy 2 (fallback): oks_dump CLI.
         # Strategy 2 (fallback for current; primary path for historical): oks_dump CLI.
         if oks_dump_path:
             return self._execute_oks_dump(
