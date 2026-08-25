@@ -150,11 +150,13 @@ class Executor:
                 f"  mode: historical Git-backed configuration"
             )
         else:
-            user_repo = os.environ.get("TDAQ_DB_USER_REPOSITORY", self.repo_root)
+            user_repo = os.environ.get("TDAQ_DB_USER_REPOSITORY")
+            if not user_repo and self.repo_root and os.path.exists(os.path.join(self.repo_root, selected_data_file)):
+                user_repo = self.repo_root
             logger.info(
                 f"Executor: Current configuration access:\n"
                 f"  data_file: {selected_data_file}\n"
-                f"  TDAQ_DB_USER_REPOSITORY: {user_repo}\n"
+                f"  TDAQ_DB_USER_REPOSITORY: {user_repo or 'unset (using TDAQ_DB_PATH/release)'}\n"
                 f"  mode: static/local current configuration"
             )
 
@@ -297,8 +299,7 @@ class Executor:
     def _get_release_ld_paths(oks_dump_path: str) -> List[str]:
         """
         Discover library paths required by an oks_dump binary in CVMFS,
-        including architecture-specific lib directories and OpenSSL 1.0 (libssl.so.10)
-        fallback locations in CVMFS.
+        including architecture-specific lib directories and static OpenSSL locations.
         """
         ld_paths = []
         if oks_dump_path:
@@ -308,24 +309,14 @@ class Executor:
             if os.path.isdir(arch_lib):
                 ld_paths.append(arch_lib)
 
-        # Search CVMFS for OpenSSL 1.0 (libssl.so.10) directories
-        cvmfs_ssl_patterns = [
-            "/cvmfs/sft.cern.ch/lcg/external/OpenSSL/*/x86_64-*/lib",
-            "/cvmfs/sft.cern.ch/lcg/releases/LCG_*/OpenSSL/*/x86_64-*/lib",
-            "/cvmfs/sft.cern.ch/lcg/contrib/openssl/*/lib",
-            "/cvmfs/sft.cern.ch/lcg/views/*/x86_64-*/lib",
-            "/cvmfs/atlas.cern.ch/repo/sw/software/*/lib",
-            "/cvmfs/atlas.cern.ch/repo/sw/tdaq/tdaq/*/installed/x86_64-*/lib",
+        # Static common CVMFS SSL lib locations (avoiding expensive wildcard globbing on network filesystem)
+        static_ssl_paths = [
+            "/cvmfs/sft.cern.ch/lcg/external/OpenSSL/1.0.2o/x86_64-centos7-gcc8-opt/lib",
+            "/cvmfs/sft.cern.ch/lcg/releases/LCG_96/OpenSSL/1.0.2o/x86_64-centos7-gcc8-opt/lib",
         ]
-        for pattern in cvmfs_ssl_patterns:
-            for p in glob.glob(pattern):
-                if os.path.isdir(p) and (
-                    os.path.exists(os.path.join(p, "libssl.so.10")) or
-                    os.path.exists(os.path.join(p, "libssl.so.1.0.0"))
-                ):
-                    if p not in ld_paths:
-                        ld_paths.append(p)
-                        break
+        for p in static_ssl_paths:
+            if os.path.isdir(p) and p not in ld_paths:
+                ld_paths.append(p)
 
         return ld_paths
 
@@ -338,7 +329,7 @@ class Executor:
         Precedence:
           1. Repository supplied by run metadata
           2. Environment variable TDAQ_DB_REPOSITORY
-          3. Auto-derived SSH URL based on repository family and release.
+          3. Auto-derived URL based on OKS_GIT_PROTOCOL, family and release.
         """
         if repository:
             return repository
@@ -355,7 +346,11 @@ class Executor:
         else:
             family = "p1"
 
-        return f"ssh://git@gitlab.cern.ch/atlas-tdaq-oks/{family}/{release}.git"
+        protocol = os.environ.get("OKS_GIT_PROTOCOL", "ssh").lower()
+        if protocol == "ssh":
+            return f"ssh://git@gitlab.cern.ch/atlas-tdaq-oks/{family}/{release}.git"
+        else:
+            return f"https://gitlab.cern.ch/atlas-tdaq-oks/{family}/{release}.git"
 
     @staticmethod
     def _validate_historical_configuration(repository: str, version: str,
@@ -381,9 +376,11 @@ class Executor:
         try:
             with tempfile.TemporaryDirectory(prefix="oks-history-validate-") as temp_dir:
                 def git(*args: str) -> subprocess.CompletedProcess:
+                    env = os.environ.copy()
+                    env["GIT_SSH_COMMAND"] = "ssh -o BatchMode=yes -o StrictHostKeyChecking=accept-new"
                     return subprocess.run(
                         ["git", *args], cwd=temp_dir, capture_output=True,
-                        text=True, timeout=45,
+                        text=True, timeout=45, env=env,
                     )
 
                 init = git("init", "--quiet")
@@ -392,7 +389,16 @@ class Executor:
                 add = git("remote", "add", "origin", repository)
                 if add.returncode:
                     return "repository resolution failed: could not configure repository %r" % repository
-                fetched = git("fetch", "--quiet", "--depth=1", "origin", revision)
+
+                if version.startswith("tag:"):
+                    fetch_ref = f"refs/tags/{revision}"
+                else:
+                    fetch_ref = revision
+
+                fetched = git("fetch", "--quiet", "--depth=1", "origin", fetch_ref)
+                if fetched.returncode:
+                    fetched = git("fetch", "--quiet", "origin", fetch_ref)
+
                 if fetched.returncode:
                     detail = (fetched.stderr or fetched.stdout).strip()
                     return ("revision resolution failed: %s is not available in repository %s"
@@ -428,7 +434,7 @@ class Executor:
             repo_url = self._resolve_repository_url(release, partition, repository)
             if repo_url:
                 env["TDAQ_DB_REPOSITORY"] = repo_url
-                env["OKS_GIT_PROTOCOL"] = "ssh"
+                env["OKS_GIT_PROTOCOL"] = os.environ.get("OKS_GIT_PROTOCOL", "ssh")
 
             env.pop("TDAQ_DB_USER_REPOSITORY", None)
             env.pop("TDAQ_DB_PATH", None)
@@ -455,8 +461,12 @@ class Executor:
         else:
             user_repo = env.get("TDAQ_DB_USER_REPOSITORY", "")
             if not user_repo and self.repo_root:
-                env["TDAQ_DB_USER_REPOSITORY"] = self.repo_root
-                logger.info(f"Executor: Auto-set TDAQ_DB_USER_REPOSITORY={self.repo_root!r} for current query")
+                local_file = os.path.join(self.repo_root, data_file)
+                if os.path.exists(local_file):
+                    env["TDAQ_DB_USER_REPOSITORY"] = self.repo_root
+                    logger.info(f"Executor: Set TDAQ_DB_USER_REPOSITORY={self.repo_root!r} for current query")
+                else:
+                    env.pop("TDAQ_DB_USER_REPOSITORY", None)
 
         extra_ld_paths = self._get_release_ld_paths(oks_dump_path)
         if extra_ld_paths:
@@ -608,7 +618,7 @@ class Executor:
                 backup["TDAQ_DB_REPOSITORY"] = os.environ.get("TDAQ_DB_REPOSITORY")
                 os.environ["TDAQ_DB_REPOSITORY"] = repo_url
                 backup["OKS_GIT_PROTOCOL"] = os.environ.get("OKS_GIT_PROTOCOL")
-                os.environ["OKS_GIT_PROTOCOL"] = "ssh"
+                os.environ["OKS_GIT_PROTOCOL"] = os.environ.get("OKS_GIT_PROTOCOL", "ssh")
 
             if "TDAQ_DB_USER_REPOSITORY" in os.environ:
                 backup["TDAQ_DB_USER_REPOSITORY"] = os.environ.get("TDAQ_DB_USER_REPOSITORY")
@@ -619,8 +629,10 @@ class Executor:
                 del os.environ["TDAQ_DB_PATH"]
         else:
             if "TDAQ_DB_USER_REPOSITORY" not in os.environ and self.repo_root:
-                backup["TDAQ_DB_USER_REPOSITORY"] = None
-                os.environ["TDAQ_DB_USER_REPOSITORY"] = self.repo_root
+                local_file = os.path.join(self.repo_root, self.data_file)
+                if os.path.exists(local_file):
+                    backup["TDAQ_DB_USER_REPOSITORY"] = None
+                    os.environ["TDAQ_DB_USER_REPOSITORY"] = self.repo_root
 
         if not version or version == "current":
             return backup
