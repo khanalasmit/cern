@@ -130,7 +130,14 @@ class Executor:
             env_backup = self._set_version_env(version, release_data_path)
             try:
                 return self._execute_config(
-                    target_class, query, max_objects, version_label, selected_data_file
+                    target_class,
+                    query,
+                    max_objects,
+                    version_label,
+                    selected_data_file,
+                    oks_dump_path=oks_dump_path,
+                    version=version,
+                    release_data_path=release_data_path,
                 )
             except Exception as e:
                 logger.warning(f"Executor: Python config backend failed ({e}); falling back to oks_dump CLI.")
@@ -162,7 +169,10 @@ class Executor:
 
     def _execute_config(self, target_class: str, query: str,
                         max_objects: int, version_label: str,
-                        data_file: str) -> ExecutionResult:
+                        data_file: str,
+                        oks_dump_path: Optional[str] = None,
+                        version: Optional[str] = None,
+                        release_data_path: Optional[str] = None) -> ExecutionResult:
         """Execute via the Python config module."""
         import config as oks_config
 
@@ -181,9 +191,12 @@ class Executor:
         if db is None:
             raise last_err or RuntimeError(f"Could not initialize Configuration for {data_file}")
 
-        raw_objects = db.get_objs(target_class, query)
+        # Materialise this once.  Some config implementations return a proxy
+        # collection whose iterator is consumed by the first loop.
+        raw_objects = list(db.get_objs(target_class, query))
 
         objects = []
+        attribute_names = self._config_attribute_names(db, target_class)
         for obj in raw_objects:
             if len(objects) >= max_objects:
                 break
@@ -192,33 +205,53 @@ class Executor:
                 "class": target_class,
                 "attributes": {},
             }
-            # Try to read common attributes
-            try:
-                attrs = db.attributes(target_class)
-                if isinstance(attrs, dict):
-                    for aname in attrs:
-                        try:
-                            obj_dict["attributes"][aname] = str(
-                                getattr(obj, aname, "")
-                            )
-                        except Exception:
-                            pass
-                elif isinstance(attrs, (list, tuple)):
-                    for a in attrs:
-                        aname = a if isinstance(a, str) else a.get("name", "")
-                        if aname:
-                            try:
-                                obj_dict["attributes"][aname] = str(
-                                    getattr(obj, aname, "")
-                                )
-                            except Exception:
-                                pass
-            except Exception:
-                pass
+            for aname in attribute_names:
+                value = self._read_config_attribute(obj, aname)
+                if value is not None:
+                    obj_dict["attributes"][aname] = value
 
             objects.append(obj_dict)
 
-        total_count = len(list(raw_objects)) if hasattr(raw_objects, '__len__') else len(objects)
+        total_count = len(raw_objects)
+
+        # The Python config proxy is excellent for selecting objects, but on
+        # some TDAQ/Python combinations its object proxy does not expose data
+        # attributes through ``getattr``.  That produces a successful query
+        # with misleading empty attribute values.  If that happens, use the
+        # native formatter/parser as a narrow fallback for the same query.
+        if (objects and oks_dump_path and
+                self._has_missing_attribute_values(objects)):
+            native_result = self._execute_oks_dump(
+                target_class,
+                query,
+                max_objects,
+                version_label,
+                data_file,
+                oks_dump_path,
+                version=version,
+                release_data_path=release_data_path,
+            )
+            if native_result.success and native_result.objects:
+                native_by_id = {
+                    item.get("id"): item
+                    for item in native_result.objects
+                    if item.get("id")
+                }
+                for item in objects:
+                    native_item = native_by_id.get(item.get("id"))
+                    if native_item and native_item.get("attributes"):
+                        item["attributes"] = native_item["attributes"]
+                logger.info(
+                    "Executor: filled missing config-proxy attributes from "
+                    "native oks_dump output"
+                )
+            else:
+                logger.warning(
+                    "Executor: config query succeeded but attribute values were "
+                    "unavailable; native oks_dump fallback also failed: %s",
+                    native_result.message,
+                )
+
         elapsed = time.perf_counter() - t_start
         logger.info(f"Executor: Python C++ config backend returned {total_count} object(s) in {elapsed:.3f}s")
 
@@ -228,6 +261,77 @@ class Executor:
             count=total_count,
             version_used=version_label,
         )
+
+    @staticmethod
+    def _config_attribute_names(db: Any, target_class: str) -> List[str]:
+        """Return attribute names from the several config APIs in use."""
+        try:
+            attrs = db.attributes(target_class)
+        except Exception:
+            return []
+
+        if isinstance(attrs, dict):
+            candidates = list(attrs.keys())
+        elif isinstance(attrs, (list, tuple)):
+            candidates = []
+            for attr in attrs:
+                if isinstance(attr, str):
+                    candidates.append(attr)
+                elif isinstance(attr, dict):
+                    candidates.append(attr.get("name", ""))
+                else:
+                    candidates.append(getattr(attr, "name", ""))
+        else:
+            candidates = []
+
+        return [str(name) for name in candidates if name]
+
+    @staticmethod
+    def _read_config_attribute(obj: Any, name: str) -> Optional[str]:
+        """Read one value without treating an absent proxy member as empty.
+
+        TDAQ releases expose object data through different Python proxy shapes.
+        In particular, ``getattr(obj, name, "")`` can hide an unsupported
+        access path by returning the default value.  Try the common accessors
+        and return ``None`` only when no accessor can provide a value.
+        """
+        sentinel = object()
+        accessors = [
+            lambda: getattr(obj, name, sentinel),
+            lambda: obj.get(name) if callable(getattr(obj, "get", None)) else sentinel,
+            lambda: obj.get_attribute(name) if callable(getattr(obj, "get_attribute", None)) else sentinel,
+            lambda: obj.getAttribute(name) if callable(getattr(obj, "getAttribute", None)) else sentinel,
+            lambda: obj.get_attr(name) if callable(getattr(obj, "get_attr", None)) else sentinel,
+            lambda: obj[name],
+        ]
+
+        for accessor in accessors:
+            try:
+                value = accessor()
+            except (AttributeError, KeyError, IndexError, TypeError):
+                continue
+            except Exception:
+                # A proxy may raise a release-specific exception for an
+                # unsupported accessor.  Continue trying the other shapes.
+                continue
+            if value is sentinel:
+                continue
+            if value is None:
+                return ""
+            if isinstance(value, bytes):
+                return value.decode(errors="replace")
+            return str(value)
+
+        return None
+
+    @staticmethod
+    def _has_missing_attribute_values(objects: List[Dict[str, Any]]) -> bool:
+        """Whether at least one returned object has only empty attributes."""
+        for obj in objects:
+            attrs = obj.get("attributes") or {}
+            if not attrs or not any(str(value).strip() for value in attrs.values()):
+                return True
+        return False
 
     # ------------------------------------------------------------------
     # oks_dump CLI execution
