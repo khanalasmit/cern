@@ -296,6 +296,9 @@ class Executor:
             # For historical version queries, TDAQ_DB_USER_REPOSITORY MUST be unset
             # so OKS can perform automatic checkout mode for the version selector.
             env.pop("TDAQ_DB_USER_REPOSITORY", None)
+            if "TDAQ_DB_REPOSITORY" not in env and self.repo_root:
+                env["TDAQ_DB_REPOSITORY"] = self.repo_root
+                logger.info(f"Executor: Setting TDAQ_DB_REPOSITORY={self.repo_root!r} in subprocess env")
             if version.startswith(("hash:", "date:", "tag:")):
                 env["TDAQ_DB_VERSION"] = version
                 logger.info(f"Executor: Setting TDAQ_DB_VERSION={version!r} in subprocess env")
@@ -459,6 +462,9 @@ class Executor:
             if "TDAQ_DB_USER_REPOSITORY" in os.environ:
                 backup["TDAQ_DB_USER_REPOSITORY"] = os.environ.get("TDAQ_DB_USER_REPOSITORY")
                 del os.environ["TDAQ_DB_USER_REPOSITORY"]
+            if "TDAQ_DB_REPOSITORY" not in os.environ and self.repo_root:
+                backup["TDAQ_DB_REPOSITORY"] = None
+                os.environ["TDAQ_DB_REPOSITORY"] = self.repo_root
         else:
             if "TDAQ_DB_USER_REPOSITORY" not in os.environ and self.repo_root:
                 backup["TDAQ_DB_USER_REPOSITORY"] = None
