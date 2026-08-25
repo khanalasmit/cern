@@ -141,6 +141,7 @@ class TestPipelineIntentIntegration:
             "release": "tdaq-11-02-01",
             "version": "hash:c85894a53e0e17911015fbefdfce33679f41e2ff",
             "config_name": "muons/partitions/part_TGC_FillTest.data.xml",
+            "repository": "ssh://git@gitlab.cern.ch:7999/atlas-tdaq-oks/p1/tdaq-11-02-01.git",
         })
 
         res = mock_pipeline.answer("List all Computer objects in run no 468836")
@@ -149,6 +150,7 @@ class TestPipelineIntentIntegration:
         kwargs = mock_pipeline.executor.execute.call_args.kwargs
         assert kwargs["release"] == "tdaq-11-02-01"
         assert kwargs["data_file"] == "muons/partitions/part_TGC_FillTest.data.xml"
+        assert kwargs["repository"] == "ssh://git@gitlab.cern.ch:7999/atlas-tdaq-oks/p1/tdaq-11-02-01.git"
 
 
     def test_legacy_run_stops_before_translation_or_execution(self, mock_pipeline):

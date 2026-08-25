@@ -88,6 +88,7 @@ HARD RULES you MUST obey:
       over few-shot examples. If a few-shot example uses an attribute that is not in the live schema,
       look for a relationship (e.g. "Detector" instead of "SubDetector") or use (object-id "..." =).
   11. To match all objects of a class, use (all (object-id "" !=)).
+  12. Run numbers (e.g. 'run 468836', 'run 380689') specify the temporal database configuration version and are handled automatically by the environment. Do NOT add run numbers as attributes or relationships in the OKS query string unless the schema explicitly declares an attribute for it.
 """
 
 # ---------------------------------------------------------------------------

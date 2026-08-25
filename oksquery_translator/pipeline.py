@@ -232,6 +232,7 @@ class OksPipeline:
         partition = intent_info.partition or "all_hosts"
         request_data_file = self.data_file
         request_release = None
+        request_repository = None
 
         if intent_info.intent == Intent.OKS_HISTORICAL_QUERY:
             if version:
@@ -321,6 +322,9 @@ class OksPipeline:
                     partition = run_info.get("partition") or partition
                     request_data_file = run_info.get("config_name") or request_data_file
                     request_release = run_info.get("release") or None
+                    # Some RNDB integrations provide the exact Git URL.  Keep
+                    # it intact; it is more authoritative than a family guess.
+                    request_repository = run_info.get("repository") or None
 
                 if effective_version is None:
                     archive_revision = (run_info or {}).get("version", "unknown")
@@ -383,6 +387,7 @@ class OksPipeline:
                 partition=partition,
                 data_file=request_data_file,
                 release=request_release,
+                repository=request_repository,
             )
 
         # ------ Step 0e: Query Preprocessing (Tokens & Hints) ------
@@ -436,7 +441,7 @@ class OksPipeline:
         exec_version = oks_context.version_tag or effective_version
         exec_result = self.executor.execute(
             target_class, oks_query, version=exec_version, data_file=request_data_file,
-            release=request_release,
+            release=request_release, partition=partition, repository=request_repository,
         )
         t_exec_elapsed = time.perf_counter() - t_exec
 
@@ -555,7 +560,8 @@ class OksPipeline:
     def _answer_all_objects(self, *, intent_info: IntentResult, oks_context: OksContext,
                             version: Optional[str], run_number: Optional[int],
                             partition: str, data_file: str,
-                            release: Optional[str] = None) -> Dict:
+                            release: Optional[str] = None,
+                            repository: Optional[str] = None) -> Dict:
         """Enumerate every concrete class for an explicit all-objects request."""
         query = '(all (object-id "" !=))'
         class_names = self.schema_retriever.get_class_list()
@@ -564,7 +570,8 @@ class OksPipeline:
         for class_name in class_names:
             result = self.executor.execute(
                 class_name, query, version=oks_context.version_tag or version,
-                data_file=data_file, release=release,
+                data_file=data_file, release=release, partition=partition,
+                repository=repository,
             )
             if not result.success:
                 failures.append(class_name)

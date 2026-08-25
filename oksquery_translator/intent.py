@@ -194,10 +194,15 @@ class RunResolver:
         supplied known run), retain the tag fallback.
         """
         if run_number in self._cached_runs:
-            cached_ver = self._cached_runs[run_number].get("version")
+            run_info = self._cached_runs[run_number]
+            cached_ver = run_info.get("version")
             if self.is_supported_version(cached_ver):
                 return cached_ver
-            return None
+            if cached_ver:
+                return None
+            part = run_info.get("partition") or partition or self.default_partition
+            if part:
+                return f"tag:r{run_number}@{part}"
 
         part = partition or self.default_partition
         return f"tag:r{run_number}@{part}"
