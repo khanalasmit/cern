@@ -130,7 +130,7 @@ class Executor:
             env_backup = self._set_version_env(version, release_data_path)
             try:
                 return self._execute_config(
-                    target_class, query, max_objects, version_label, selected_data_file
+                    target_class, query, max_objects, version_label, selected_data_file, version=version
                 )
             except Exception as e:
                 logger.warning(f"Executor: Python config backend failed ({e}); falling back to oks_dump CLI.")
@@ -162,24 +162,29 @@ class Executor:
 
     def _execute_config(self, target_class: str, query: str,
                         max_objects: int, version_label: str,
-                        data_file: str) -> ExecutionResult:
+                        data_file: str, version: Optional[str] = None) -> ExecutionResult:
         """Execute via the Python config module."""
         import config as oks_config
 
-        logger.info(f"Executor: Executing via Python C++ config backend -> class={target_class!r}, query={query!r}, data_file={data_file!r}")
+        logger.info(f"Executor: Executing via Python C++ config backend -> class={target_class!r}, query={query!r}, data_file={data_file!r}, version={version!r}")
         t_start = time.perf_counter()
+
+        conn_spec = data_file
+        if version and version != "current" and "&version=" not in conn_spec:
+            conn_spec = f"{data_file}&version={version}"
 
         db = None
         last_err = None
         for prefix in ("oksconfig:", "oksconflibs:"):
             try:
-                db = oks_config.Configuration(f"{prefix}{data_file}")
+                db = oks_config.Configuration(f"{prefix}{conn_spec}")
                 break
             except Exception as e:
+                logger.warning(f"Executor: Configuration('{prefix}{conn_spec}') failed: {e}")
                 last_err = e
                 continue
         if db is None:
-            raise last_err or RuntimeError(f"Could not initialize Configuration for {data_file}")
+            raise last_err or RuntimeError(f"Could not initialize Configuration for {conn_spec}")
 
         raw_objects = db.get_objs(target_class, query)
 
@@ -218,7 +223,7 @@ class Executor:
 
             objects.append(obj_dict)
 
-        total_count = len(list(raw_objects)) if hasattr(raw_objects, '__len__') else len(objects)
+        total_count = len(objects)
         elapsed = time.perf_counter() - t_start
         logger.info(f"Executor: Python C++ config backend returned {total_count} object(s) in {elapsed:.3f}s")
 
@@ -287,7 +292,10 @@ class Executor:
             env["TDAQ_DB_PATH"] = release_data_path
             logger.info(f"Executor: Setting TDAQ_DB_PATH={release_data_path!r} in subprocess env")
 
-        if version:
+        if version and version != "current":
+            # For historical version queries, TDAQ_DB_USER_REPOSITORY MUST be unset
+            # so OKS can perform automatic checkout mode for the version selector.
+            env.pop("TDAQ_DB_USER_REPOSITORY", None)
             if version.startswith(("hash:", "date:", "tag:")):
                 env["TDAQ_DB_VERSION"] = version
                 logger.info(f"Executor: Setting TDAQ_DB_VERSION={version!r} in subprocess env")
@@ -296,21 +304,11 @@ class Executor:
                 tag_name = f"tag:r{run_num}@ATLAS"
                 env["TDAQ_DB_VERSION"] = tag_name
                 logger.info(f"Executor: Setting TDAQ_DB_VERSION={tag_name!r} in subprocess env (from {version!r})")
-
-        # Log whether TDAQ_DB_USER_REPOSITORY is present (instant checkout path)
-        user_repo = env.get("TDAQ_DB_USER_REPOSITORY", "")
-        if not user_repo and self.repo_root:
-            user_repo = self.repo_root
-            env["TDAQ_DB_USER_REPOSITORY"] = user_repo
-            logger.info(f"Executor: Auto-set TDAQ_DB_USER_REPOSITORY={user_repo!r} from repo_root (fast path)")
-        elif user_repo:
-            logger.info(f"Executor: TDAQ_DB_USER_REPOSITORY={user_repo!r} — will use existing checkout (fast path)")
-        elif env.get("TDAQ_DB_VERSION"):
-            logger.warning(
-                "Executor: TDAQ_DB_USER_REPOSITORY is NOT set — oks_dump will run oks-checkout.sh "
-                "to Git-clone the OKS repository for this version. This can take minutes. "
-                "For faster execution, export TDAQ_DB_USER_REPOSITORY pointing to a local checkout."
-            )
+        else:
+            user_repo = env.get("TDAQ_DB_USER_REPOSITORY", "")
+            if not user_repo and self.repo_root:
+                env["TDAQ_DB_USER_REPOSITORY"] = self.repo_root
+                logger.info(f"Executor: Auto-set TDAQ_DB_USER_REPOSITORY={self.repo_root!r} for current query")
 
         extra_ld_paths = self._get_release_ld_paths(oks_dump_path)
         if extra_ld_paths:
@@ -447,16 +445,24 @@ class Executor:
     # Temporal version environment
     # ------------------------------------------------------------------
 
-    def _set_version_env(self, version: str,
+    def _set_version_env(self, version: Optional[str],
                          release_data_path: Optional[str] = None) -> Dict[str, Optional[str]]:
         """
         Set environment variables for temporal access.
         Returns backup of original values for restoration.
         """
         backup = {}
-        if "TDAQ_DB_USER_REPOSITORY" not in os.environ and self.repo_root:
-            backup["TDAQ_DB_USER_REPOSITORY"] = None
-            os.environ["TDAQ_DB_USER_REPOSITORY"] = self.repo_root
+
+        if version and version != "current":
+            # For historical version queries, TDAQ_DB_USER_REPOSITORY MUST be unset
+            # so OKS can perform automatic checkout mode for the version selector.
+            if "TDAQ_DB_USER_REPOSITORY" in os.environ:
+                backup["TDAQ_DB_USER_REPOSITORY"] = os.environ.get("TDAQ_DB_USER_REPOSITORY")
+                del os.environ["TDAQ_DB_USER_REPOSITORY"]
+        else:
+            if "TDAQ_DB_USER_REPOSITORY" not in os.environ and self.repo_root:
+                backup["TDAQ_DB_USER_REPOSITORY"] = None
+                os.environ["TDAQ_DB_USER_REPOSITORY"] = self.repo_root
 
         if release_data_path:
             backup["TDAQ_DB_PATH"] = os.environ.get("TDAQ_DB_PATH")
