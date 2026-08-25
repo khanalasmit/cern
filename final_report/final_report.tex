@@ -350,28 +350,378 @@ The system is scoped to translating natural-language questions about the ATLAS D
 \chapter{METHODOLOGY}
 
 \section{Project approach}
-[Content to be added...]
+The project was developed through successive capability increments and repeated
+verification against the OKS runtime. The work began with a translation
+prototype and was refined when testing exposed limitations in query generation,
+schema awareness, version handling, and execution. Each refinement preserved
+the working components while adding a more reliable capability. The final
+implementation therefore combines an iterative development process with an
+incremental growth of functionality, rather than treating the system as a
+single implementation completed at the end of the project.
+
+The principal stages of the approach were as follows:
+
+\begin{enumerate}[label=\Roman*., leftmargin=1.1cm]
+  \item \textbf{Domain and runtime analysis.} The OKS object model, schema
+  files, OksQuery grammar, Python \texttt{config} binding, and native
+  \texttt{oks\_dump} utility were examined first. This established the
+  supported classes, attributes, relationships, operators, query constraints,
+  and runtime requirements.
+
+  \item \textbf{Baseline translation prototype.} A basic natural-language to
+  OksQuery path was implemented to test the feasibility of using an
+  OpenAI-compatible language model for query generation. Initial outputs were
+  inspected and executed against the native runtime so that syntactic and
+  semantic failure cases could be identified.
+
+  \item \textbf{Version-scoped context construction.} The approach was then
+  extended to resolve current and historical configuration versions. For each
+  request, the context builder creates an immutable \texttt{OksContext} with
+  version metadata, schema and data locations, and a schema fingerprint. The
+  retrieval index is consequently aligned with the configuration used for
+  execution.
+
+  \item \textbf{Structured translation and validation.} Instead of asking the
+  language model to produce executable query text directly, the system requests
+  a JSON intermediate representation. The representation is normalised,
+  checked structurally and semantically against the active schema, repaired
+  within a bounded retry loop when required, and compiled deterministically to
+  OksQuery.
+
+  \item \textbf{Execution, service integration, and verification.} Validated
+  queries are executed through the Python \texttt{config} interface or the
+  \texttt{oks\_dump} fallback. The pipeline was subsequently exposed through
+  the stateless MCP service, which provides query, translation-only, and
+  environment-probe tools. Unit, integration, and MCP contract tests were used
+  to verify the individual modules and their combined behaviour.
+\end{enumerate}
 
 \section{System Architecture}
-[Content to be added...]
+The system follows a service-oriented pipeline deployed across the user
+environment and the CERN TDAQ environment. A user submits a natural-language
+question through a coding agent or another MCP-compatible client. The client
+connects to a local MCP endpoint, which is securely forwarded to the MCP
+server running on CERN lxplus through an SSH local port forward. This keeps the
+remote service private and avoids exposing a public application port.
+
+Within the CERN environment, the Streamable HTTP MCP server exposes the
+\texttt{oks\_query}, \texttt{oks\_translate}, and
+\texttt{oks\_environment\_probe} tools. \texttt{OksQueryService} validates
+inputs, applies request and result limits, serialises the request, and returns
+structured responses. The \texttt{OksPipeline} resolves the requested
+configuration, retrieves the relevant version-scoped schema context, and
+coordinates translation and execution.
+
+The translation and validation stage communicates with an OpenAI-compatible
+LLM API over HTTPS. The generated representation is checked and repaired when
+necessary before compilation. The executor then accesses the approved OKS data
+through the TDAQ Python \texttt{config} binding or the native
+\texttt{oks\_dump} fallback. Only filtered structured results and diagnostic
+metadata are returned to the MCP client; conversational memory remains with
+the calling agent.
+
+The deployment and request flow are summarised in Figure~\ref{fig:system-architecture}.
+
+\begin{figure}[p]
+  \centering
+  \includegraphics[width=0.72\textwidth]{system_architecture.png}
+  \caption{Deployment and processing architecture of the OKS MCP server.}
+  \label{fig:system-architecture}
+\end{figure}
+\clearpage
 
 \section{System Design/Modules (UI module, backend logic, database, APIs, etc)}
-[Content to be added...]
+The system is a layered, read-only translation and execution pipeline. It
+separates request handling, version resolution, schema retrieval, model
+interaction, deterministic validation, execution, and MCP service access so
+that each responsibility can be tested independently.
+
+\begin{enumerate}[label=\Roman*., leftmargin=1.1cm]
+  \item \textbf{Request and intent module.} CLI, programmatic, and MCP entry
+  points validate the question, version selector, and service limits. Intent
+  classification separates query, help, and out-of-scope requests.
+
+  \item \textbf{Version and context module.} The resolver interprets current
+  or historical tags, hashes, dates, and run identifiers. The context builder
+  creates the version-bound \texttt{OksContext}, with a request lock protecting
+  historical runtime selection.
+
+  \item \textbf{Schema retrieval module.} The provider reads classes,
+  attributes, inheritance, and relationships from the active schema. Exact
+  and lexical matching, synonym hints, and relationship expansion build a
+  compact, version-fingerprinted schema context.
+
+  \item \textbf{Translation and validation module.} The prompt builder combines
+  the question, schema context, rules, and examples. The translator creates a
+  structured representation; \texttt{oks\_ast} validates it and the compiler
+  deterministically produces OksQuery text. Invalid output enters a bounded
+  repair loop.
+
+  \item \textbf{Execution and interpretation module.} The executor runs only
+  validated queries through the TDAQ Python \texttt{config} binding or
+  \texttt{oks\_dump}. Results include query, version, target class, count,
+  status, and warnings. CLI output may be interpreted in the application,
+  while MCP returns structured data to the calling agent.
+
+  \item \textbf{MCP service module.} \texttt{OksQueryService} provides a
+  stateless boundary with input and version checks, result limits,
+  serialisation, and controlled errors. FastMCP exposes
+  \texttt{oks\_query}, \texttt{oks\_translate}, and
+  \texttt{oks\_environment\_probe}; configuration remains in OKS/TDAQ.
+\end{enumerate}
+
+\subsection{Use-Case Diagram}
+
+The use-case view identifies the developer or team member and coding agent as
+the main actors. The LLM API supports translation and repair, while the server
+handles MCP access, versioned queries, validation, environment probing, and
+read-only execution. Conversation memory and follow-up resolution remain with
+the host agent; the server exposes only approved data and filtered results.
+
+\subsubsection{Use-Case Descriptions}
+
+\paragraph{UC-01: Query OKS Data}
+\textbf{Actor:} User, programmatic client, or MCP client.\\
+\textbf{Precondition:} The service is configured and the question and selected
+configuration are valid.\\
+\textbf{Postcondition:} Structured results, status, and warnings are returned;
+the OKS configuration is unchanged.\\
+\textbf{Flow:} Validate the request, resolve context, retrieve schema, generate
+and validate the representation, compile OksQuery, execute it, and return the
+normalised result. Unresolved versions, runtime failures, or exhausted repair
+attempts stop execution with a controlled error.
+
+\paragraph{UC-02: Translate Without Execution}
+\textbf{Actor:} User, developer, or MCP client.\\
+\textbf{Precondition:} The question, optional selector, schema context, and LLM
+endpoint are available.\\
+\textbf{Postcondition:} A validated representation and compiled OksQuery are
+returned without contacting the OKS runtime.\\
+\textbf{Flow:} Resolve context, retrieve schema, generate, validate, and if
+necessary repair the representation within the retry limit. Invalid input,
+missing schema data, or failed repair returns a controlled error.
+
+\paragraph{UC-03: Probe OKS Environment}
+\textbf{Actor:} User, operator, or MCP client.\\
+\textbf{Precondition:} Runtime paths and settings are loaded.\\
+\textbf{Postcondition:} A non-secret readiness report covers dependencies,
+paths, schema availability, and classes; no query or mutation occurs.\\
+\textbf{Flow:} Check the Python \texttt{config} path and/or
+\texttt{oks\_dump}; report missing dependencies as diagnostics.
+
+\paragraph{Included use cases}
+\textbf{UC-04: Resolve Context} interprets a current or historical selector and
+creates a version-bound \texttt{OksContext}. \textbf{UC-05: Validate and
+Compile} normalises the JSON representation, checks it against the active
+schema, and compiles it only after validation; invalid output is repaired
+within a bound. \textbf{UC-06: Execute Query} runs the validated expression
+through the Python \texttt{config} binding or \texttt{oks\_dump} and returns a
+read-only \texttt{ExecutionResult}.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.96\textwidth]{use_case.png}
+  \caption{Use-case diagram of the OKS MCP Server.}
+  \label{fig:use-case-diagram}
+\end{figure}
+
+\subsection{Context Diagram (DFD Level 0)}
+
+The Level-0 DFD models the OKS MCP Server as one process interacting with the
+developer or coding agent, the LLM API, and the CERN TDAQ/OKS configuration.
+It receives a question and version, retrieves schema context, validates the
+candidate query, executes only an approved read-only request, and returns
+filtered structured results. Levels 1 and 2 are detailed in Data Handling.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.96\textwidth]{dfd_level_0.png}
+  \caption{Level-0 context data-flow diagram of the OKS MCP Server.}
+  \label{fig:dfd-level-0}
+\end{figure}
+
+\subsection{Class Diagram}
+
+The class view shows the MCP adapter, service facade, pipeline, and supporting
+translation, retrieval, validation, and execution components. \texttt{OksContext}
+carries version and schema metadata, while \texttt{ExecutionResult} records
+filtered objects, status, and version. The separation supports independent
+testing of request handling, model generation, schema checks, and runtime access.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.98\textwidth]{class_diagram.png}
+  \caption{Principal classes and collaborations in the merged implementation.}
+  \label{fig:class-diagram}
+\end{figure}
+
+\subsection{Sequence Diagram}
+
+The sequence view shows the deployed path from the user and coding agent,
+through the local SSH port forward, to the MCP service and pipeline on CERN.
+The pipeline obtains schema context, asks the LLM for a candidate, validates or
+repairs it, and executes only the approved read-only query against TDAQ/OKS.
+Filtered structured results return through the tunnel for agent interpretation.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.98\textwidth]{sequence_diagram.png}
+  \caption{Concise sequence of operations for an MCP query request.}
+  \label{fig:sequence-diagram}
+\end{figure}
+
+% The explanatory subsections occur before the figure pages in the final
+% layout, allowing LaTeX to use the preceding page space effectively.
+\clearpage
 
 \section{Technology Stack (languages, frameworks, tools, etc)}
-[Content to be added...]
+The system uses the following technologies to support OKS integration,
+structured translation, and MCP service delivery:
+
+\begin{enumerate}[label=\Roman*., leftmargin=1.1cm]
+  \item \textbf{Python.} Python 3.10 or later is used for the pipeline,
+  service layer, schema processing, validation, and testing.
+
+  \item \textbf{OKS/TDAQ integration.} The TDAQ Python \texttt{config} binding
+  provides the primary execution interface, with \texttt{oks\_dump} as a
+  fallback and diagnostic tool.
+
+  \item \textbf{LLM and structured validation.} The \texttt{openai} package
+  connects to an OpenAI-compatible endpoint. JSON, Pydantic, and the project
+  \texttt{oks\_ast} modules support normalisation, semantic validation, repair,
+  and deterministic compilation.
+
+  \item \textbf{Schema retrieval.} Versioned OKS schemas and Git/runtime
+  metadata provide context. Lexical retrieval and \texttt{rank\_bm25} identify
+  relevant classes, attributes, and relationships.
+
+  \item \textbf{MCP and deployment.} The Python MCP SDK with FastMCP exposes
+  the query, translation, and environment-probe tools through \texttt{stdio}
+  or Streamable HTTP. Environment variables, \texttt{python-dotenv}, SSH, and
+  \texttt{tmux} support configuration and deployment.
+
+  \item \textbf{Testing.} \texttt{pytest} is used for unit, integration,
+  service, pipeline, and MCP contract tests.
+\end{enumerate}
 
 \section{Development Methodology (agile/waterfall/iterative or suitable one)}
-[Content to be added...]
+The project used iterative prototyping with incremental refinement rather than
+a strict Agile or Waterfall process. Requirements were clarified through
+implementation and testing, and the increments were not separately deployed.
+A prototype was tested against native OKS tools; identified limitations then
+guided version-aware retrieval, validation and repair, execution, and MCP
+integration.
+
+\begin{center}
+\textit{Prototype} $\rightarrow$ \textit{Test} $\rightarrow$ \textit{Refine}
+$\rightarrow$ \textit{Integrate MCP} $\rightarrow$ \textit{Validate}
+\end{center}
 
 \section{Data Handling (input, storage, processing)}
-[Content to be added...]
+The system handles natural-language questions and approved, version-scoped OKS
+data without introducing an application database.
+
+\subsection{Input and Storage}
+
+The input is a complete question with an optional current or historical
+selector. The service validates the question, selector, input length, and
+result limit; the operator, not the MCP client, chooses the approved data file.
+TDAQ/OKS schemas and data files remain authoritative. A request-specific schema
+index, examples, context metadata, and fingerprint are held in memory, while
+conversation history and configuration objects are not persisted.
+
+\subsection{Processing and Context Management}
+
+The question is classified and used to retrieve a compact, fingerprint-scoped
+schema slice through exact and lexical matching. The LLM receives only the
+question and relevant context, not the complete data file. Its JSON query IR is
+normalised, validated, and repaired within a bounded limit; the deterministic
+compiler then produces OksQuery. The executor runs the approved query through
+the Python \texttt{config} binding or \texttt{oks\_dump} and returns bounded,
+read-only structured results.
+
+\subsection{Level-1 Data Flow}
+
+Figure~\ref{fig:dfd-level-1} shows the main request flow: validate and classify
+the question, retrieve schema and examples, translate and validate the query,
+execute the approved expression against the selected data file, and serialise
+a bounded MCP response.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.99\textwidth]{dfd_level_1.png}
+  \caption{Level-1 data-flow diagram for OKS MCP request processing.}
+  \label{fig:dfd-level-1}
+\end{figure}
+
+\subsection{Level-2 Translation and Validation Flow}
+
+Figure~\ref{fig:dfd-level-2} expands translation and validation. Target terms
+select a fingerprinted schema and prompt context; the LLM generates a candidate
+IR, which is checked for valid classes, attributes, operators, scope, and logic.
+Only the valid branch reaches compilation and execution; the invalid branch
+returns diagnostics to a bounded repair prompt.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.99\textwidth]{dfd_level_2.png}
+  \caption{Level-2 data-flow diagram for translation and validation.}
+  \label{fig:dfd-level-2}
+\end{figure}
 
 \section{Testing and Validation (unit testing, integration testing, user testing)}
-[Content to be added...]
+Testing covered components, the complete pipeline, the service boundary, and
+the runtime to prevent invalid queries from reaching OKS.
+
+\begin{enumerate}[label=\Roman*., leftmargin=1.1cm]
+  \item \textbf{Unit testing.} Intent, retrieval, version resolution,
+  validation, compilation, and execution components are tested independently.
+  \item \textbf{Integration testing.} End-to-end tests cover context
+  construction, translation, validation, execution, interpretation, and
+  historical-version consistency.
+  \item \textbf{Service and MCP testing.} Input limits, version checks, result
+  bounds, serialisation, errors, statelessness, and the three MCP tool
+  contracts are verified.
+  \item \textbf{Runtime and evaluation.} Queries are checked against native
+  OKS tools and representative project cases. The MCP-agent workflow is
+  verified for correctness, reproducibility, and safe read-only operation.
+\end{enumerate}
+
+The \texttt{pytest} suite contains component, pipeline, service,
+architecture-invariant, and MCP-server tests.
 
 \section{Deployment Setup (hosting, server, environment)}
-[Content to be added...]
+The MCP server runs on CERN lxplus with the ATLAS TDAQ release and OKS files
+available through CVMFS. The workstation connects through an authenticated SSH
+tunnel to the loopback-bound MCP endpoint.
+
+\begin{enumerate}[label=\Roman*., leftmargin=1.1cm]
+  \item \textbf{Access and source.} Connect to lxplus through SSH, clone the
+  final GitHub repository, and select the checkout containing the merged MCP
+  implementation.
+
+  \item \textbf{Environment preparation.} Source one TDAQ release from CVMFS,
+  create a Python 3.10-or-newer virtual environment, install requirements, and
+  configure the LLM endpoint outside version control. Select the approved
+  \texttt{OKS\_DATA\_FILE} and repository root.
+
+  \item \textbf{Server launch.} The launcher sources TDAQ and
+  \texttt{deploy/start\_mcp\_tmux.sh} starts Streamable HTTP in detached
+  \texttt{tmux} at \texttt{127.0.0.1:8001/mcp}; it is not publicly reachable.
+
+  \item \textbf{SSH forwarding.} From the workstation, run
+  \texttt{ssh -N -L 18001:127.0.0.1:8001}. The agent uses
+  \url{http://127.0.0.1:18001/mcp}, while the CERN service remains private.
+
+  \item \textbf{Agent connection.} Register the forwarded endpoint in Claude
+  Code or another MCP-compatible agent. It discovers \texttt{oks\_query},
+  \texttt{oks\_translate}, and \texttt{oks\_environment\_probe}; conversation
+  memory remains with the agent.
+
+  \item \textbf{Operations and security.} Check the listener and environment
+  probe before use. Keep the service read-only and loopback-bound, store keys
+  outside Git, and use an approved supervisor for persistent deployment.
+\end{enumerate}
 
 
 % ============================================================

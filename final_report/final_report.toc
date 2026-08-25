@@ -3,9 +3,9 @@
 \contentsline {chapter}{COPYRIGHT}{iii}{chapter*.3}%
 \contentsline {chapter}{ABSTRACT}{iv}{chapter*.4}%
 \contentsline {chapter}{ACKNOWLEDGEMENTS}{v}{chapter*.5}%
-\contentsline {chapter}{LIST OF FIGURES}{viii}{chapter*.5}%
-\contentsline {chapter}{LIST OF TABLES}{viii}{chapter*.5}%
-\contentsline {chapter}{ABBREVIATIONS}{ix}{chapter*.6}%
+\contentsline {chapter}{LIST OF FIGURES}{ix}{chapter*.5}%
+\contentsline {chapter}{LIST OF TABLES}{ix}{chapter*.5}%
+\contentsline {chapter}{ABBREVIATIONS}{x}{chapter*.6}%
 \contentsline {chapter}{\numberline {1}INTRODUCTION}{1}{chapter.1}%
 \contentsline {section}{\numberline {1.1}Background}{1}{section.1.1}%
 \contentsline {section}{\numberline {1.2}Problem Statement}{2}{section.1.2}%
@@ -22,27 +22,40 @@
 \contentsline {section}{\numberline {2.3}Gap analysis(if required)}{5}{section.2.3}%
 \contentsline {chapter}{\numberline {3}METHODOLOGY}{6}{chapter.3}%
 \contentsline {section}{\numberline {3.1}Project approach}{6}{section.3.1}%
-\contentsline {section}{\numberline {3.2}System Architecture}{6}{section.3.2}%
-\contentsline {section}{\numberline {3.3}System Design/Modules (UI module, backend logic, database, APIs, etc)}{6}{section.3.3}%
-\contentsline {section}{\numberline {3.4}Technology Stack (languages, frameworks, tools, etc)}{6}{section.3.4}%
-\contentsline {section}{\numberline {3.5}Development Methodology (agile/waterfall/iterative or suitable one)}{6}{section.3.5}%
-\contentsline {section}{\numberline {3.6}Data Handling (input, storage, processing)}{6}{section.3.6}%
-\contentsline {section}{\numberline {3.7}Testing and Validation (unit testing, integration testing, user testing)}{6}{section.3.7}%
-\contentsline {section}{\numberline {3.8}Deployment Setup (hosting, server, environment)}{6}{section.3.8}%
-\contentsline {chapter}{\numberline {4}IMPLEMENTATION DETAILS}{7}{chapter.4}%
-\contentsline {section}{\numberline {4.1}Requirements Specification(functional/non-functional requirements, constraints)}{7}{section.4.1}%
-\contentsline {section}{\numberline {4.2}System Overview (Description of implemented system, mapping methodology to implementation)}{7}{section.4.2}%
-\contentsline {section}{\numberline {4.3}Development Environment(programming languages, tools, libraries and frameworks used, hardware and software specifications)}{7}{section.4.3}%
-\contentsline {section}{\numberline {4.4}System Implementation(data/input handling, pre-processing steps, algorithm implementation, modules design and integration etc)}{7}{section.4.4}%
-\contentsline {section}{\numberline {4.5}Interface and Visualization}{7}{section.4.5}%
-\contentsline {section}{\numberline {4.6}Deployment and Execution(system setup, execution steps, local/server/cloud setup)}{7}{section.4.6}%
-\contentsline {section}{\numberline {4.7}Challenges and Solutions(technical challenges faced, solutions found)}{7}{section.4.7}%
-\contentsline {chapter}{\numberline {5}RESULTS AND DISCUSSION}{8}{chapter.5}%
-\contentsline {section}{\numberline {5.1}Results}{8}{section.5.1}%
-\contentsline {section}{\numberline {5.2}Discussion}{8}{section.5.2}%
-\contentsline {section}{\numberline {5.3}Comparative analysis(if applicable)}{8}{section.5.3}%
-\contentsline {chapter}{\numberline {6}CONCLUSIONS AND RECOMMENDATIONS}{9}{chapter.6}%
-\contentsline {section}{\numberline {6.1}Conclusions}{9}{section.6.1}%
-\contentsline {section}{\numberline {6.2}Recommendations/Future Enhancements}{9}{section.6.2}%
-\contentsline {chapter}{REFERENCES}{9}{section.6.2}%
-\contentsline {chapter}{APPENDICES}{11}{chapter*.8}%
+\contentsline {section}{\numberline {3.2}System Architecture}{7}{section.3.2}%
+\contentsline {section}{\numberline {3.3}System Design/Modules (UI module, backend logic, database, APIs, etc)}{9}{section.3.3}%
+\contentsline {subsection}{\numberline {3.3.1}Use-Case Diagram}{10}{subsection.3.3.1}%
+\contentsline {subsubsection}{Use-Case Descriptions}{10}{subsubsection*.8}%
+\contentsline {paragraph}{UC-01: Query OKS Data}{10}{paragraph*.9}%
+\contentsline {paragraph}{UC-02: Translate Without Execution}{10}{paragraph*.10}%
+\contentsline {paragraph}{UC-03: Probe OKS Environment}{10}{paragraph*.11}%
+\contentsline {paragraph}{Included use cases}{11}{paragraph*.12}%
+\contentsline {subsection}{\numberline {3.3.2}Context Diagram (DFD Level 0)}{12}{subsection.3.3.2}%
+\contentsline {subsection}{\numberline {3.3.3}Class Diagram}{12}{subsection.3.3.3}%
+\contentsline {subsection}{\numberline {3.3.4}Sequence Diagram}{13}{subsection.3.3.4}%
+\contentsline {section}{\numberline {3.4}Technology Stack (languages, frameworks, tools, etc)}{14}{section.3.4}%
+\contentsline {section}{\numberline {3.5}Development Methodology (agile/waterfall/iterative or suitable one)}{14}{section.3.5}%
+\contentsline {section}{\numberline {3.6}Data Handling (input, storage, processing)}{15}{section.3.6}%
+\contentsline {subsection}{\numberline {3.6.1}Input and Storage}{15}{subsection.3.6.1}%
+\contentsline {subsection}{\numberline {3.6.2}Processing and Context Management}{15}{subsection.3.6.2}%
+\contentsline {subsection}{\numberline {3.6.3}Level-1 Data Flow}{15}{subsection.3.6.3}%
+\contentsline {subsection}{\numberline {3.6.4}Level-2 Translation and Validation Flow}{15}{subsection.3.6.4}%
+\contentsline {section}{\numberline {3.7}Testing and Validation (unit testing, integration testing, user testing)}{16}{section.3.7}%
+\contentsline {section}{\numberline {3.8}Deployment Setup (hosting, server, environment)}{17}{section.3.8}%
+\contentsline {chapter}{\numberline {4}IMPLEMENTATION DETAILS}{18}{chapter.4}%
+\contentsline {section}{\numberline {4.1}Requirements Specification(functional/non-functional requirements, constraints)}{18}{section.4.1}%
+\contentsline {section}{\numberline {4.2}System Overview (Description of implemented system, mapping methodology to implementation)}{18}{section.4.2}%
+\contentsline {section}{\numberline {4.3}Development Environment(programming languages, tools, libraries and frameworks used, hardware and software specifications)}{18}{section.4.3}%
+\contentsline {section}{\numberline {4.4}System Implementation(data/input handling, pre-processing steps, algorithm implementation, modules design and integration etc)}{18}{section.4.4}%
+\contentsline {section}{\numberline {4.5}Interface and Visualization}{18}{section.4.5}%
+\contentsline {section}{\numberline {4.6}Deployment and Execution(system setup, execution steps, local/server/cloud setup)}{18}{section.4.6}%
+\contentsline {section}{\numberline {4.7}Challenges and Solutions(technical challenges faced, solutions found)}{18}{section.4.7}%
+\contentsline {chapter}{\numberline {5}RESULTS AND DISCUSSION}{19}{chapter.5}%
+\contentsline {section}{\numberline {5.1}Results}{19}{section.5.1}%
+\contentsline {section}{\numberline {5.2}Discussion}{19}{section.5.2}%
+\contentsline {section}{\numberline {5.3}Comparative analysis(if applicable)}{19}{section.5.3}%
+\contentsline {chapter}{\numberline {6}CONCLUSIONS AND RECOMMENDATIONS}{20}{chapter.6}%
+\contentsline {section}{\numberline {6.1}Conclusions}{20}{section.6.1}%
+\contentsline {section}{\numberline {6.2}Recommendations/Future Enhancements}{20}{section.6.2}%
+\contentsline {chapter}{REFERENCES}{20}{section.6.2}%
+\contentsline {chapter}{APPENDICES}{22}{chapter*.20}%

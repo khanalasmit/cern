@@ -1,9 +1,8 @@
 # Draft update for the final report
 
-> This is a review draft only. It has not been integrated into
-> `final_report/final_report.tex`. It is based on the implementation in the
-> `rhythm` and `origin/feature/mcp-server` branches, while the report itself
-> remains on the `report` branch.
+> This draft is retained as an editable record. Sections 3.1, 3.3, and 3.4
+> have now been integrated into `final_report/final_report.tex`; Section 3.2
+> remains reserved for the system-architecture contribution.
 
 ## 3.1 Project Approach
 
@@ -56,4 +55,70 @@ service enforces input, version, result, and read-only limits.
 ### V. Verification and Evaluation
 
 Unit, integration, and MCP contract tests verify the pipeline components. The
-project 
+translation accuracy is evaluated against the project evaluation dataset.
+
+## 3.3 System Design and Modules
+
+The system was designed as a layered pipeline in which each module has a
+separate responsibility. A natural-language question is first processed by the
+intent and preprocessing modules. The version resolver identifies current or
+historical configuration requirements, while the context builder creates the
+version-scoped `OksContext` and schema fingerprint.
+
+The schema layer retrieves the relevant OKS classes, attributes, inherited
+members, and relationships. It uses the active schema and lexical matching to
+construct a compact context for the language model. The prompt and few-shot
+modules then combine this context with OksQuery rules and suitable examples.
+
+The translation layer converts the question into a JSON intermediate
+representation. The `oks_ast` modules normalise the representation, validate
+its structure and schema semantics, and compile it deterministically into an
+OksQuery expression. If validation fails, the translator sends the diagnostic
+through a bounded repair loop before compilation.
+
+The execution layer runs the compiled query using the Python `config` binding or
+the `oks_dump` fallback. It converts returned objects into structured records
+and preserves query, version, target-class, count, and status information. The
+`OksPipeline` coordinates intent detection, context construction, translation,
+execution, and optional result interpretation.
+
+For external access, the MCP layer adds an `OksQueryService` and a thin MCP
+adapter. The `oks_query` tool performs translation and execution, while
+`oks_translate` provides translation without execution and
+`oks_environment_probe` reports runtime readiness. The service is stateless;
+conversation history belongs to the calling agent. It also applies input
+validation, result limits, version checks, request serialisation, and the
+read-only service boundary. No separate application database or mutation API is
+required; configuration data remains in the OKS/TDAQ environment.
+
+The associated report figures are stored in `final_report/`: the use-case,
+data-flow, sequence, and class diagrams. They are referenced in Section 3.3 of
+the integrated report.
+
+## 3.4 Technology Stack
+
+The system uses the following technologies to support OKS integration,
+structured translation, and MCP service delivery:
+
+I. **Python.** Python 3.10 or later is used for the pipeline, service layer,
+schema processing, validation, and testing.
+
+II. **OKS/TDAQ integration.** The TDAQ Python `config` binding provides the
+primary execution interface, with `oks_dump` as a fallback and diagnostic tool.
+
+III. **LLM and structured validation.** The `openai` package connects to an
+OpenAI-compatible endpoint. JSON, Pydantic, and the project `oks_ast` modules
+support normalisation, semantic validation, repair, and deterministic
+compilation.
+
+IV. **Schema retrieval.** Versioned OKS schemas and Git/runtime metadata provide
+context. Lexical retrieval and `rank_bm25` identify relevant classes,
+attributes, and relationships.
+
+V. **MCP and deployment.** The Python MCP SDK with FastMCP exposes the query,
+translation, and environment-probe tools through `stdio` or Streamable HTTP.
+Environment variables, `python-dotenv`, SSH, and `tmux` support configuration
+and deployment.
+
+VI. **Testing.** `pytest` is used for unit, integration, service, pipeline, and
+MCP contract tests.
