@@ -164,12 +164,20 @@ class Executor:
         # A release-specific binary is only a fallback implementation detail.
         # Historical data itself is always selected from the Git repository.
         if not self._config_available and release:
+        if release:
             release_info = self._release_info(release)
             if release_info is not None:
                 rel_dump_path, _ = release_info
                 if not oks_dump_path:
+                if is_historical:
+                    # For historical queries, prefer the release-specific binary
+                    # from CVMFS over the currently-sourced one.  Cross-release
+                    # oks_dump can mishandle schema differences.
+                    oks_dump_path = rel_dump_path or oks_dump_path
+                elif not oks_dump_path:
                     oks_dump_path = rel_dump_path
             elif not oks_dump_path:
+            elif not oks_dump_path and not self._config_available:
                 return ExecutionResult(
                     success=False,
                     message=(
@@ -180,6 +188,14 @@ class Executor:
 
         # Strategy 1 (preferred): Python config module.
         if self._config_available:
+        # Strategy 1 (preferred): Python config module — for CURRENT queries only.
+        # For historical queries the Python config module is skipped because:
+        #   a) It is imported once and caches env at import time, so
+        #      os.environ changes (TDAQ_DB_REPOSITORY, TDAQ_DB_VERSION) made
+        #      after import have no effect on the C++ layer.
+        #   b) Cross-release access (e.g. tdaq-12-00-00 config module against a
+        #      tdaq-11-02-01 git repository) is unreliable.
+        if self._config_available and not is_historical:
             env_backup = self._set_version_env(
                 version, release=release, partition=partition, repository=repository
             )
@@ -193,6 +209,7 @@ class Executor:
                 self._restore_env(env_backup)
 
         # Strategy 2 (fallback): oks_dump CLI.
+        # Strategy 2 (fallback for current; primary path for historical): oks_dump CLI.
         if oks_dump_path:
             return self._execute_oks_dump(
                 target_class, query, max_objects, version_label, selected_data_file,
@@ -481,6 +498,10 @@ class Executor:
                 tag_name = f"tag:r{run_num}@{part}"
                 env["TDAQ_DB_VERSION"] = tag_name
                 logger.info(f"Executor: Setting TDAQ_DB_VERSION={tag_name!r} in subprocess env (from {version!r})")
+
+            # Ensure SSH git operations in the subprocess are non-interactive.
+            if "GIT_SSH_COMMAND" not in env:
+                env["GIT_SSH_COMMAND"] = "ssh -o BatchMode=yes -o StrictHostKeyChecking=accept-new"
         else:
             user_repo = env.get("TDAQ_DB_USER_REPOSITORY", "")
             if not user_repo and self.repo_root:
@@ -519,9 +540,10 @@ class Executor:
                 setup_script = candidate
                 break
 
+        # oks_dump CLI only accepts a plain file path — the "&version=" syntax
+        # is specific to config.Configuration() and is NOT understood by the
+        # oks_dump binary.  Version selection is via TDAQ_DB_VERSION (set above).
         conn_spec = data_file
-        if version and version != "current" and "&version=" not in conn_spec:
-            conn_spec = f"{data_file}&version={version}"
 
         cmd = [oks_dump_path, "-c", target_class, "-q", query, conn_spec]
         cmd_display = " ".join(shlex.quote(arg) for arg in cmd)
