@@ -1,0 +1,39 @@
+@startuml
+title Data-Flow Diagram — Level 1 (OKS MCP Request Processing)
+
+skinparam monochrome true
+skinparam shadowing false
+skinparam backgroundColor white
+skinparam defaultFontName Arial
+skinparam rectangleBorderThickness 1
+left to right direction
+
+rectangle "Developer /\nCoding Agent" as User
+rectangle "1. Validate input\nand classify intent" as P1
+rectangle "2. Retrieve relevant\nschema and examples" as P2
+rectangle "3. Translate and\nvalidate OksQuery" as P3
+rectangle "4. Execute approved\nread-only query" as P4
+rectangle "5. Serialize bounded\nMCP response" as P5
+rectangle "LLM API" as LLM
+database "D1: Schema cache /\nindex" as D1
+database "D2: TDAQ/OKS\ndata files" as D2
+
+User --> P1 : question + version
+P1 --> P2 : valid request + target hints
+P2 --> D1 : lookup schema metadata
+D1 --> P2 : class / attribute slice
+P2 --> P3 : schema slice + few-shot examples
+P3 --> LLM : translation / repair prompt
+LLM --> P3 : candidate OksQuery
+P3 --> P4 : validated OksQuery
+P4 --> D2 : query selected data file
+D2 --> P4 : matching objects
+P4 --> P5 : structured result set
+P5 --> User : query, count, results, warnings
+
+note bottom of D2
+  The executor filters before results cross
+  the MCP boundary; the full configuration is
+  never returned to the agent.
+end note
+@enduml

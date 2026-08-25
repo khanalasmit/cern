@@ -7,6 +7,8 @@ The earlier pastel draft remains available as
 [system_architecture.png](system_architecture.png). The reusable AI-generation prompt
 for a stylistic variant is in
 [system_architecture_image_prompt.md](system_architecture_image_prompt.md).
+The report-oriented use-case, class, sequence, and DFD diagrams are in
+[system_design_diagrams.md](system_design_diagrams.md).
 
 ```mermaid
 flowchart LR

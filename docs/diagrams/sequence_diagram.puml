@@ -1,0 +1,59 @@
+@startuml
+title OKS MCP Server — Query Sequence
+
+skinparam monochrome true
+skinparam shadowing false
+skinparam backgroundColor white
+skinparam defaultFontName Arial
+skinparam responseMessageBelowArrow true
+skinparam sequenceMessageAlign center
+
+actor User
+participant "Coding Agent /\nMCP Client" as Agent
+participant "SSH local\nport forward" as SSH
+participant "MCP Server\n127.0.0.1:8001" as MCP
+participant OksQueryService as Service
+participant OksPipeline as Pipeline
+participant "Schema +\nfew-shot retrieval" as Retrieval
+participant "LLM API" as LLM
+participant Validator
+participant Executor
+database "CVMFS TDAQ/OKS\ndata" as OKS
+
+User -> Agent: Ask natural-language OKS question
+Agent -> Agent: Resolve follow-up context
+Agent -> SSH: MCP request to 127.0.0.1:18001/mcp
+SSH -> MCP: Encrypted forwarded request
+MCP -> Service: oks_query(question, version)
+Service -> Service: Validate input and version
+Service -> Pipeline: answer(..., interpret=false)
+Pipeline -> Retrieval: Retrieve relevant schema slice
+Retrieval --> Pipeline: Classes, attributes, relationships
+Pipeline -> LLM: Translation prompt
+LLM --> Pipeline: Candidate OksQuery / IR
+Pipeline -> Validator: Validate against exact schema
+
+alt Query invalid
+  Validator --> Pipeline: Diagnostic
+  Pipeline -> LLM: Repair prompt with diagnostic
+  LLM --> Pipeline: Corrected OksQuery
+  Pipeline -> Validator: Validate again
+else Query valid
+  Validator --> Pipeline: Valid query
+end
+
+Pipeline -> Executor: Execute approved OksQuery
+Executor -> OKS: Read and filter selected data file
+OKS --> Executor: Matching objects and attributes
+Executor --> Pipeline: Structured results
+Pipeline --> Service: Query, count, IDs, attributes, metadata
+Service --> MCP: Bounded structured response
+MCP --> SSH: MCP response
+SSH --> Agent: Response through private tunnel
+Agent --> User: Explain result
+
+note over Agent, MCP
+  No public listener is required.
+  The server is stateless; the agent owns conversation memory.
+end note
+@enduml

@@ -12,6 +12,8 @@ agent-connection procedure, read [`mcp_running_guide.md`](mcp_running_guide.md).
 For the system diagram and the image-generation prompt, read
 [`docs/system_architecture.md`](docs/system_architecture.md) and
 [`docs/system_architecture_image_prompt.md`](docs/system_architecture_image_prompt.md).
+For the report diagrams, read
+[`docs/system_design_diagrams.md`](docs/system_design_diagrams.md).
 
 Follow the complete setup and run sequence below:
 

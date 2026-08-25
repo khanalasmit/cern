@@ -1,0 +1,49 @@
+@startuml
+title Data-Flow Diagram — Level 2 (Translation and Validation Detail)
+
+skinparam monochrome true
+skinparam shadowing false
+skinparam backgroundColor white
+skinparam defaultFontName Arial
+skinparam rectangleBorderThickness 1
+top to bottom direction
+
+rectangle "Input question" as Input
+rectangle "2.1 Identify target\nclass and terms" as P21
+rectangle "2.2 Retrieve exact\nschema fingerprint" as P22
+rectangle "2.3 Add few-shot\nexamples and rules" as P23
+rectangle "2.4 Ask LLM for\nOksQuery / IR" as P24
+rectangle "2.5 Normalize and\nvalidate AST against schema" as P25
+rectangle "Decision: valid?" as Decision
+rectangle "2.6 Build repair prompt\nwith diagnostic" as P26
+rectangle "2.7 Compile validated\nOksQuery" as P27
+rectangle "Approved query\nto executor" as Output
+database "D1: Version-scoped\nschema index" as Schema
+rectangle "LLM API" as LLM
+
+Input --> P21
+P21 --> P22
+P22 --> Schema : lookup by terms
+Schema --> P22 : classes, attributes, relations
+P22 --> P23
+P23 --> P24 : bounded prompt
+P24 --> LLM : question + schema slice
+LLM --> P24 : candidate output
+P24 --> P25
+P25 --> Decision
+Decision --> P27 : yes
+Decision --> P26 : no / diagnostic
+P26 --> P24 : retry, max configured attempts
+P27 --> Output
+
+note right of P25
+  Deterministic checks enforce class names,
+  attribute names, operators, scope, and
+  logical-expression structure.
+end note
+
+note left of Output
+  No execution occurs until
+  this validation boundary passes.
+end note
+@enduml

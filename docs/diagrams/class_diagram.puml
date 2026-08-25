@@ -1,0 +1,100 @@
+@startuml
+title OKS MCP Server — Class Diagram
+
+skinparam monochrome true
+skinparam shadowing false
+skinparam backgroundColor white
+skinparam defaultFontName Arial
+skinparam classAttributeIconSize 0
+skinparam linetype ortho
+
+package "MCP adapter" {
+  class MCPServer <<adapter>> {
+    +oks_query(question, version)
+    +oks_translate(question, version)
+    +oks_environment_probe()
+  }
+}
+
+package "Service and pipeline" {
+  class OksQueryService <<facade>> {
+    +query(question, version)
+    +translate(question, version)
+    +environment_probe()
+    -_validate_question()
+    -_validate_version()
+  }
+
+  class OksPipeline <<orchestrator>> {
+    +answer(question, version, interpret)
+    +translate_only(question, version)
+  }
+
+  class IntentClassifier
+  class OksContextBuilder
+  class QueryPreprocessor
+  class SchemaSearchIndex
+  class SchemaRetriever
+  class FewShotManager
+  class PromptBuilder
+  class Translator
+  class Validator
+  class Interpreter
+}
+
+package "Execution" {
+  class Executor {
+    +execute(target_class, query, version)
+    -_execute_config()
+    -_execute_oks_dump()
+  }
+  class ExecutionResult {
+    +success
+    +objects
+    +count
+    +version_used
+  }
+}
+
+package "OKS context" {
+  class OksContext {
+    +schema_fingerprint
+    +context_label
+    +data_file
+    +version
+  }
+}
+
+MCPServer --> OksQueryService : calls
+OksQueryService *-- OksPipeline : owns
+OksPipeline *-- IntentClassifier
+OksPipeline *-- OksContextBuilder
+OksPipeline *-- QueryPreprocessor
+OksPipeline *-- SchemaSearchIndex
+OksPipeline *-- SchemaRetriever
+OksPipeline *-- FewShotManager
+OksPipeline *-- PromptBuilder
+OksPipeline *-- Translator
+OksPipeline *-- Executor
+OksPipeline *-- Interpreter
+OksContextBuilder --> OksContext : creates
+PromptBuilder --> SchemaRetriever : retrieves slice
+PromptBuilder --> FewShotManager : loads examples
+Translator --> PromptBuilder : builds prompt
+Translator --> Validator : validates / repairs
+OksPipeline --> OksContext : uses one context/query
+Executor --> ExecutionResult : returns
+OksPipeline --> ExecutionResult : consumes
+
+note right of OksQueryService
+  Stateless facade.
+  Validates bounded inputs and
+  serializes version-sensitive work.
+end note
+
+note bottom of Executor
+  Preferred backend: Python config.
+  Fallback/backend: native oks_dump.
+  Both return only matching objects.
+end note
+@enduml

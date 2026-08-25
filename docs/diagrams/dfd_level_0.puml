@@ -1,0 +1,26 @@
+@startuml
+title Data-Flow Diagram — Level 0 (Context)
+
+skinparam monochrome true
+skinparam shadowing false
+skinparam backgroundColor white
+skinparam defaultFontName Arial
+skinparam rectangleBorderThickness 1
+
+rectangle "Developer /\nCoding Agent" as User
+circle "0\nOKS MCP\nServer" as System
+rectangle "LLM API" as LLM
+database "CERN TDAQ/OKS\nConfiguration" as Data
+
+User --> System : natural-language question
+System --> User : OksQuery + filtered results
+System --> LLM : schema slice + question
+LLM --> System : candidate OksQuery / repair
+System --> Data : approved read-only query
+Data --> System : matching objects + attributes
+
+note bottom of System
+  Context boundary: one stateless MCP capability
+  translating and executing read-only OKS queries.
+end note
+@enduml
