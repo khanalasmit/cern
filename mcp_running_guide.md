@@ -350,7 +350,9 @@ Interpret the output as follows:
   the correct query is the object-id query, not the tutorial `Name` example.
 
 To search every class discoverable through the Python config binding, add
-`--all-classes`. This can take longer because it probes the selected release:
+`--all-classes`. When config is available, this uses one in-process scan and
+then invokes native oks_dump only for confirmed matches. If config is
+unavailable, it falls back to per-class native probes and can take longer:
 
 ~~~bash
 "$OKS_QUERY_PYTHON" deploy/diagnose_oks_query.py \

@@ -36,21 +36,62 @@ DEFAULT_CLASSES = (
 )
 
 
-def _configuration_classes(data_file: str) -> List[str]:
-    """Try to discover live class names without requiring an LLM."""
+def _configuration_db(data_file: str):
+    """Open the live config binding, if either supported prefix works."""
     try:
         import config
     except ImportError:
-        return []
+        return None
 
     for prefix in ("oksconfig:", "oksconflibs:"):
         try:
-            db = config.Configuration(f"{prefix}{data_file}")
-            classes = db.classes()
-            return sorted(str(name) for name in classes)
+            return config.Configuration(f"{prefix}{data_file}")
         except Exception:
             continue
-    return []
+    return None
+
+
+def _configuration_classes(data_file: str) -> List[str]:
+    """Try to discover live class names without requiring an LLM."""
+    db = _configuration_db(data_file)
+    if db is None:
+        return []
+    try:
+        return sorted(str(name) for name in db.classes())
+    except Exception:
+        return []
+
+
+def _configuration_scan(
+    data_file: str,
+    classes: Iterable[str],
+    object_query: str,
+    attribute_query: str,
+):
+    """Scan all classes in one config process instead of spawning 2N tools."""
+    db = _configuration_db(data_file)
+    if db is None:
+        return None
+
+    object_matches = []
+    attribute_matches = []
+    attribute_errors = []
+    for class_name in classes:
+        try:
+            for obj in list(db.get_objs(class_name, object_query)):
+                object_matches.append((class_name, obj.UID()))
+        except Exception:
+            # object-id is universal, but an unusual class proxy should not
+            # prevent the remaining classes from being checked.
+            continue
+
+        try:
+            for obj in list(db.get_objs(class_name, attribute_query)):
+                attribute_matches.append((class_name, obj.UID()))
+        except Exception as exc:
+            attribute_errors.append((class_name, str(exc)))
+
+    return object_matches, attribute_matches, attribute_errors
 
 
 def _run_probe(
@@ -195,6 +236,61 @@ def main() -> int:
     object_matches = 0
     attribute_matches = 0
     attribute_errors = 0
+
+    if args.all_classes:
+        config_scan = _configuration_scan(
+            data_file, classes, object_query, attribute_query
+        )
+        if config_scan is not None:
+            object_rows, attribute_rows, attribute_error_rows = config_scan
+            print("[all-class scan] backend=config (single process)")
+            print(f"object_id_matches: {len(object_rows)}")
+            for class_name, object_id in object_rows:
+                print(f"  {class_name}: {object_id}")
+            print(f"attribute_matches: {len(attribute_rows)}")
+            for class_name, object_id in attribute_rows:
+                print(f"  {class_name}: {object_id}")
+            print(f"attribute_query_errors: {len(attribute_error_rows)}")
+            for class_name, detail in attribute_error_rows[:10]:
+                print(f"  {class_name}: {detail[:500]}")
+            print()
+
+            # Use native oks_dump only for confirmed matches so the output has
+            # the same attributes an MCP response would expose.
+            for class_name in sorted({row[0] for row in object_rows}):
+                _print_probe(
+                    "native object-id match",
+                    oks_dump,
+                    class_name,
+                    object_query,
+                    data_file,
+                    args.timeout,
+                )
+            for class_name in sorted({row[0] for row in attribute_rows}):
+                _print_probe(
+                    "native attribute match",
+                    oks_dump,
+                    class_name,
+                    attribute_query,
+                    data_file,
+                    args.timeout,
+                )
+
+            print("=== Conclusion ===")
+            print(f"classes_with_object_id_match: {len({row[0] for row in object_rows})}")
+            print(f"attribute_match_count: {len(attribute_rows)}")
+            print(f"attribute_query_errors: {len(attribute_error_rows)}")
+            if not object_rows and not attribute_rows:
+                print(
+                    "No matching record was found in the selected data file/version. "
+                    "This is a valid empty-data result, not an MCP transport failure."
+                )
+            if attribute_error_rows:
+                print(
+                    "The attribute predicate is not valid for at least some live "
+                    "classes. A tutorial/few-shot Name example may not apply here."
+                )
+            return 0
 
     for class_name in classes:
         if _print_probe(
