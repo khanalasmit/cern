@@ -23,6 +23,7 @@ the consuming agent, not this stateless MCP server.
 
 ## Use-case diagram
 
+
 ![Use-case diagram](diagrams/use_case.svg)
 
 Source: [`use_case.puml`](diagrams/use_case.puml)
@@ -33,7 +34,7 @@ Source: [`use_case.puml`](diagrams/use_case.puml)
 
 Source: [`class_diagram.puml`](diagrams/class_diagram.puml)
 
-## Sequence diagram
+## Concise sequence diagram
 
 ![Sequence diagram](diagrams/sequence_diagram.svg)
 

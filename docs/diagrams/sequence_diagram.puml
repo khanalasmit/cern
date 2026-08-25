@@ -1,5 +1,5 @@
 @startuml
-title OKS MCP Server — Query Sequence
+title OKS MCP Server — Concise Query Sequence
 
 skinparam monochrome true
 skinparam shadowing false
@@ -12,48 +12,28 @@ actor User
 participant "Coding Agent /\nMCP Client" as Agent
 participant "SSH local\nport forward" as SSH
 participant "MCP Server\n127.0.0.1:8001" as MCP
-participant OksQueryService as Service
-participant OksPipeline as Pipeline
-participant "Schema +\nfew-shot retrieval" as Retrieval
+participant "OksQueryService\n+ OksPipeline" as Service
 participant "LLM API" as LLM
-participant Validator
-participant Executor
 database "CVMFS TDAQ/OKS\ndata" as OKS
 
 User -> Agent: Ask natural-language OKS question
-Agent -> Agent: Resolve follow-up context
-Agent -> SSH: MCP request to 127.0.0.1:18001/mcp
+Agent -> SSH: MCP request
 SSH -> MCP: Encrypted forwarded request
 MCP -> Service: oks_query(question, version)
-Service -> Service: Validate input and version
-Service -> Pipeline: answer(..., interpret=false)
-Pipeline -> Retrieval: Retrieve relevant schema slice
-Retrieval --> Pipeline: Classes, attributes, relationships
-Pipeline -> LLM: Translation prompt
-LLM --> Pipeline: Candidate OksQuery / IR
-Pipeline -> Validator: Validate against exact schema
-
-alt Query invalid
-  Validator --> Pipeline: Diagnostic
-  Pipeline -> LLM: Repair prompt with diagnostic
-  LLM --> Pipeline: Corrected OksQuery
-  Pipeline -> Validator: Validate again
-else Query valid
-  Validator --> Pipeline: Valid query
-end
-
-Pipeline -> Executor: Execute approved OksQuery
-Executor -> OKS: Read and filter selected data file
-OKS --> Executor: Matching objects and attributes
-Executor --> Pipeline: Structured results
-Pipeline --> Service: Query, count, IDs, attributes, metadata
-Service --> MCP: Bounded structured response
+Service -> LLM: Schema slice + translation prompt
+LLM --> Service: Candidate OksQuery
+Service -> Service: Validate and repair if needed
+Service -> OKS: Execute approved read-only query
+OKS --> Service: Filtered matching objects
+Service --> MCP: Structured results
 MCP --> SSH: MCP response
-SSH --> Agent: Response through private tunnel
+SSH --> Agent: Response through tunnel
 Agent --> User: Explain result
 
 note over Agent, MCP
-  No public listener is required.
-  The server is stateless; the agent owns conversation memory.
+  The architecture remains vertical.
+  The sequence is intentionally concise:
+  the agent owns conversation memory, while
+  the server translates, validates, and executes.
 end note
 @enduml
