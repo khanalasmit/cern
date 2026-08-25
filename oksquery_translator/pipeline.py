@@ -431,7 +431,7 @@ class OksPipeline:
         exec_version = oks_context.version_tag or effective_version
         exec_result = self.executor.execute(
             target_class, oks_query, version=exec_version, data_file=request_data_file,
-            release=request_release,
+            release=request_release, partition=partition,
         )
         t_exec_elapsed = time.perf_counter() - t_exec
 
@@ -533,7 +533,7 @@ class OksPipeline:
         for class_name in class_names:
             result = self.executor.execute(
                 class_name, query, version=oks_context.version_tag or version,
-                data_file=data_file, release=release,
+                data_file=data_file, release=release, partition=partition,
             )
             if not result.success:
                 failures.append(class_name)

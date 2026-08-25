@@ -199,6 +199,15 @@ class TestHistoricalConfig(unittest.TestCase):
             self.assertIn("Active TDAQ release is 'tdaq-12-00-00'", warn_msg)
             self.assertIn("run specifies release 'tdaq-11-02-01'", warn_msg)
 
+    @patch.dict(os.environ, {}, clear=True)
+    def test_9_auto_derived_repository_url(self):
+        """Test 9: Auto-derives Point-1 (p1) vs TestBed (tbed) repository URL based on release & partition."""
+        p1_url = self.executor._resolve_repository_url("tdaq-11-02-01", "part_TGC_FillTest")
+        self.assertEqual(p1_url, "https://gitlab.cern.ch/atlas-tdaq-oks/p1/tdaq-11-02-01.git")
+
+        tbed_url = self.executor._resolve_repository_url("tdaq-11-02-01", "all_hosts")
+        self.assertEqual(tbed_url, "https://gitlab.cern.ch/atlas-tdaq-oks/tbed/tdaq-11-02-01.git")
+
 
 if __name__ == "__main__":
     unittest.main()

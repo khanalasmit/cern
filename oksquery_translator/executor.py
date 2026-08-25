@@ -71,7 +71,8 @@ class Executor:
                 version: str = None,
                 max_objects: int = 200,
                 data_file: Optional[str] = None,
-                release: Optional[str] = None) -> ExecutionResult:
+                release: Optional[str] = None,
+                partition: Optional[str] = None) -> ExecutionResult:
         """
         Execute a query and return matching objects.
 
@@ -89,6 +90,8 @@ class Executor:
             Data file path relative to OKS configuration repository.
         release : str, optional
             Target TDAQ release (e.g. "tdaq-11-02-01").
+        partition : str, optional
+            Partition name (e.g. "part_TGC_FillTest", "all_hosts").
 
         Returns
         -------
@@ -107,12 +110,12 @@ class Executor:
             )
 
         if is_historical:
-            # Validate historical configuration prerequisites
-            tdaq_repo = os.environ.get("TDAQ_DB_REPOSITORY")
+            # Resolve official ATLAS OKS configuration Git repository URL
+            tdaq_repo = self._resolve_repository_url(release, partition)
             if not tdaq_repo:
                 msg = (
                     "Cannot load historical OKS configuration: "
-                    "TDAQ_DB_REPOSITORY is not configured in the environment. "
+                    "TDAQ_DB_REPOSITORY is not configured in the environment and could not be derived. "
                     "Historical configuration access requires TDAQ_DB_REPOSITORY to point to "
                     "the actual ATLAS OKS configuration Git repository."
                 )
@@ -127,9 +130,11 @@ class Executor:
             logger.info(
                 f"Executor: Historical configuration access:\n"
                 f"  release: {release or 'unspecified'}\n"
+                f"  partition: {partition or 'unspecified'}\n"
                 f"  version: {version}\n"
                 f"  data_file: {selected_data_file}\n"
                 f"  TDAQ_DB_REPOSITORY: {tdaq_repo}\n"
+                f"  OKS_GIT_PROTOCOL: https\n"
                 f"  TDAQ_DB_VERSION: {version}\n"
                 f"  mode: historical Git-backed configuration"
             )
@@ -160,7 +165,7 @@ class Executor:
 
         # Strategy 1 (preferred): Python config module.
         if self._config_available:
-            env_backup = self._set_version_env(version)
+            env_backup = self._set_version_env(version, release=release, partition=partition)
             try:
                 return self._execute_config(
                     target_class, query, max_objects, version_label, selected_data_file, version=version
@@ -176,6 +181,8 @@ class Executor:
                 target_class, query, max_objects, version_label, selected_data_file,
                 oks_dump_path,
                 version=version,
+                release=release,
+                partition=partition,
             )
 
         return ExecutionResult(
@@ -306,10 +313,38 @@ class Executor:
 
         return ld_paths
 
+    @staticmethod
+    def _resolve_repository_url(release: Optional[str], partition: Optional[str] = None) -> Optional[str]:
+        """
+        Resolve the official ATLAS OKS configuration Git repository URL.
+
+        Precedence:
+          1. Environment variable TDAQ_DB_REPOSITORY (if explicitly set)
+          2. Auto-derived URL based on repository family and release:
+             - Point-1 production (e.g. ATLAS, part_*) -> https://gitlab.cern.ch/atlas-tdaq-oks/p1/<release>.git
+             - TestBed / dev (e.g. all_hosts, tbed)      -> https://gitlab.cern.ch/atlas-tdaq-oks/tbed/<release>.git
+        """
+        env_repo = os.environ.get("TDAQ_DB_REPOSITORY")
+        if env_repo:
+            return env_repo
+
+        if not release:
+            return None
+
+        part = (partition or "").lower()
+        if part in ("all_hosts", "tbed", "testbed"):
+            family = "tbed"
+        else:
+            family = "p1"
+
+        return f"https://gitlab.cern.ch/atlas-tdaq-oks/{family}/{release}.git"
+
     def _execute_oks_dump(self, target_class: str, query: str,
                           max_objects: int, version_label: str,
                           data_file: str, oks_dump_path: str,
-                          version: str = None) -> ExecutionResult:
+                          version: str = None,
+                          release: str = None,
+                          partition: str = None) -> ExecutionResult:
         """Execute via oks_dump CLI and parse the output."""
         import shlex
 
@@ -318,9 +353,14 @@ class Executor:
         env = os.environ.copy()
 
         if version and version != "current":
-            # For historical version queries, TDAQ_DB_USER_REPOSITORY MUST be unset
-            # so OKS can perform automatic checkout mode for the version selector.
+            repo_url = self._resolve_repository_url(release, partition)
+            if repo_url:
+                env["TDAQ_DB_REPOSITORY"] = repo_url
+                env["OKS_GIT_PROTOCOL"] = "https"
+
             env.pop("TDAQ_DB_USER_REPOSITORY", None)
+            env.pop("TDAQ_DB_PATH", None)
+
             if not env.get("TDAQ_DB_REPOSITORY"):
                 return ExecutionResult(
                     success=False,
@@ -336,7 +376,8 @@ class Executor:
                 logger.info(f"Executor: Setting TDAQ_DB_VERSION={version!r} in subprocess env")
             elif version.startswith("run:") or (version.startswith("r") and version[1:].isdigit()):
                 run_num = version.split(":")[-1].lstrip("r")
-                tag_name = f"tag:r{run_num}@ATLAS"
+                part = partition or "all_hosts"
+                tag_name = f"tag:r{run_num}@{part}"
                 env["TDAQ_DB_VERSION"] = tag_name
                 logger.info(f"Executor: Setting TDAQ_DB_VERSION={tag_name!r} in subprocess env (from {version!r})")
         else:
@@ -373,18 +414,20 @@ class Executor:
                 setup_script = candidate
                 break
 
-        cmd = [oks_dump_path, "-c", target_class, "-q", query, data_file]
+        conn_spec = data_file
+        if version and version != "current" and "&version=" not in conn_spec:
+            conn_spec = f"{data_file}&version={version}"
+
+        cmd = [oks_dump_path, "-c", target_class, "-q", query, conn_spec]
         cmd_display = " ".join(shlex.quote(arg) for arg in cmd)
 
         t_start = time.perf_counter()
         try:
-            # 1. Try DIRECT binary execution first (instant, bypasses slow CVMFS setup script & git clone hooks)
             logger.info(f"Executor: Executing direct oks_dump binary:\n  $ {cmd_display}")
             result = subprocess.run(
                 cmd, capture_output=True, text=True, timeout=60, env=env
             )
 
-            # 2. If direct execution failed and a setup script is available, fallback to sourcing setup script
             if result.returncode not in (0, 5) and setup_script:
                 logger.info(f"Executor: Direct binary execution returned exit {result.returncode}; retrying via setup script...")
                 env_exports = ""
@@ -408,7 +451,6 @@ class Executor:
                 message=f"Unable to start oks_dump '{oks_dump_path}': {exc}",
             )
 
-
         elapsed = time.perf_counter() - t_start
 
         if result.returncode not in (0, 5):
@@ -428,8 +470,6 @@ class Executor:
             count=len(objects),
             version_used=version_label,
         )
-
-
 
     @staticmethod
     def _parse_oks_dump_output(output: str, target_class: str) -> List[Dict]:
@@ -480,7 +520,9 @@ class Executor:
     # Temporal version environment
     # ------------------------------------------------------------------
 
-    def _set_version_env(self, version: Optional[str]) -> Dict[str, Optional[str]]:
+    def _set_version_env(self, version: Optional[str],
+                         release: Optional[str] = None,
+                         partition: Optional[str] = None) -> Dict[str, Optional[str]]:
         """
         Set environment variables for temporal access.
         Returns backup of original values for restoration.
@@ -488,11 +530,20 @@ class Executor:
         backup: Dict[str, Optional[str]] = {}
 
         if version and version != "current":
-            # For historical version queries, TDAQ_DB_USER_REPOSITORY MUST be unset
-            # so OKS can perform automatic checkout mode for the version selector.
+            repo_url = self._resolve_repository_url(release, partition)
+            if repo_url:
+                backup["TDAQ_DB_REPOSITORY"] = os.environ.get("TDAQ_DB_REPOSITORY")
+                os.environ["TDAQ_DB_REPOSITORY"] = repo_url
+                backup["OKS_GIT_PROTOCOL"] = os.environ.get("OKS_GIT_PROTOCOL")
+                os.environ["OKS_GIT_PROTOCOL"] = "https"
+
             if "TDAQ_DB_USER_REPOSITORY" in os.environ:
                 backup["TDAQ_DB_USER_REPOSITORY"] = os.environ.get("TDAQ_DB_USER_REPOSITORY")
                 del os.environ["TDAQ_DB_USER_REPOSITORY"]
+
+            if "TDAQ_DB_PATH" in os.environ:
+                backup["TDAQ_DB_PATH"] = os.environ.get("TDAQ_DB_PATH")
+                del os.environ["TDAQ_DB_PATH"]
         else:
             if "TDAQ_DB_USER_REPOSITORY" not in os.environ and self.repo_root:
                 backup["TDAQ_DB_USER_REPOSITORY"] = None
@@ -506,13 +557,12 @@ class Executor:
             backup["TDAQ_DB_VERSION"] = os.environ.get("TDAQ_DB_VERSION")
             os.environ["TDAQ_DB_VERSION"] = version
         elif version.startswith("run:") or (version.startswith("r") and version[1:].isdigit()):
-            # Run number format, e.g. "run:454833" or "r454833" -> "tag:r454833@ATLAS"
             run_num = version.split(":")[-1].lstrip("r")
-            tag_name = f"tag:r{run_num}@ATLAS"
+            part = partition or "all_hosts"
+            tag_name = f"tag:r{run_num}@{part}"
             backup["TDAQ_DB_VERSION"] = os.environ.get("TDAQ_DB_VERSION")
             os.environ["TDAQ_DB_VERSION"] = tag_name
         elif version.startswith("tdaq-"):
-            # CVMFS snapshot
             snapshot_path = (
                 f"/cvmfs/atlas.cern.ch/repo/sw/tdaq/tdaq/{version}"
                 f"/installed/share/data"
