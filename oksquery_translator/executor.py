@@ -82,30 +82,71 @@ class Executor:
         query : str
             Validated OksQuery string.
         version : str, optional
-            Temporal version specifier:
-              - "hash:<commit>"  → sets TDAQ_DB_VERSION
-              - "date:<date>"    → sets TDAQ_DB_VERSION
-              - "tdaq-XX-YY-ZZ"  → sets TDAQ_DB_PATH to CVMFS snapshot
+            Temporal version specifier (e.g. "hash:<sha>", "tag:r380689@all_hosts").
         max_objects : int
             Cap the number of returned objects.
+        data_file : str, optional
+            Data file path relative to OKS configuration repository.
+        release : str, optional
+            Target TDAQ release (e.g. "tdaq-11-02-01").
 
         Returns
         -------
         ExecutionResult
         """
-        # A run-number DB record may identify a different top-level data file.
-        # Keep the instance default for ordinary/current queries.
         selected_data_file = data_file or self.data_file
+        version_label = version or "current"
+        is_historical = bool(version and version != "current")
 
-        # Locate historical release data directory if provided
-        release_data_path = None
+        # Check for release mismatch between active environment and requested release
+        active_release = os.environ.get("TDAQ_RELEASE")
+        if release and active_release and release != active_release:
+            logger.warning(
+                f"Executor: Active TDAQ release is '{active_release}', but run specifies release '{release}'. "
+                f"Query execution will proceed using active runtime '{active_release}' against historical revision '{version}'."
+            )
+
+        if is_historical:
+            # Validate historical configuration prerequisites
+            tdaq_repo = os.environ.get("TDAQ_DB_REPOSITORY")
+            if not tdaq_repo:
+                msg = (
+                    "Cannot load historical OKS configuration: "
+                    "TDAQ_DB_REPOSITORY is not configured in the environment. "
+                    "Historical configuration access requires TDAQ_DB_REPOSITORY to point to "
+                    "the actual ATLAS OKS configuration Git repository."
+                )
+                logger.error(f"Executor: {msg}")
+                return ExecutionResult(success=False, message=msg)
+
+            if not selected_data_file:
+                msg = "Cannot load historical OKS configuration: data_file path is missing."
+                logger.error(f"Executor: {msg}")
+                return ExecutionResult(success=False, message=msg)
+
+            logger.info(
+                f"Executor: Historical configuration access:\n"
+                f"  release: {release or 'unspecified'}\n"
+                f"  version: {version}\n"
+                f"  data_file: {selected_data_file}\n"
+                f"  TDAQ_DB_REPOSITORY: {tdaq_repo}\n"
+                f"  TDAQ_DB_VERSION: {version}\n"
+                f"  mode: historical Git-backed configuration"
+            )
+        else:
+            user_repo = os.environ.get("TDAQ_DB_USER_REPOSITORY", self.repo_root)
+            logger.info(
+                f"Executor: Current configuration access:\n"
+                f"  data_file: {selected_data_file}\n"
+                f"  TDAQ_DB_USER_REPOSITORY: {user_repo}\n"
+                f"  mode: static/local current configuration"
+            )
+
         oks_dump_path = self._oks_dump_path
-
         if release:
             release_info = self._release_info(release)
             if release_info is not None:
-                rel_dump_path, release_data_path = release_info
-                # Prefer host's active oks_dump on PATH if available; otherwise use release binary
+                rel_dump_path, _ = release_info
                 if not oks_dump_path:
                     oks_dump_path = rel_dump_path
             elif not oks_dump_path:
@@ -117,17 +158,9 @@ class Executor:
                     ),
                 )
 
-        version_label = version or "current"
-
-        # Resolve selected_data_file against release_data_path if not found locally
-        if release_data_path and not os.path.exists(selected_data_file):
-            candidate = os.path.join(release_data_path, selected_data_file)
-            if os.path.exists(candidate):
-                selected_data_file = candidate
-
         # Strategy 1 (preferred): Python config module.
         if self._config_available:
-            env_backup = self._set_version_env(version, release_data_path)
+            env_backup = self._set_version_env(version)
             try:
                 return self._execute_config(
                     target_class, query, max_objects, version_label, selected_data_file, version=version
@@ -143,7 +176,6 @@ class Executor:
                 target_class, query, max_objects, version_label, selected_data_file,
                 oks_dump_path,
                 version=version,
-                release_data_path=release_data_path,
             )
 
         return ExecutionResult(
@@ -277,28 +309,28 @@ class Executor:
     def _execute_oks_dump(self, target_class: str, query: str,
                           max_objects: int, version_label: str,
                           data_file: str, oks_dump_path: str,
-                          version: str = None,
-                          release_data_path: str = None) -> ExecutionResult:
+                          version: str = None) -> ExecutionResult:
         """Execute via oks_dump CLI and parse the output."""
         import shlex
 
         # Prepare environment — start from caller's full environment so that
-        # TDAQ_DB_USER_REPOSITORY, TDAQ_DB_REPOSITORY etc. are inherited.
-        # Then inject version selectors directly into the dict (never os.environ).
+        # TDAQ_DB_REPOSITORY etc. are inherited.
         env = os.environ.copy()
-
-        # Inject version selector into subprocess env directly (not os.environ)
-        if release_data_path:
-            env["TDAQ_DB_PATH"] = release_data_path
-            logger.info(f"Executor: Setting TDAQ_DB_PATH={release_data_path!r} in subprocess env")
 
         if version and version != "current":
             # For historical version queries, TDAQ_DB_USER_REPOSITORY MUST be unset
             # so OKS can perform automatic checkout mode for the version selector.
             env.pop("TDAQ_DB_USER_REPOSITORY", None)
-            if "TDAQ_DB_REPOSITORY" not in env and self.repo_root:
-                env["TDAQ_DB_REPOSITORY"] = self.repo_root
-                logger.info(f"Executor: Setting TDAQ_DB_REPOSITORY={self.repo_root!r} in subprocess env")
+            if not env.get("TDAQ_DB_REPOSITORY"):
+                return ExecutionResult(
+                    success=False,
+                    message=(
+                        "Cannot load historical OKS configuration: "
+                        "TDAQ_DB_REPOSITORY is not configured in the environment. "
+                        "Historical configuration access requires TDAQ_DB_REPOSITORY to point to "
+                        "the actual ATLAS OKS configuration Git repository."
+                    ),
+                )
             if version.startswith(("hash:", "date:", "tag:")):
                 env["TDAQ_DB_VERSION"] = version
                 logger.info(f"Executor: Setting TDAQ_DB_VERSION={version!r} in subprocess env")
@@ -448,13 +480,12 @@ class Executor:
     # Temporal version environment
     # ------------------------------------------------------------------
 
-    def _set_version_env(self, version: Optional[str],
-                         release_data_path: Optional[str] = None) -> Dict[str, Optional[str]]:
+    def _set_version_env(self, version: Optional[str]) -> Dict[str, Optional[str]]:
         """
         Set environment variables for temporal access.
         Returns backup of original values for restoration.
         """
-        backup = {}
+        backup: Dict[str, Optional[str]] = {}
 
         if version and version != "current":
             # For historical version queries, TDAQ_DB_USER_REPOSITORY MUST be unset
@@ -462,19 +493,12 @@ class Executor:
             if "TDAQ_DB_USER_REPOSITORY" in os.environ:
                 backup["TDAQ_DB_USER_REPOSITORY"] = os.environ.get("TDAQ_DB_USER_REPOSITORY")
                 del os.environ["TDAQ_DB_USER_REPOSITORY"]
-            if "TDAQ_DB_REPOSITORY" not in os.environ and self.repo_root:
-                backup["TDAQ_DB_REPOSITORY"] = None
-                os.environ["TDAQ_DB_REPOSITORY"] = self.repo_root
         else:
             if "TDAQ_DB_USER_REPOSITORY" not in os.environ and self.repo_root:
                 backup["TDAQ_DB_USER_REPOSITORY"] = None
                 os.environ["TDAQ_DB_USER_REPOSITORY"] = self.repo_root
 
-        if release_data_path:
-            backup["TDAQ_DB_PATH"] = os.environ.get("TDAQ_DB_PATH")
-            os.environ["TDAQ_DB_PATH"] = release_data_path
-
-        if not version:
+        if not version or version == "current":
             return backup
 
         if (version.startswith("hash:") or version.startswith("date:") or 
@@ -493,8 +517,7 @@ class Executor:
                 f"/cvmfs/atlas.cern.ch/repo/sw/tdaq/tdaq/{version}"
                 f"/installed/share/data"
             )
-            if "TDAQ_DB_PATH" not in backup:
-                backup["TDAQ_DB_PATH"] = os.environ.get("TDAQ_DB_PATH")
+            backup["TDAQ_DB_PATH"] = os.environ.get("TDAQ_DB_PATH")
             os.environ["TDAQ_DB_PATH"] = snapshot_path
 
         return backup

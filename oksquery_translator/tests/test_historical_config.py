@@ -1,0 +1,204 @@
+"""
+test_historical_config.py — Historical Configuration Resolution Tests
+======================================================================
+
+Tests the 8 required test cases for historical OKS configuration access:
+  1. Preserving TDAQ_DB_REPOSITORY from environment (not replacing with translator repo).
+  2. Failing early with clear error when TDAQ_DB_REPOSITORY is missing.
+  3. Propagating TDAQ_DB_VERSION correctly to the execution environment.
+  4. Preserving the exact historical data_file path (e.g. muons/partitions/part_TGC_FillTest.data.xml).
+  5. Not forcing TDAQ_DB_PATH to release installed/share/data for historical queries.
+  6. Removing TDAQ_DB_USER_REPOSITORY for historical queries.
+  7. Passing correct env (TDAQ_DB_REPOSITORY, TDAQ_DB_VERSION) to oks_dump subprocess.
+  8. Logging a release mismatch warning when active TDAQ_RELEASE differs from run release.
+"""
+
+import logging
+import os
+import unittest
+from unittest.mock import MagicMock, patch
+
+from oksquery_translator.executor import Executor, ExecutionResult
+
+
+class TestHistoricalConfig(unittest.TestCase):
+    """Test suite for historical OKS configuration loading in Executor."""
+
+    def setUp(self):
+        self.translator_repo = "/path/to/translator/project"
+        self.executor = Executor(
+            data_file="daq/segments/setup.data.xml",
+            repo_root=self.translator_repo,
+        )
+        self.executor._config_available = True
+
+    @patch.dict(os.environ, {"TDAQ_DB_REPOSITORY": "/actual/config/repository"}, clear=True)
+    def test_1_historical_repository_preserved(self):
+        """Test 1: Given TDAQ_DB_REPOSITORY=/actual/config/repository, executor preserves it."""
+        with patch.object(self.executor, "_execute_config") as mock_exec_config:
+            mock_exec_config.return_value = ExecutionResult(success=True, count=1)
+            
+            res = self.executor.execute(
+                target_class="Application",
+                query='(all ("InitTimeout" "30" >))',
+                version="hash:c85894a53e0e17911015fbefdfce33679f41e2ff",
+                data_file="muons/partitions/part_TGC_FillTest.data.xml",
+            )
+            
+            self.assertTrue(res.success)
+            self.assertEqual(os.environ.get("TDAQ_DB_REPOSITORY"), "/actual/config/repository")
+            self.assertNotEqual(os.environ.get("TDAQ_DB_REPOSITORY"), self.translator_repo)
+
+    @patch.dict(os.environ, {}, clear=True)
+    def test_2_missing_historical_repository_fails_early(self):
+        """Test 2: Given missing TDAQ_DB_REPOSITORY, historical execution fails early with clear error."""
+        res = self.executor.execute(
+            target_class="Application",
+            query='(all ("InitTimeout" "30" >))',
+            version="hash:c85894a53e0e17911015fbefdfce33679f41e2ff",
+            data_file="muons/partitions/part_TGC_FillTest.data.xml",
+        )
+        
+        self.assertFalse(res.success)
+        self.assertIn("TDAQ_DB_REPOSITORY is not configured", res.message)
+        self.assertIn("Historical configuration access requires TDAQ_DB_REPOSITORY", res.message)
+        # Verify self.repo_root was NOT set into os.environ
+        self.assertIsNone(os.environ.get("TDAQ_DB_REPOSITORY"))
+
+    @patch.dict(os.environ, {"TDAQ_DB_REPOSITORY": "/actual/config/repository"}, clear=True)
+    def test_3_historical_version_propagation(self):
+        """Test 3: TDAQ_DB_VERSION is passed correctly to environment during execution."""
+        sha = "hash:c85894a53e0e17911015fbefdfce33679f41e2ff"
+        captured_version_env = None
+
+        def side_effect(*args, **kwargs):
+            nonlocal captured_version_env
+            captured_version_env = os.environ.get("TDAQ_DB_VERSION")
+            return ExecutionResult(success=True, count=1)
+
+        with patch.object(self.executor, "_execute_config", side_effect=side_effect):
+            res = self.executor.execute(
+                target_class="Application",
+                query='(all ("InitTimeout" "30" >))',
+                version=sha,
+                data_file="muons/partitions/part_TGC_FillTest.data.xml",
+            )
+            self.assertTrue(res.success)
+            self.assertEqual(captured_version_env, sha)
+
+    @patch.dict(os.environ, {"TDAQ_DB_REPOSITORY": "/actual/config/repository"}, clear=True)
+    def test_4_historical_data_file_preserved(self):
+        """Test 4: Historical data_file (muons/partitions/part_TGC_FillTest.data.xml) is passed unchanged."""
+        hist_file = "muons/partitions/part_TGC_FillTest.data.xml"
+        captured_data_file = None
+
+        def side_effect(target_class, query, max_objects, version_label, data_file, version=None):
+            nonlocal captured_data_file
+            captured_data_file = data_file
+            return ExecutionResult(success=True, count=1)
+
+        with patch.object(self.executor, "_execute_config", side_effect=side_effect):
+            res = self.executor.execute(
+                target_class="Application",
+                query='(all ("InitTimeout" "30" >))',
+                version="hash:c85894a53e0e17911015fbefdfce33679f41e2ff",
+                data_file=hist_file,
+            )
+            self.assertTrue(res.success)
+            self.assertEqual(captured_data_file, hist_file)
+            self.assertNotEqual(captured_data_file, "daq/segments/setup.data.xml")
+
+    @patch.dict(os.environ, {"TDAQ_DB_REPOSITORY": "/actual/config/repository"}, clear=True)
+    def test_5_tdaq_db_path_not_forced(self):
+        """Test 5: TDAQ_DB_PATH is not forced to installed/share/data for historical queries."""
+        captured_db_path = None
+
+        def side_effect(*args, **kwargs):
+            nonlocal captured_db_path
+            captured_db_path = os.environ.get("TDAQ_DB_PATH")
+            return ExecutionResult(success=True, count=1)
+
+        self.executor._oks_dump_path = "/usr/bin/oks_dump"
+        with patch.object(self.executor, "_execute_config", side_effect=side_effect):
+            res = self.executor.execute(
+                target_class="Application",
+                query='(all ("InitTimeout" "30" >))',
+                version="hash:c85894a53e0e17911015fbefdfce33679f41e2ff",
+                data_file="muons/partitions/part_TGC_FillTest.data.xml",
+                release="tdaq-11-02-01",
+            )
+            self.assertTrue(res.success)
+            self.assertIsNone(captured_db_path)
+
+    @patch.dict(os.environ, {"TDAQ_DB_REPOSITORY": "/actual/config/repository", "TDAQ_DB_USER_REPOSITORY": "/some/local/repo"}, clear=True)
+    def test_6_user_repository_removed_for_historical(self):
+        """Test 6: TDAQ_DB_USER_REPOSITORY is removed during historical resolution."""
+        captured_user_repo = "NOT_CHECKED"
+
+        def side_effect(*args, **kwargs):
+            nonlocal captured_user_repo
+            captured_user_repo = os.environ.get("TDAQ_DB_USER_REPOSITORY")
+            return ExecutionResult(success=True, count=1)
+
+        with patch.object(self.executor, "_execute_config", side_effect=side_effect):
+            res = self.executor.execute(
+                target_class="Application",
+                query='(all ("InitTimeout" "30" >))',
+                version="hash:c85894a53e0e17911015fbefdfce33679f41e2ff",
+                data_file="muons/partitions/part_TGC_FillTest.data.xml",
+            )
+            self.assertTrue(res.success)
+            self.assertIsNone(captured_user_repo)
+
+    @patch.dict(os.environ, {"TDAQ_DB_REPOSITORY": "/actual/config/repository", "TDAQ_DB_USER_REPOSITORY": "/local/repo"}, clear=True)
+    @patch("subprocess.run")
+    def test_7_subprocess_environment_for_oks_dump(self, mock_run):
+        """Test 7: Subprocess for oks_dump receives TDAQ_DB_REPOSITORY and TDAQ_DB_VERSION."""
+        mock_run.return_value = MagicMock(returncode=0, stdout='Object "app1@Application"\n  InitTimeout: 40\n')
+        
+        # Disable python config module to force oks_dump CLI fallback
+        with patch.object(self.executor, "_config_available", False):
+            res = self.executor._execute_oks_dump(
+                target_class="Application",
+                query='(all ("InitTimeout" "30" >))',
+                max_objects=10,
+                version_label="hash:c85894a53e0e17911015fbefdfce33679f41e2ff",
+                data_file="muons/partitions/part_TGC_FillTest.data.xml",
+                oks_dump_path="/usr/bin/oks_dump",
+                version="hash:c85894a53e0e17911015fbefdfce33679f41e2ff",
+            )
+            self.assertTrue(res.success)
+            self.assertTrue(mock_run.called)
+            
+            # Extract env passed to subprocess.run
+            call_kwargs = mock_run.call_args[1]
+            sub_env = call_kwargs.get("env", {})
+            
+            self.assertEqual(sub_env.get("TDAQ_DB_REPOSITORY"), "/actual/config/repository")
+            self.assertEqual(sub_env.get("TDAQ_DB_VERSION"), "hash:c85894a53e0e17911015fbefdfce33679f41e2ff")
+            self.assertNotIn("TDAQ_DB_USER_REPOSITORY", sub_env)
+
+    @patch.dict(os.environ, {"TDAQ_DB_REPOSITORY": "/actual/config/repository", "TDAQ_RELEASE": "tdaq-12-00-00"}, clear=True)
+    def test_8_release_mismatch_warning(self):
+        """Test 8: Release mismatch between active TDAQ_RELEASE and run release logs a warning."""
+        self.executor._oks_dump_path = "/usr/bin/oks_dump"
+        with patch.object(self.executor, "_execute_config") as mock_exec_config, \
+             patch("oksquery_translator.executor.logger.warning") as mock_warn:
+            mock_exec_config.return_value = ExecutionResult(success=True, count=1)
+            
+            res = self.executor.execute(
+                target_class="Application",
+                query='(all ("InitTimeout" "30" >))',
+                version="hash:c85894a53e0e17911015fbefdfce33679f41e2ff",
+                data_file="muons/partitions/part_TGC_FillTest.data.xml",
+                release="tdaq-11-02-01",
+            )
+            self.assertTrue(res.success)
+            self.assertTrue(mock_warn.called)
+            warn_msg = str(mock_warn.call_args)
+            self.assertIn("Active TDAQ release is 'tdaq-12-00-00'", warn_msg)
+            self.assertIn("run specifies release 'tdaq-11-02-01'", warn_msg)
+
+
+if __name__ == "__main__":
+    unittest.main()
