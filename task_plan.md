@@ -143,3 +143,4 @@ Start with a single-user, stdio or SSH-tunnelled Streamable HTTP prototype on th
 | Existing test fixture used an f-string escape unsupported by Python 3.9/3.11 | 1 | Rewrote the fixture expression without changing its JSON payload. |
 | MCP SDK 2.0 removed `mcp.server.fastmcp` | 1 | Constrained the dependency to the compatible 1.x SDK (`mcp>=1.12,<2`) and verified 1.29.1. |
 | Structured pipeline return referenced `version_label` before initialization | 1 | Initialized the label before the no-interpretation branch and added a regression test. |
+| LXPLUS test `test_executor_rejects_invalid_historical_release` failed | 1 | Diagnosis: an invalid `release` falls through to the active current `oks_dump`/`config` backend and returns success; executor must reject it before execution to prevent silently querying current configuration. |

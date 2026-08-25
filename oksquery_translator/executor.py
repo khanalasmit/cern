@@ -108,7 +108,7 @@ class Executor:
                 # Prefer host's active oks_dump on PATH if available; otherwise use release binary
                 if not oks_dump_path:
                     oks_dump_path = rel_dump_path
-            elif not oks_dump_path:
+            else:
                 return ExecutionResult(
                     success=False,
                     message=(
