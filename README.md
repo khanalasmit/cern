@@ -9,6 +9,10 @@ A Python proof of concept and complete translation module that converts natural-
 For the complete LXPLUS deployment, detached-server, SSH-tunnel, and
 agent-connection procedure, read [`mcp_running_guide.md`](mcp_running_guide.md).
 
+For the system diagram and the image-generation prompt, read
+[`docs/system_architecture.md`](docs/system_architecture.md) and
+[`docs/system_architecture_image_prompt.md`](docs/system_architecture_image_prompt.md).
+
 Follow the complete setup and run sequence below:
 
 ### 1. Sourcing TDAQ Release (CERN lxplus / CVMFS)

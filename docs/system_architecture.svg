@@ -1,0 +1,132 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900" role="img" aria-labelledby="title desc">
+  <title id="title">OKS MCP Server system architecture</title>
+  <desc id="desc">A developer coding agent connects through a private SSH tunnel to the CERN LXPLUS OKS MCP server, which translates and validates natural language queries before executing them against TDAQ OKS data.</desc>
+  <defs>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="5" stdDeviation="8" flood-color="#776899" flood-opacity="0.18"/>
+    </filter>
+    <marker id="arrow" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto">
+      <path d="M0,0 L12,6 L0,12 Z" fill="#4c4a56"/>
+    </marker>
+    <style>
+      .title { font: 700 31px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #272532; }
+      .subtitle { font: 500 15px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #6c6878; }
+      .region-title { font: 700 19px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #282431; }
+      .label { font: 700 15px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #272532; }
+      .small { font: 500 12px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #4d4a57; }
+      .tiny { font: 500 11px ui-monospace, SFMono-Regular, Menlo, monospace; fill: #4d4a57; }
+      .region { fill: #ffffff; fill-opacity: .68; stroke: #68bfd2; stroke-width: 2; stroke-dasharray: 7 7; }
+      .client { fill: #f1e6ff; stroke: #9861dc; stroke-width: 2; }
+      .green { fill: #eff9e8; stroke: #73ad50; stroke-width: 2; }
+      .orange { fill: #fff1df; stroke: #e49344; stroke-width: 2; }
+      .blue { fill: #e7f5ff; stroke: #58a6c7; stroke-width: 2; }
+      .purple { fill: #f4eaff; stroke: #9f67df; stroke-width: 2; }
+      .line { stroke: #4c4a56; stroke-width: 2.4; stroke-dasharray: 5 7; fill: none; marker-end: url(#arrow); }
+      .soft-line { stroke: #6e6b78; stroke-width: 1.8; stroke-dasharray: 4 6; fill: none; marker-end: url(#arrow); }
+    </style>
+  </defs>
+
+  <rect width="1600" height="900" fill="#e5d9ff"/>
+  <rect x="22" y="18" width="1556" height="864" rx="28" fill="#ffffff" filter="url(#shadow)"/>
+
+  <text x="58" y="66" class="title">OKS MCP Server</text>
+  <text x="58" y="92" class="subtitle">Natural-language questions → validated OksQuery → filtered TDAQ configuration results</text>
+
+  <!-- Developer workstation -->
+  <rect x="58" y="132" width="418" height="638" rx="18" class="region"/>
+  <rect x="78" y="151" width="34" height="34" rx="8" fill="#62bfd0"/>
+  <path d="M88 160h15v16H88zm3 4h9m-9 4h9m-9 4h6" stroke="#fff" stroke-width="1.6" fill="none"/>
+  <text x="125" y="175" class="region-title">Developer Workstation</text>
+
+  <rect x="92" y="220" width="145" height="92" rx="14" class="client"/>
+  <circle cx="165" cy="250" r="20" fill="#9d63df"/>
+  <path d="M153 250h24M165 238v24M157 242l16 16M173 242l-16 16" stroke="#fff" stroke-width="2"/>
+  <text x="165" y="287" text-anchor="middle" class="label">User</text>
+
+  <rect x="288" y="220" width="156" height="92" rx="14" class="client"/>
+  <circle cx="366" cy="250" r="20" fill="#9d63df"/>
+  <path d="M355 245h22v13h-22zM360 240v5m12-5v5M361 263h10" stroke="#fff" stroke-width="2" fill="none"/>
+  <text x="366" y="280" text-anchor="middle" class="label">Coding Agent</text>
+  <text x="366" y="298" text-anchor="middle" class="small">Claude Code / Codex</text>
+
+  <path d="M237 266h44" class="line"/>
+
+  <rect x="120" y="385" width="294" height="105" rx="14" class="blue"/>
+  <circle cx="164" cy="437" r="22" fill="#55a9ca"/>
+  <path d="M153 437h22M164 426v22M157 430l14 14M171 430l-14 14" stroke="#fff" stroke-width="2"/>
+  <text x="278" y="426" text-anchor="middle" class="label">Local MCP endpoint</text>
+  <text x="278" y="450" text-anchor="middle" class="tiny">127.0.0.1:18001/mcp</text>
+  <text x="278" y="471" text-anchor="middle" class="small">available while SSH tunnel is open</text>
+  <path d="M366 312v68" class="line"/>
+
+  <rect x="93" y="565" width="348" height="136" rx="14" class="purple"/>
+  <text x="267" y="596" text-anchor="middle" class="label">Agent owns conversation memory</text>
+  <text x="267" y="625" text-anchor="middle" class="small">Follow-ups are resolved into complete</text>
+  <text x="267" y="645" text-anchor="middle" class="small">questions before the MCP call.</text>
+  <path d="M267 490v70" class="soft-line"/>
+
+  <!-- Tunnel -->
+  <rect x="507" y="212" width="128" height="370" rx="18" class="orange"/>
+  <circle cx="571" cy="254" r="23" fill="#e99443"/>
+  <path d="M557 254h28M571 240v28M563 246l16 16M579 246l-16 16" stroke="#fff" stroke-width="2"/>
+  <text x="571" y="304" text-anchor="middle" class="label">Private</text>
+  <text x="571" y="324" text-anchor="middle" class="label">SSH tunnel</text>
+  <text x="571" y="370" text-anchor="middle" class="tiny">-L 18001:</text>
+  <text x="571" y="389" text-anchor="middle" class="tiny">127.0.0.1:8001</text>
+  <text x="571" y="442" text-anchor="middle" class="small">encrypted</text>
+  <text x="571" y="460" text-anchor="middle" class="small">2FA access</text>
+  <text x="571" y="520" text-anchor="middle" class="small">no public port</text>
+  <path d="M414 437h83" class="line"/>
+
+  <!-- CERN -->
+  <rect x="684" y="132" width="836" height="638" rx="18" class="region"/>
+  <rect x="704" y="151" width="34" height="34" rx="8" fill="#73ad50"/>
+  <path d="M713 160h16v15h-16zm3 4h10m-10 4h10m-10 4h7" stroke="#fff" stroke-width="1.6" fill="none"/>
+  <text x="751" y="175" class="region-title">CERN LXPLUS</text>
+  <text x="1467" y="175" text-anchor="end" class="small">stateless MCP service</text>
+
+  <rect x="752" y="210" width="700" height="79" rx="14" class="green"/>
+  <circle cx="790" cy="250" r="22" fill="#73ad50"/>
+  <path d="M778 250h24M790 238v24M783 243l14 14M797 243l-14 14" stroke="#fff" stroke-width="2"/>
+  <text x="1102" y="242" text-anchor="middle" class="label">Streamable HTTP MCP server</text>
+  <text x="1102" y="265" text-anchor="middle" class="tiny">127.0.0.1:8001  ·  oks_query  ·  oks_translate  ·  environment_probe</text>
+  <path d="M635 397h111" class="line"/>
+
+  <rect x="752" y="330" width="310" height="255" rx="14" class="green"/>
+  <text x="907" y="363" text-anchor="middle" class="label">OksQueryService</text>
+  <text x="907" y="386" text-anchor="middle" class="small">input limits · serialization</text>
+  <rect x="777" y="415" width="260" height="46" rx="9" class="blue"/>
+  <text x="907" y="444" text-anchor="middle" class="small">validated question</text>
+  <rect x="777" y="480" width="260" height="46" rx="9" class="blue"/>
+  <text x="907" y="509" text-anchor="middle" class="small">structured MCP response</text>
+  <path d="M907 289v35" class="line"/>
+  <path d="M1062 457h28" class="line"/>
+
+  <rect x="1090" y="330" width="363" height="255" rx="14" class="green"/>
+  <text x="1271" y="363" text-anchor="middle" class="label">OksPipeline</text>
+  <rect x="1117" y="390" width="310" height="39" rx="8" class="purple"/>
+  <text x="1272" y="415" text-anchor="middle" class="small">Schema + few-shot retrieval</text>
+  <rect x="1117" y="442" width="310" height="39" rx="8" class="purple"/>
+  <text x="1272" y="467" text-anchor="middle" class="small">LLM translation + validation</text>
+  <rect x="1117" y="494" width="310" height="39" rx="8" class="orange"/>
+  <text x="1272" y="519" text-anchor="middle" class="small">Executor: config / oks_dump</text>
+  <path d="M1272 429v10M1272 481v10" class="soft-line"/>
+
+  <rect x="752" y="620" width="340" height="96" rx="14" class="blue"/>
+  <circle cx="793" cy="668" r="21" fill="#55a9ca"/>
+  <path d="M782 668h22M793 657v22M786 661l14 14M800 661l-14 14" stroke="#fff" stroke-width="2"/>
+  <text x="928" y="659" text-anchor="middle" class="label">CVMFS TDAQ / OKS</text>
+  <text x="928" y="681" text-anchor="middle" class="small">schema + approved data file</text>
+  <path d="M1272 533v59l-100 0v26" class="line"/>
+
+  <rect x="1130" y="620" width="340" height="96" rx="14" class="blue"/>
+  <circle cx="1171" cy="668" r="21" fill="#55a9ca"/>
+  <path d="M1160 668h22M1171 657v22M1164 661l14 14M1178 661l-14 14" stroke="#fff" stroke-width="2"/>
+  <text x="1307" y="659" text-anchor="middle" class="label">OpenAI-compatible LLM API</text>
+  <text x="1307" y="681" text-anchor="middle" class="small">outbound HTTPS only</text>
+  <path d="M1272 481v76h35v58" class="soft-line"/>
+
+  <!-- Output path -->
+  <path d="M752 537H696V437h-61" class="line"/>
+  <text x="717" y="522" text-anchor="middle" class="small" transform="rotate(-90 717 522)">filtered results</text>
+</svg>
