@@ -449,6 +449,19 @@ class TestInvariant8And9_NormalizeIrDeterminism:
         result = normalize_ir(raw)
         assert result["expression"]["value"] == "20"
 
+    def test_match_all_object_id_operator_is_preserved(self):
+        raw = {
+            "target_class": "Computer",
+            "scope": "all",
+            "expression": {
+                "type": "object_id",
+                "operator": "!=",
+                "object_id": "",
+            },
+        }
+        result = normalize_ir(raw)
+        assert result["expression"]["operator"] == "!="
+
     def test_float_value_coerced_to_string(self):
         raw = self._wrap_attribute("T", ">", 3.14)
         result = normalize_ir(raw)
