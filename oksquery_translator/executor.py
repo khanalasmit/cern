@@ -194,7 +194,15 @@ class Executor:
             )
             try:
                 return self._execute_config(
-                    target_class, query, max_objects, version_label, selected_data_file, version=version
+                    target_class,
+                    query,
+                    max_objects,
+                    version_label,
+                    selected_data_file,
+                    version=version,
+                    release=release,
+                    partition=partition,
+                    repository=repository,
                 )
             except Exception as e:
                 logger.warning(f"Executor: Python config backend failed ({e}); falling back to oks_dump CLI.")
@@ -230,7 +238,10 @@ class Executor:
                         max_objects: int, version_label: str,
                         data_file: str,
                         oks_dump_path: Optional[str] = None,
-                        version: Optional[str] = None) -> ExecutionResult:
+                        version: Optional[str] = None,
+                        release: Optional[str] = None,
+                        partition: Optional[str] = None,
+                        repository: Optional[str] = None) -> ExecutionResult:
         """Execute via the Python config module."""
         import config as oks_config
 

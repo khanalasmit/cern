@@ -40,10 +40,9 @@ class TestHistoricalConfig(unittest.TestCase):
     @patch.dict(os.environ, {"TDAQ_DB_REPOSITORY": "/actual/config/repository"}, clear=True)
     def test_1_historical_repository_preserved(self):
         """Test 1: Given TDAQ_DB_REPOSITORY=/actual/config/repository, executor preserves it."""
-        with patch.object(self.executor, "_execute_config") as mock_exec_config:
+        with patch.object(self.executor, "_execute_config") as mock_exec_config, \
+             patch.object(self.executor, "_execute_oks_dump") as mock_exec:
             mock_exec_config.return_value = ExecutionResult(success=True, count=1)
-            
-        with patch.object(self.executor, "_execute_oks_dump") as mock_exec:
             mock_exec.return_value = ExecutionResult(success=True, count=1)
 
             res = self.executor.execute(
@@ -76,60 +75,41 @@ class TestHistoricalConfig(unittest.TestCase):
         self.assertIsNone(os.environ.get("TDAQ_DB_REPOSITORY"))
 
     @patch.dict(os.environ, {"TDAQ_DB_REPOSITORY": "/actual/config/repository"}, clear=True)
-    def test_3_historical_version_propagation(self):
+    @patch("subprocess.run")
+    def test_3_historical_version_propagation(self, mock_run):
         """Test 3: TDAQ_DB_VERSION is passed correctly to environment during execution."""
         sha = "hash:c85894a53e0e17911015fbefdfce33679f41e2ff"
-        captured_version_env = None
+        mock_run.return_value = MagicMock(returncode=0, stdout="")
 
-        def side_effect(*args, **kwargs):
-            nonlocal captured_version_env
-            captured_version_env = os.environ.get("TDAQ_DB_VERSION")
-            return ExecutionResult(success=True, count=1)
-        with patch.object(self.executor, "_execute_oks_dump") as mock_exec:
-            mock_exec.return_value = ExecutionResult(success=True, count=1)
-
-        with patch.object(self.executor, "_execute_config", side_effect=side_effect):
-            res = self.executor.execute(
-                target_class="Application",
-                query='(all ("InitTimeout" "30" >))',
-                version=sha,
-                data_file="muons/partitions/part_TGC_FillTest.data.xml",
-            )
-            self.assertTrue(res.success)
-            self.assertEqual(captured_version_env, sha)
-            call_kwargs = mock_exec.call_args.kwargs
-            self.assertEqual(call_kwargs.get("version"), sha)
+        res = self.executor.execute(
+            target_class="Application",
+            query='(all ("InitTimeout" "30" >))',
+            version=sha,
+            data_file="muons/partitions/part_TGC_FillTest.data.xml",
+        )
+        self.assertTrue(res.success)
+        sub_env = mock_run.call_args.kwargs.get("env", {})
+        self.assertEqual(sub_env.get("TDAQ_DB_VERSION"), sha)
 
     @patch.dict(os.environ, {"TDAQ_DB_REPOSITORY": "/actual/config/repository"}, clear=True)
-    def test_4_historical_data_file_preserved(self):
+    @patch("subprocess.run")
+    def test_4_historical_data_file_preserved(self, mock_run):
         """Test 4: Historical data_file (muons/partitions/part_TGC_FillTest.data.xml) is passed unchanged."""
         hist_file = "muons/partitions/part_TGC_FillTest.data.xml"
-        captured_data_file = None
+        mock_run.return_value = MagicMock(returncode=0, stdout="")
 
-        def side_effect(target_class, query, max_objects, version_label, data_file, version=None):
-            nonlocal captured_data_file
-            captured_data_file = data_file
-            return ExecutionResult(success=True, count=1)
-        with patch.object(self.executor, "_execute_oks_dump") as mock_exec:
-            mock_exec.return_value = ExecutionResult(success=True, count=1)
-
-        with patch.object(self.executor, "_execute_config", side_effect=side_effect):
-            res = self.executor.execute(
-                target_class="Application",
-                query='(all ("InitTimeout" "30" >))',
-                version="hash:c85894a53e0e17911015fbefdfce33679f41e2ff",
-                data_file=hist_file,
-            )
-            self.assertTrue(res.success)
-            self.assertEqual(captured_data_file, hist_file)
-            self.assertNotEqual(captured_data_file, "daq/segments/setup.data.xml")
-            call_args = mock_exec.call_args
-            passed_data_file = call_args.args[4] if call_args.args else call_args.kwargs.get("data_file")
-            self.assertEqual(passed_data_file, hist_file)
-            self.assertNotEqual(passed_data_file, "daq/segments/setup.data.xml")
+        res = self.executor.execute(
+            target_class="Application",
+            query='(all ("InitTimeout" "30" >))',
+            version="hash:c85894a53e0e17911015fbefdfce33679f41e2ff",
+            data_file=hist_file,
+        )
+        self.assertTrue(res.success)
+        command = mock_run.call_args.args[0]
+        self.assertEqual(command[-1], hist_file)
+        self.assertNotEqual(command[-1], "daq/segments/setup.data.xml")
 
     @patch.dict(os.environ, {"TDAQ_DB_REPOSITORY": "/actual/config/repository"}, clear=True)
-    def test_5_tdaq_db_path_not_forced(self):
     @patch("subprocess.run")
     def test_5_tdaq_db_path_not_forced(self, mock_run):
         """Test 5: TDAQ_DB_PATH is not forced to installed/share/data for historical queries."""
@@ -167,17 +147,10 @@ class TestHistoricalConfig(unittest.TestCase):
             self.assertIsNone(captured_db_path)
 
     @patch.dict(os.environ, {"TDAQ_DB_REPOSITORY": "/actual/config/repository", "TDAQ_DB_USER_REPOSITORY": "/some/local/repo"}, clear=True)
-    def test_6_user_repository_removed_for_historical(self):
     @patch("subprocess.run")
     def test_6_user_repository_removed_for_historical(self, mock_run):
         """Test 6: TDAQ_DB_USER_REPOSITORY is removed during historical resolution."""
-        captured_user_repo = "NOT_CHECKED"
         mock_run.return_value = MagicMock(returncode=0, stdout="")
-
-        def side_effect(*args, **kwargs):
-            nonlocal captured_user_repo
-            captured_user_repo = os.environ.get("TDAQ_DB_USER_REPOSITORY")
-            return ExecutionResult(success=True, count=1)
         res = self.executor._execute_oks_dump(
             target_class="Application",
             query='(all ("InitTimeout" "30" >))',
@@ -191,15 +164,15 @@ class TestHistoricalConfig(unittest.TestCase):
         sub_env = mock_run.call_args[1].get("env", {})
         self.assertNotIn("TDAQ_DB_USER_REPOSITORY", sub_env)
 
-        with patch.object(self.executor, "_execute_config", side_effect=side_effect):
-            res = self.executor.execute(
-                target_class="Application",
-                query='(all ("InitTimeout" "30" >))',
-                version="hash:c85894a53e0e17911015fbefdfce33679f41e2ff",
-                data_file="muons/partitions/part_TGC_FillTest.data.xml",
-            )
-            self.assertTrue(res.success)
-            self.assertIsNone(captured_user_repo)
+        res = self.executor.execute(
+            target_class="Application",
+            query='(all ("InitTimeout" "30" >))',
+            version="hash:c85894a53e0e17911015fbefdfce33679f41e2ff",
+            data_file="muons/partitions/part_TGC_FillTest.data.xml",
+        )
+        self.assertTrue(res.success)
+        sub_env = mock_run.call_args.kwargs.get("env", {})
+        self.assertNotIn("TDAQ_DB_USER_REPOSITORY", sub_env)
 
     @patch.dict(os.environ, {"TDAQ_DB_REPOSITORY": "/actual/config/repository", "TDAQ_DB_USER_REPOSITORY": "/local/repo"}, clear=True)
     @patch("subprocess.run")
@@ -234,7 +207,7 @@ class TestHistoricalConfig(unittest.TestCase):
         """Test 8: Release mismatch between active TDAQ_RELEASE and run release logs a warning."""
         self.executor._oks_dump_path = "/usr/bin/oks_dump"
         with patch.object(self.executor, "_execute_config") as mock_exec_config, \
-        with patch.object(self.executor, "_execute_oks_dump") as mock_exec, \
+             patch.object(self.executor, "_execute_oks_dump") as mock_exec, \
              patch("oksquery_translator.executor.logger.warning") as mock_warn:
             mock_exec_config.return_value = ExecutionResult(success=True, count=1)
             
@@ -277,22 +250,9 @@ class TestHistoricalConfig(unittest.TestCase):
     def test_10_metadata_repository_wins_over_environment_and_uses_ssh(self):
         """A recorded repository is never replaced by a current-release URL."""
         with patch.dict(os.environ, {"TDAQ_DB_REPOSITORY": "ssh://git@current/repo.git"}, clear=True):
-            captured = {}
-
-            def execute(*_args, **_kwargs):
-                captured.update({
-                    "repository": os.environ.get("TDAQ_DB_REPOSITORY"),
-                    "protocol": os.environ.get("OKS_GIT_PROTOCOL"),
-                    "user_repo": os.environ.get("TDAQ_DB_USER_REPOSITORY"),
-                    "db_path": os.environ.get("TDAQ_DB_PATH"),
-                })
-            def execute_dump(*_args, **_kwargs):
-                captured["repository"] = _kwargs.get("repository")
-                return ExecutionResult(success=True)
-
-            with patch.object(self.executor, "_execute_config", side_effect=execute):
-            with patch.object(Executor, "_validate_historical_configuration", return_value=None), \
-                 patch.object(self.executor, "_execute_oks_dump", side_effect=execute_dump):
+            with patch("subprocess.run") as mock_run, \
+                 patch.object(Executor, "_validate_historical_configuration", return_value=None):
+                mock_run.return_value = MagicMock(returncode=0, stdout="")
                 self.executor._oks_dump_path = "/fake/oks_dump"
                 result = self.executor.execute(
                     "Application", '(all (object-id "" !=))',
@@ -302,10 +262,11 @@ class TestHistoricalConfig(unittest.TestCase):
                 )
             self.assertTrue(result.success)
             # The recorded repository must take precedence over the env var.
-            self.assertEqual(captured["repository"], "ssh://git@recorded/history.git")
-            self.assertEqual(captured["protocol"], "ssh")
-            self.assertIsNone(captured["user_repo"])
-            self.assertIsNone(captured["db_path"])
+            sub_env = mock_run.call_args.kwargs.get("env", {})
+            self.assertEqual(sub_env.get("TDAQ_DB_REPOSITORY"), "ssh://git@recorded/history.git")
+            self.assertEqual(sub_env.get("OKS_GIT_PROTOCOL"), "ssh")
+            self.assertNotIn("TDAQ_DB_USER_REPOSITORY", sub_env)
+            self.assertNotIn("TDAQ_DB_PATH", sub_env)
 
     def test_11_git_preflight_accepts_tag_and_hash_and_checks_file(self):
         """Use a separate local Git repository to prove selection is revision-driven."""
