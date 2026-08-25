@@ -15,6 +15,18 @@ import os
 from pathlib import Path
 from typing import Any, Dict, Optional
 
+def _configured_port() -> int:
+    """Read and validate the HTTP port without changing stdio behavior."""
+    raw_port = os.environ.get("MCP_PORT", "8000")
+    try:
+        port = int(raw_port)
+    except ValueError as exc:
+        raise RuntimeError("MCP_PORT must be an integer between 1 and 65535") from exc
+    if not 1 <= port <= 65535:
+        raise RuntimeError("MCP_PORT must be an integer between 1 and 65535")
+    return port
+
+
 try:
     from dotenv import load_dotenv
 except ImportError:  # pragma: no cover - requirements installs it
@@ -30,7 +42,11 @@ except ImportError as exc:  # pragma: no cover - exercised by install checks
 from .service import OksQueryService, ServiceInputError, service_from_environment
 
 logger = logging.getLogger("oksquery_translator.mcp")
-mcp = FastMCP("oksquery-translator")
+mcp = FastMCP(
+    "oksquery-translator",
+    host=os.environ.get("MCP_HOST", "127.0.0.1"),
+    port=_configured_port(),
+)
 _service: Optional[OksQueryService] = None
 
 
