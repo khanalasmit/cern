@@ -72,3 +72,4 @@
 \contentsline {section}{Appendix A: Demonstrated Runtime Configuration}{36}{section*.25}%
 \contentsline {section}{Appendix B: Evidence and Reproducibility Notes}{36}{section*.25}%
 \contentsline {section}{Appendix C: CLI Runtime Log Evidence}{36}{section*.25}%
+\contentsline {section}{Appendix D: OksQuery Grammar and Usage Reference}{38}{figure.caption.27}%

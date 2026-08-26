@@ -1330,4 +1330,167 @@ separate from the MCP-server screenshots presented in Chapter~5.
   \label{fig:appendix-cli-query-log}
 \end{figure}
 
+\clearpage
+\section*{Appendix D: OksQuery Grammar and Usage Reference}
+\addcontentsline{toc}{section}{Appendix D: OksQuery Grammar and Usage Reference}
+
+This appendix specifies the subset of the OksQuery language used by the
+translation module. OksQuery is a read-only, S-expression-like language used
+by the OKS engine to select objects of a target class. A query is interpreted
+against the loaded, version-specific OKS schema; consequently, an attribute or
+relationship name is valid only when it is defined for the selected class or
+is inherited by that class.
+
+\subsection*{D.1 Grammar notation}
+The following Extended Backus--Naur Form (EBNF) describes filter expressions.
+Square brackets denote an optional item, braces denote zero or more
+repetitions, and alternatives are separated by a vertical bar. The target
+class is supplied separately by the calling API or the \texttt{oks\_dump}
+command.
+
+\begin{verbatim}
+query          = expression ;
+expression     = comparison | relationship | negation
+               | conjunction | disjunction ;
+comparison     = "(" field value comparator ")" ;
+field          = attribute-name | "object-id" ;
+comparator     = "=" | "!=" | "~=" | "<" | "<="
+               | ">" | ">=" ;
+relationship   = "(" relationship-name quantifier expression ")" ;
+quantifier     = "some" | "all" ;
+negation       = "(" "not" expression ")" ;
+conjunction    = "(" "and" expression
+               expression { expression } ")" ;
+disjunction    = "(" "or" expression
+               expression { expression } ")" ;
+value          = quoted-string | unquoted-literal ;
+quoted-string  = '"' { character } '"' | "'" { character } "'"
+               | "`" { character } "`" ;
+\end{verbatim}
+
+Whitespace separates tokens and parentheses make nesting explicit. Values that
+contain whitespace or punctuation should be quoted. The native parser accepts
+double quotes, single quotes, and backticks as quoting delimiters; this project
+uses double quotes consistently when compiling queries.
+
+\subsection*{D.2 Comparison expressions}
+A comparison has the form \verb|(field value operator)|. Its operand order is
+important: the attribute name is first, the literal value is second, and the
+comparison operator is last. This differs from SQL and many common programming
+languages. For example, the following query selects objects whose
+\texttt{InitTimeout} attribute is greater than two:
+
+\begin{center}
+\verb|(InitTimeout "2" >)|
+\end{center}
+
+Table~\ref{tab:oksquery-comparators} summarizes the supported comparators.
+Their applicability depends on the declared type of the referenced attribute.
+
+\begin{table}[H]
+  \centering
+  \caption{OksQuery comparison operators.}
+  \label{tab:oksquery-comparators}
+  \small
+  \begin{tabularx}{\textwidth}{@{}p{1.8cm}p{3.8cm}X@{}}
+    \toprule
+    \textbf{Operator} & \textbf{Meaning} & \textbf{Example} \\
+    \midrule
+    \verb|=| & Equal to & \verb|(Name "HLT" =)| \\
+    \verb|!=| & Not equal to & \verb|(Enabled "true" !=)| \\
+    \verb|~=| & Regular-expression match & \verb|(Name "^HLT.*" ~=)| \\
+    \verb|<|, \verb|<=| & Less than, or less than or equal to & \verb|(Priority "10" <=)| \\
+    \verb|>|, \verb|>=| & Greater than, or greater than or equal to & \verb|(InitTimeout "2" >)| \\
+    \bottomrule
+  \end{tabularx}
+\end{table}
+
+The reserved field \texttt{object-id} compares the unique identifier of an
+object rather than one of its declared attributes. For example:
+
+\begin{center}
+\verb|(object-id "Application_01" =)|
+\end{center}
+
+Numeric, Boolean, enumeration, and string values are converted according to
+the attribute type declared in the OKS schema. A syntactically correct literal
+can therefore still be rejected if it is incompatible with that type or with
+an attribute constraint.
+
+\subsection*{D.3 Logical expressions}
+Logical operators combine complete nested expressions. The \texttt{and} and
+\texttt{or} operators require at least two operands, while \texttt{not} accepts
+one. The following query selects an object that is enabled and whose timeout is
+at least two:
+
+\begin{center}
+\verb|(and (Enabled "true" =) (InitTimeout "2" >=))|
+\end{center}
+
+The corresponding disjunction and negation forms are:
+
+\begin{center}
+\verb|(or (Name "HLT" =) (Name "DAQ" =))|\\[4pt]
+\verb|(not (Enabled "true" =))|
+\end{center}
+
+Because every subexpression is parenthesized, logical grouping is unambiguous.
+For example, \verb|(and A (or B C))| means that \texttt{A} must hold and at
+least one of \texttt{B} or \texttt{C} must also hold.
+
+\subsection*{D.4 Relationship expressions}
+OKS objects can reference objects of other classes through named relationships.
+A relationship expression evaluates a nested condition on related objects:
+
+\begin{center}
+\verb!(relationship-name some|all nested-expression)!
+\end{center}
+
+The \texttt{some} quantifier succeeds when at least one related object
+satisfies the nested expression. The \texttt{all} quantifier requires every
+related object to satisfy it. For example, when the target class defines a
+relationship called \texttt{RunsOn}, the following expression selects objects
+related to at least one computer named \texttt{pc-01}:
+
+\begin{center}
+\verb|(RunsOn some (Name "pc-01" =))|
+\end{center}
+
+The relationship must be defined for the current class, and its nested
+expression is checked against the relationship's target class. Thus, a query
+cannot legally use an attribute belonging only to an unrelated class.
+
+\subsection*{D.5 Validation and execution constraints}
+Before an OksQuery expression is executed, the OKS parser resolves the
+referenced attributes and relationships against the loaded schema, verifies
+the comparator, and converts the literal to the declared attribute type.
+Invalid member names, invalid relationship targets, unknown operators,
+malformed parentheses, and type-conversion errors cause the query to fail
+rather than returning a partial result.
+
+The query mechanism only reads loaded objects and returns the objects that
+match; it does not create, modify, or delete configuration data. In the
+implemented translation module, the language model does not directly
+construct this text. It produces a structured intermediate representation,
+which is checked against the selected schema and deterministically compiled
+into an OksQuery expression. This separation prevents common errors such as
+reversing the value and operator, inventing an attribute, or placing a
+relationship condition on the wrong class.
+
+\subsection*{D.6 Practical query-writing rules}
+\begin{enumerate}[leftmargin=*]
+  \item Select the target class first. Query member names are resolved relative
+  to that class and its inheritance hierarchy.
+  \item Write comparisons strictly as \verb|(attribute value operator)|.
+  \item Quote string values, especially identifiers and regular expressions.
+  \item Use \texttt{some} or \texttt{all} only after a valid relationship name.
+  \item Parenthesize every atomic and logical expression.
+  \item Validate the expression against the exact configuration version before
+  execution, since schemas may differ between releases or commits.
+\end{enumerate}
+
+The grammar in this appendix is intended as a concise operational reference.
+The selected schema remains the authoritative source for valid class names,
+attributes, relationships, value types, and constraints.
+
 \end{document}
