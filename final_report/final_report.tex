@@ -181,8 +181,8 @@ The undersigned certify that they have read, and recommended to the Institute of
 
 \vspace{1.5cm}
 \noindent\rule{8cm}{0.4pt}\\
-Supervisor, Name of the Supervisor\\
-Designation, \\
+Supervisor, Dr. Basant Joshi\\
+Assistant Professor, \\
 Department of Electronics \& Computer Engineering\\
 Pulchowk Campus, IOE, TU
 
@@ -918,18 +918,18 @@ tunnel to the loopback-bound MCP endpoint.
 The implementation requirements were derived from the need to allow an MCP-compatible agent to query the ATLAS TDAQ configuration without receiving the complete OKS configuration or obtaining direct access to the CERN environment. The system is intentionally limited to read-only retrieval of configuration objects.
 
 \subsection{Functional Requirements}
-\begin{enumerate}[label=\textbf{FR\arabic*.}, leftmargin=2cm]
-  \item The system shall accept one complete natural-language question and an optional configuration-version selector.
-  \item The system shall identify the query intent, construct a version-bound OKS context, and retrieve only the schema classes, attributes, and relations relevant to the question.
-  \item The system shall use the retrieved schema slice and few-shot examples to translate the question into a structured intermediate representation and an OksQuery expression.
-  \item The system shall normalize and validate the generated query against the selected OKS schema before execution. Invalid candidates shall be supplied with diagnostics to a bounded repair loop.
-  \item The system shall execute only validated, read-only queries through the Python \texttt{config} interface or the native \texttt{oks\_dump} utility.
-  \item The system shall return a structured response containing the generated OksQuery, target class, result count, matching object identifiers and selected attributes, version/context metadata, and warnings.
-  \item The MCP interface shall expose \texttt{oks\_query} for translation and execution, \texttt{oks\_translate} for translation without execution, and \texttt{oks\_environment\_probe} for non-secret environment diagnostics.
+\begin{enumerate}[label=\textbf{\Roman*)}, leftmargin=*]
+  \item \textbf{Question acceptance:} The system shall accept one complete natural-language question and an optional configuration-version selector.
+  \item \textbf{Intent and schema retrieval:} The system shall identify the query intent, construct a version-bound OKS context, and retrieve only the schema classes, attributes, and relations relevant to the question.
+  \item \textbf{Query translation:} The system shall use the retrieved schema slice and few-shot examples to translate the question into a structured intermediate representation and an OksQuery expression.
+  \item \textbf{Query validation and repair:} The system shall normalize and validate the generated query against the selected OKS schema before execution. Invalid candidates shall be supplied with diagnostics to a bounded repair loop.
+  \item \textbf{Read-only execution:} The system shall execute only validated, read-only queries through the Python \texttt{config} interface or the native \texttt{oks\_dump} utility.
+  \item \textbf{Structured response:} The system shall return a structured response containing the generated OksQuery, target class, result count, matching object identifiers and selected attributes, version/context metadata, and warnings.
+  \item \textbf{MCP tool interface:} The MCP interface shall expose \texttt{oks\_query} for translation and execution, \texttt{oks\_translate} for translation without execution, and \texttt{oks\_environment\_probe} for non-secret environment diagnostics.
 \end{enumerate}
 
 \subsection{Non-functional Requirements and Constraints}
-\begin{enumerate}[label=\textbf{NFR\arabic*.}, leftmargin=2cm]
+\begin{enumerate}[label=\textbf{\Roman*)}, leftmargin=*]
   \item \textbf{Safety:} The MCP boundary shall not expose shell-command execution, arbitrary filesystem paths, raw unvalidated queries, or write operations.
   \item \textbf{Context efficiency:} The full OKS configuration shall remain on the server. Only a small, query-relevant schema slice and filtered result records may cross the LLM boundary.
   \item \textbf{Version consistency:} Schema retrieval, validation, compilation, and execution shall use the same resolved configuration context. Each response includes a schema fingerprint and context label for traceability.
@@ -1147,28 +1147,41 @@ natural-language formulation is translated correctly. Semantic correctness
 still requires a labelled dataset, expected result sets, and repeated
 measurements across query difficulty and configuration versions.
 
-\section{Comparative Analysis}
-Table~\ref{tab:design-comparison} compares the proposed pipeline with an
-unconstrained direct-generation approach. This is a design comparison, not a
-claim of experimentally measured accuracy.
+The main contribution demonstrated here is integration feasibility. The
+transport layer, SSH forwarding arrangement, MCP tool contract, translation
+pipeline, schema validation boundary, and OKS execution path operate together
+in the intended environment. Because the generated OksQuery, selected class,
+result count, warnings, and configuration context are returned explicitly, the
+calling agent can inspect the result and distinguish an input, validation,
+transport, or execution problem from a successful query.
 
-\begin{table}[H]
-  \centering
-  \small
-  \caption{Qualitative comparison of direct generation and the implemented pipeline.}
-  \label{tab:design-comparison}
-  \begin{tabularx}{\textwidth}{@{}p{3.5cm}XX@{}}
-    \toprule
-    \textbf{Aspect} & \textbf{Direct raw generation} & \textbf{Implemented pipeline} \\
-    \midrule
-    Schema context & Depends on model memory or manually supplied context. & Retrieves a compact, version-scoped schema slice. \\
-    Query representation & Produces executable text directly. & Produces structured IR before compilation. \\
-    Safety boundary & Syntax and semantics are mostly implicit. & Normalization and deterministic schema validation precede execution. \\
-    Version handling & Easy to mix schema and data from different releases. & Context, retrieval, validation, and execution share version metadata. \\
-    Failure reporting & Invalid output may fail only at the backend. & Bounded repair and structured diagnostics are returned. \\
-    \bottomrule
-  \end{tabularx}
-\end{table}
+The valid empty-result demonstration also has operational value. A zero result
+count does not necessarily indicate a failed request; it may reflect an absent
+object, a restrictive predicate, or a different configuration version. Reporting
+this case explicitly prevents unnecessary retries, although deciding how to
+correct the question remains the responsibility of the user or calling agent.
+Similarly, the separation between LLM-assisted translation and deterministic
+retrieval, validation, compilation, and execution reduces the chance that an
+invalid schema reference reaches OKS. The version-bound context and schema
+fingerprint improve traceability, but a schema-valid query is not necessarily
+semantically correct.
+
+The private loopback and SSH-forwarded deployment keeps the complete OKS
+configuration on the CERN side and exposes only filtered responses. It is
+appropriate for the demonstrated controlled environment, but still depends on
+the selected TDAQ release, OKS data file, CVMFS, an active SSH tunnel, and an
+LLM endpoint. It should therefore not be considered a production deployment;
+production use would require approved supervision, stronger service
+authentication and authorization, operational logging, and recovery controls.
+
+These results are not a translation-accuracy or latency benchmark. A stronger
+evaluation should use a labelled set of questions with canonical queries and
+expected result sets across query difficulties and configuration versions. It
+should report schema-validity and execution rates, result-set equivalence,
+repair frequency, and end-to-end latency, preferably against a direct-generation
+baseline. Until such testing is completed, the demonstrations support the
+feasibility of an inspectable, version-aware, read-only integration path rather
+than broad claims about general translation accuracy or production robustness.
 
 
 % ============================================================

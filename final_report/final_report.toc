@@ -66,11 +66,10 @@
 \contentsline {subsection}{\numberline {5.1.1}Verification of the Implementation}{31}{subsection.5.1.1}%
 \contentsline {subsection}{\numberline {5.1.2}Observed Query Demonstrations}{31}{subsection.5.1.2}%
 \contentsline {section}{\numberline {5.2}Discussion}{32}{section.5.2}%
-\contentsline {section}{\numberline {5.3}Comparative Analysis}{33}{section.5.3}%
 \contentsline {chapter}{\numberline {6}CONCLUSIONS AND RECOMMENDATIONS}{34}{chapter.6}%
 \contentsline {section}{\numberline {6.1}Conclusions}{34}{section.6.1}%
 \contentsline {section}{\numberline {6.2}Recommendations/Future Enhancements}{34}{section.6.2}%
 \contentsline {chapter}{REFERENCES}{35}{Item.65}%
-\contentsline {chapter}{APPENDICES}{37}{chapter*.28}%
-\contentsline {section}{Appendix A: Demonstrated Runtime Configuration}{37}{section*.29}%
-\contentsline {section}{Appendix B: Evidence and Reproducibility Notes}{37}{section*.29}%
+\contentsline {chapter}{APPENDICES}{37}{chapter*.27}%
+\contentsline {section}{Appendix A: Demonstrated Runtime Configuration}{37}{section*.28}%
+\contentsline {section}{Appendix B: Evidence and Reproducibility Notes}{37}{section*.28}%
