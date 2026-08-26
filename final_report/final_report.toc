@@ -18,44 +18,45 @@
 \contentsline {section}{\numberline {1.7}Outline of the Report}{4}{section.1.7}%
 \contentsline {chapter}{\numberline {2}LITERATURE REVIEW}{5}{chapter.2}%
 \contentsline {section}{\numberline {2.1}Review of Related Theory}{5}{section.2.1}%
-\contentsline {section}{\numberline {2.2}Review of Related Works}{5}{section.2.2}%
-\contentsline {section}{\numberline {2.3}Gap analysis(if required)}{5}{section.2.3}%
-\contentsline {chapter}{\numberline {3}METHODOLOGY}{6}{chapter.3}%
-\contentsline {section}{\numberline {3.1}Project approach}{6}{section.3.1}%
-\contentsline {section}{\numberline {3.2}System Architecture}{7}{section.3.2}%
-\contentsline {section}{\numberline {3.3}System Design/Modules (UI module, backend logic, database, APIs, etc)}{9}{section.3.3}%
-\contentsline {subsection}{\numberline {3.3.1}Use-Case Diagram}{10}{subsection.3.3.1}%
-\contentsline {subsubsection}{Use-Case Descriptions}{10}{subsubsection*.8}%
-\contentsline {paragraph}{UC-01: Query OKS Data}{10}{paragraph*.9}%
-\contentsline {paragraph}{UC-02: Translate Without Execution}{10}{paragraph*.10}%
-\contentsline {paragraph}{UC-03: Probe OKS Environment}{10}{paragraph*.11}%
-\contentsline {paragraph}{Included use cases}{11}{paragraph*.12}%
-\contentsline {subsection}{\numberline {3.3.2}Context Diagram (DFD Level 0)}{12}{subsection.3.3.2}%
-\contentsline {subsection}{\numberline {3.3.3}Class Diagram}{12}{subsection.3.3.3}%
-\contentsline {subsection}{\numberline {3.3.4}Sequence Diagram}{13}{subsection.3.3.4}%
-\contentsline {section}{\numberline {3.4}Technology Stack (languages, frameworks, tools, etc)}{14}{section.3.4}%
-\contentsline {section}{\numberline {3.5}Development Methodology (agile/waterfall/iterative or suitable one)}{14}{section.3.5}%
-\contentsline {section}{\numberline {3.6}Data Handling (input, storage, processing)}{15}{section.3.6}%
-\contentsline {subsection}{\numberline {3.6.1}Input and Storage}{15}{subsection.3.6.1}%
-\contentsline {subsection}{\numberline {3.6.2}Processing and Context Management}{15}{subsection.3.6.2}%
-\contentsline {subsection}{\numberline {3.6.3}Level-1 Data Flow}{15}{subsection.3.6.3}%
-\contentsline {subsection}{\numberline {3.6.4}Level-2 Translation and Validation Flow}{15}{subsection.3.6.4}%
-\contentsline {section}{\numberline {3.7}Testing and Validation (unit testing, integration testing, user testing)}{16}{section.3.7}%
-\contentsline {section}{\numberline {3.8}Deployment Setup (hosting, server, environment)}{17}{section.3.8}%
-\contentsline {chapter}{\numberline {4}IMPLEMENTATION DETAILS}{18}{chapter.4}%
-\contentsline {section}{\numberline {4.1}Requirements Specification(functional/non-functional requirements, constraints)}{18}{section.4.1}%
-\contentsline {section}{\numberline {4.2}System Overview (Description of implemented system, mapping methodology to implementation)}{18}{section.4.2}%
-\contentsline {section}{\numberline {4.3}Development Environment(programming languages, tools, libraries and frameworks used, hardware and software specifications)}{18}{section.4.3}%
-\contentsline {section}{\numberline {4.4}System Implementation(data/input handling, pre-processing steps, algorithm implementation, modules design and integration etc)}{18}{section.4.4}%
-\contentsline {section}{\numberline {4.5}Interface and Visualization}{18}{section.4.5}%
-\contentsline {section}{\numberline {4.6}Deployment and Execution(system setup, execution steps, local/server/cloud setup)}{18}{section.4.6}%
-\contentsline {section}{\numberline {4.7}Challenges and Solutions(technical challenges faced, solutions found)}{18}{section.4.7}%
-\contentsline {chapter}{\numberline {5}RESULTS AND DISCUSSION}{19}{chapter.5}%
-\contentsline {section}{\numberline {5.1}Results}{19}{section.5.1}%
-\contentsline {section}{\numberline {5.2}Discussion}{19}{section.5.2}%
-\contentsline {section}{\numberline {5.3}Comparative analysis(if applicable)}{19}{section.5.3}%
-\contentsline {chapter}{\numberline {6}CONCLUSIONS AND RECOMMENDATIONS}{20}{chapter.6}%
-\contentsline {section}{\numberline {6.1}Conclusions}{20}{section.6.1}%
-\contentsline {section}{\numberline {6.2}Recommendations/Future Enhancements}{20}{section.6.2}%
-\contentsline {chapter}{REFERENCES}{20}{section.6.2}%
-\contentsline {chapter}{APPENDICES}{22}{chapter*.20}%
+\contentsline {section}{\numberline {2.2}Retrieval-Augmented Generation and Few-Shot Prompting}{5}{section.2.2}%
+\contentsline {section}{\numberline {2.3}Natural-Language Query Translation and Validation}{6}{section.2.3}%
+\contentsline {section}{\numberline {2.4}Research Gap and Project Relevance}{7}{section.2.4}%
+\contentsline {chapter}{\numberline {3}METHODOLOGY}{8}{chapter.3}%
+\contentsline {section}{\numberline {3.1}Project approach}{8}{section.3.1}%
+\contentsline {section}{\numberline {3.2}System Architecture}{9}{section.3.2}%
+\contentsline {section}{\numberline {3.3}System Design/Modules (UI module, backend logic, database, APIs, etc)}{11}{section.3.3}%
+\contentsline {subsection}{\numberline {3.3.1}Use-Case Diagram}{12}{subsection.3.3.1}%
+\contentsline {subsubsection}{Use-Case Descriptions}{12}{subsubsection*.8}%
+\contentsline {paragraph}{UC-01: Query OKS Data}{12}{paragraph*.9}%
+\contentsline {paragraph}{UC-02: Translate Without Execution}{12}{paragraph*.10}%
+\contentsline {paragraph}{UC-03: Probe OKS Environment}{12}{paragraph*.11}%
+\contentsline {paragraph}{Included use cases}{13}{paragraph*.12}%
+\contentsline {subsection}{\numberline {3.3.2}Context Diagram (DFD Level 0)}{14}{subsection.3.3.2}%
+\contentsline {subsection}{\numberline {3.3.3}Class Diagram}{14}{subsection.3.3.3}%
+\contentsline {subsection}{\numberline {3.3.4}Sequence Diagram}{15}{subsection.3.3.4}%
+\contentsline {section}{\numberline {3.4}Technology Stack (languages, frameworks, tools, etc)}{16}{section.3.4}%
+\contentsline {section}{\numberline {3.5}Development Methodology (agile/waterfall/iterative or suitable one)}{16}{section.3.5}%
+\contentsline {section}{\numberline {3.6}Data Handling (input, storage, processing)}{17}{section.3.6}%
+\contentsline {subsection}{\numberline {3.6.1}Input and Storage}{17}{subsection.3.6.1}%
+\contentsline {subsection}{\numberline {3.6.2}Processing and Context Management}{17}{subsection.3.6.2}%
+\contentsline {subsection}{\numberline {3.6.3}Level-1 Data Flow}{17}{subsection.3.6.3}%
+\contentsline {subsection}{\numberline {3.6.4}Level-2 Translation and Validation Flow}{17}{subsection.3.6.4}%
+\contentsline {section}{\numberline {3.7}Testing and Validation (unit testing, integration testing, user testing)}{18}{section.3.7}%
+\contentsline {section}{\numberline {3.8}Deployment Setup (hosting, server, environment)}{19}{section.3.8}%
+\contentsline {chapter}{\numberline {4}IMPLEMENTATION DETAILS}{20}{chapter.4}%
+\contentsline {section}{\numberline {4.1}Requirements Specification(functional/non-functional requirements, constraints)}{20}{section.4.1}%
+\contentsline {section}{\numberline {4.2}System Overview (Description of implemented system, mapping methodology to implementation)}{20}{section.4.2}%
+\contentsline {section}{\numberline {4.3}Development Environment(programming languages, tools, libraries and frameworks used, hardware and software specifications)}{20}{section.4.3}%
+\contentsline {section}{\numberline {4.4}System Implementation(data/input handling, pre-processing steps, algorithm implementation, modules design and integration etc)}{20}{section.4.4}%
+\contentsline {section}{\numberline {4.5}Interface and Visualization}{20}{section.4.5}%
+\contentsline {section}{\numberline {4.6}Deployment and Execution(system setup, execution steps, local/server/cloud setup)}{20}{section.4.6}%
+\contentsline {section}{\numberline {4.7}Challenges and Solutions(technical challenges faced, solutions found)}{20}{section.4.7}%
+\contentsline {chapter}{\numberline {5}RESULTS AND DISCUSSION}{21}{chapter.5}%
+\contentsline {section}{\numberline {5.1}Results}{21}{section.5.1}%
+\contentsline {section}{\numberline {5.2}Discussion}{21}{section.5.2}%
+\contentsline {section}{\numberline {5.3}Comparative analysis(if applicable)}{21}{section.5.3}%
+\contentsline {chapter}{\numberline {6}CONCLUSIONS AND RECOMMENDATIONS}{22}{chapter.6}%
+\contentsline {section}{\numberline {6.1}Conclusions}{22}{section.6.1}%
+\contentsline {section}{\numberline {6.2}Recommendations/Future Enhancements}{22}{section.6.2}%
+\contentsline {chapter}{REFERENCES}{22}{section.6.2}%
+\contentsline {chapter}{APPENDICES}{24}{chapter*.20}%
