@@ -4,16 +4,16 @@
 \contentsline {figure}{\numberline {3.1}{\ignorespaces Deployment and processing architecture of the OKS MCP server.}}{11}{figure.caption.7}%
 \contentsline {figure}{\numberline {3.2}{\ignorespaces Use-case diagram of the OKS MCP Server.}}{14}{figure.caption.13}%
 \contentsline {figure}{\numberline {3.3}{\ignorespaces Level-0 context data-flow diagram of the OKS MCP Server.}}{15}{figure.caption.14}%
-\contentsline {figure}{\numberline {3.4}{\ignorespaces Principal classes and collaborations in the merged implementation.}}{15}{figure.caption.15}%
-\contentsline {figure}{\numberline {3.5}{\ignorespaces Concise sequence of operations for an MCP query request.}}{16}{figure.caption.16}%
-\contentsline {figure}{\numberline {3.6}{\ignorespaces Level-1 data-flow diagram for OKS MCP request processing.}}{18}{figure.caption.17}%
-\contentsline {figure}{\numberline {3.7}{\ignorespaces Level-2 data-flow diagram for translation and validation.}}{19}{figure.caption.18}%
+\contentsline {figure}{\numberline {3.4}{\ignorespaces Concise sequence of operations for an MCP query request.}}{16}{figure.caption.15}%
+\contentsline {figure}{\numberline {3.5}{\ignorespaces Level-1 data-flow diagram for OKS MCP request processing.}}{18}{figure.caption.16}%
 \addvspace {10\p@ }
-\contentsline {figure}{\numberline {4.1}{\ignorespaces Implemented private MCP architecture for natural-language OKS queries.}}{23}{figure.caption.19}%
-\contentsline {figure}{\numberline {4.2}{\ignorespaces MCP service running on the LXPLUS loopback endpoint at port 8001.}}{27}{figure.caption.21}%
-\contentsline {figure}{\numberline {4.3}{\ignorespaces Redacted workstation command establishing the SSH local port forward.}}{27}{figure.caption.22}%
-\contentsline {figure}{\numberline {4.4}{\ignorespaces MCP client showing the connected \texttt {oksquery} server and its three tools.}}{28}{figure.caption.23}%
+\contentsline {figure}{\numberline {4.1}{\ignorespaces Implemented private MCP architecture for natural-language OKS queries.}}{22}{figure.caption.17}%
+\contentsline {figure}{\numberline {4.2}{\ignorespaces MCP service running on the LXPLUS loopback endpoint at port 8001.}}{26}{figure.caption.18}%
+\contentsline {figure}{\numberline {4.3}{\ignorespaces Redacted workstation command establishing the SSH local port forward.}}{26}{figure.caption.19}%
+\contentsline {figure}{\numberline {4.4}{\ignorespaces MCP client showing the connected \texttt {oksquery} server and its three tools.}}{26}{figure.caption.20}%
 \addvspace {10\p@ }
-\contentsline {figure}{\numberline {5.1}{\ignorespaces Valid empty result returned for an object absent from the selected configuration.}}{31}{figure.caption.24}%
-\contentsline {figure}{\numberline {5.2}{\ignorespaces Successful BaseApplication query showing generated OksQuery, count, and identifiers.}}{32}{figure.caption.25}%
+\contentsline {figure}{\numberline {5.1}{\ignorespaces Valid empty result returned for an object absent from the selected configuration.}}{30}{figure.caption.21}%
+\contentsline {figure}{\numberline {5.2}{\ignorespaces Successful BaseApplication query showing generated OksQuery, count, and identifiers.}}{31}{figure.caption.22}%
 \addvspace {10\p@ }
+\contentsline {figure}{\numberline {6.1}{\ignorespaces CLI startup and environment-probe log for the OKS query translator.}}{37}{figure.caption.26}%
+\contentsline {figure}{\numberline {6.2}{\ignorespaces CLI translation and execution log showing a valid empty result for the selected configuration.}}{37}{figure.caption.27}%

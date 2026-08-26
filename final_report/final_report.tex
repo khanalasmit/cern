@@ -27,6 +27,7 @@
 \usepackage{pgfgantt}
 \usepackage{amssymb}
 \usepackage{tabularx}
+\usepackage{longtable}
 \usepackage{adjustbox}         % FIX: for table overflow
 \usepackage{microtype}
 
@@ -581,34 +582,34 @@ The principal stages of the approach were as follows:
 \end{enumerate}
 
 \section{System Architecture}
-The system follows a service-oriented pipeline deployed across the user
-environment and the CERN TDAQ environment. A user submits a natural-language
-question through a coding agent or another MCP-compatible client. The client
-connects to a local MCP endpoint, which is securely forwarded to the MCP
-server running on CERN lxplus through an SSH local port forward. This keeps the
-remote service private and avoids exposing a public application port.
+The updated architecture in Figure~\ref{fig:system-architecture} presents the
+complete request path from a user question to a filtered TDAQ/OKS result. The
+user submits a natural-language question through a coding agent or another
+MCP-compatible client. The agent connects to the local endpoint
+\texttt{http://127.0.0.1:18001/mcp}, which is linked to the CERN LXPLUS
+service through an authenticated SSH local port forward. This arrangement
+keeps the remote MCP server loopback-bound and avoids exposing a public
+application port.
 
-Within the CERN environment, the Streamable HTTP MCP server exposes the
+Inside the CERN boundary, the Streamable HTTP MCP server exposes
 \texttt{oks\_query}, \texttt{oks\_translate}, and
-\texttt{oks\_environment\_probe} tools. \texttt{OksQueryService} validates
-inputs, applies request and result limits, serialises the request, and returns
-structured responses. The \texttt{OksPipeline} resolves the requested
-configuration, retrieves the relevant version-scoped schema context, and
-coordinates translation and execution.
+\texttt{oks\_environment\_probe}. \texttt{OksQueryService} performs input
+validation, request-limit checks, and response serialization before passing a
+request to the \texttt{OksPipeline}. The pipeline retrieves the relevant
+schema and few-shot context, sends the constrained prompt to an
+OpenAI-compatible LLM API over HTTPS, and validates or repairs the generated
+OksQuery before execution.
 
-The translation and validation stage communicates with an OpenAI-compatible
-LLM API over HTTPS. The generated representation is checked and repaired when
-necessary before compilation. The executor then accesses the approved OKS data
-through the TDAQ Python \texttt{config} binding or the native
-\texttt{oks\_dump} fallback. Only filtered structured results and diagnostic
-metadata are returned to the MCP client; conversational memory remains with
-the calling agent.
-
-The deployment and request flow are summarised in Figure~\ref{fig:system-architecture}.
+The executor accesses the approved OKS data through the TDAQ Python
+\texttt{config} interface or the native \texttt{oks\_dump} utility. It returns
+only filtered structured results containing query, count, identifiers,
+attributes, version information, and warnings. The calling agent explains the
+result and maintains conversation memory; the CERN service does not return the
+complete configuration or store the conversation.
 
 \begin{figure}[p]
   \centering
-  \includegraphics[width=0.72\textwidth]{system_architecture.png}
+  \includegraphics[width=0.72\textwidth]{systemarchi.png}
   \caption{Deployment and processing architecture of the OKS MCP server.}
   \label{fig:system-architecture}
 \end{figure}
@@ -713,30 +714,17 @@ read-only \texttt{ExecutionResult}.
 
 The Level-0 DFD models the OKS MCP Server as one process interacting with the
 developer or coding agent, the LLM API, and the CERN TDAQ/OKS configuration.
-It receives a question and version, retrieves schema context, validates the
-candidate query, executes only an approved read-only request, and returns
-filtered structured results. Levels 1 and 2 are detailed in Data Handling.
+It receives a natural-language question, sends a schema slice and question to
+the LLM API, receives a candidate OksQuery or repair response, and returns an
+OksQuery with filtered results to the developer or coding agent. The boundary
+represents one stateless capability that translates and executes read-only OKS
+queries; the complete configuration remains outside the agent boundary.
 
 \begin{figure}[H]
   \centering
-  \includegraphics[width=0.96\textwidth]{dfd_level_0.png}
+  \includegraphics[width=0.96\textwidth]{dfd0.png}
   \caption{Level-0 context data-flow diagram of the OKS MCP Server.}
   \label{fig:dfd-level-0}
-\end{figure}
-
-\subsection{Class Diagram}
-
-The class view shows the MCP adapter, service facade, pipeline, and supporting
-translation, retrieval, validation, and execution components. \texttt{OksContext}
-carries version and schema metadata, while \texttt{ExecutionResult} records
-filtered objects, status, and version. The separation supports independent
-testing of request handling, model generation, schema checks, and runtime access.
-
-\begin{figure}[H]
-  \centering
-  \includegraphics[width=0.98\textwidth]{class_diagram.png}
-  \caption{Principal classes and collaborations in the merged implementation.}
-  \label{fig:class-diagram}
 \end{figure}
 
 \subsection{Sequence Diagram}
@@ -756,7 +744,7 @@ Filtered structured results return through the tunnel for agent interpretation.
 
 % The explanatory subsections occur before the figure pages in the final
 % layout, allowing LaTeX to use the preceding page space effectively.
-\clearpage
+
 
 \section{Technology Stack}
 The system uses the following technologies to support OKS integration,
@@ -826,31 +814,19 @@ read-only structured results.
 
 \subsection{Level-1 Data Flow}
 
-Figure~\ref{fig:dfd-level-1} shows the main request flow: validate and classify
-the question, retrieve schema and examples, translate and validate the query,
-execute the approved expression against the selected data file, and serialise
-a bounded MCP response.
+Figure~\ref{fig:dfd-level-1} expands the context diagram into five processing
+stages. The server validates and classifies the question, retrieves the
+relevant schema and examples from the schema cache or index, translates and
+validates the OksQuery through the LLM API, executes only the approved
+read-only query against the selected TDAQ/OKS data file, and serializes a
+bounded MCP response. The diagram also shows that only the structured result
+set crosses back to the agent, not the complete configuration.
 
 \begin{figure}[H]
   \centering
-  \includegraphics[width=0.99\textwidth]{dfd_level_1.png}
+  \includegraphics[width=0.99\textwidth]{dfd1.jpeg}
   \caption{Level-1 data-flow diagram for OKS MCP request processing.}
   \label{fig:dfd-level-1}
-\end{figure}
-
-\subsection{Level-2 Translation and Validation Flow}
-
-Figure~\ref{fig:dfd-level-2} expands translation and validation. Target terms
-select a fingerprinted schema and prompt context; the LLM generates a candidate
-IR, which is checked for valid classes, attributes, operators, scope, and logic.
-Only the valid branch reaches compilation and execution; the invalid branch
-returns diagnostics to a bounded repair prompt.
-
-\begin{figure}[H]
-  \centering
-  \includegraphics[width=0.99\textwidth]{dfd_level_2.png}
-  \caption{Level-2 data-flow diagram for translation and validation.}
-  \label{fig:dfd-level-2}
 \end{figure}
 
 \section{Testing and Validation}
@@ -959,25 +935,37 @@ This mapping preserves the project methodology in the deployed implementation. S
 
 The project was implemented primarily in Python and integrated with the existing ATLAS TDAQ/OKS runtime. Table~\ref{tab:development-environment} summarizes the principal development environment. Exact processor and memory specifications are not fixed by the repository; they should be recorded with the Chapter~5 experiments if resource-use measurements are reported.
 
-\begin{table}[H]
-  \centering
-  \small
+{\small
+\begin{longtable}{@{}p{3.4cm}p{\dimexpr\textwidth-3.4cm-2\tabcolsep\relax}@{}}
   \caption{Development environment and principal tools.}
-  \label{tab:development-environment}
-  \begin{tabularx}{\textwidth}{@{}p{3.4cm}X@{}}
-    \toprule
-    \textbf{Item} & \textbf{Implementation environment} \\
-    \midrule
-    Programming language & Python 3.10 or later. \\
-    Translation and integration & Python package \texttt{oksquery\_translator}, containing the MCP server, service facade, pipeline, schema retrieval, validation, and execution modules. \\
-    External libraries & \texttt{openai} for an OpenAI-compatible LLM API, \texttt{mcp} for the Model Context Protocol server, \texttt{python-dotenv} for environment loading, \texttt{rank-bm25} for lexical schema retrieval, and \texttt{pytest} for tests. \\
-    CERN runtime & CERN LXPLUS/Linux environment with an ATLAS TDAQ release sourced from CVMFS. The current deployment guide uses \texttt{tdaq-14-00-00}. \\
-    OKS access & Python \texttt{config} bindings are preferred for current configurations; the native \texttt{oks\_dump} command is used as a fallback and for historical configuration paths. \\
-    Development and deployment tools & Git, Python virtual environment, SSH with CERN authentication, and \texttt{tmux} for a detached development server process. \\
-    Configuration & Environment variables select the LLM API endpoint/model, OKS data file, schema directory, MCP transport, host, and port. API credentials are stored outside version control. \\
-    \bottomrule
-  \end{tabularx}
-\end{table}
+  \label{tab:development-environment}\\
+  \toprule
+  \textbf{Item} & \textbf{Implementation environment} \\
+  \midrule
+  \endfirsthead
+
+  \multicolumn{2}{c}{\tablename\ \thetable\ -- continued from previous page}\\
+  \toprule
+  \textbf{Item} & \textbf{Implementation environment} \\
+  \midrule
+  \endhead
+
+  \midrule
+  \multicolumn{2}{r@{}}{\textit{Continued on next page}}\\
+  \endfoot
+
+  \bottomrule
+  \endlastfoot
+
+  Programming language & Python 3.10 or later. \\
+  Translation and integration & Python package \texttt{oksquery\_translator}, containing the MCP server, service facade, pipeline, schema retrieval, validation, and execution modules. \\
+  External libraries & \texttt{openai} for an OpenAI-compatible LLM API, \texttt{mcp} for the Model Context Protocol server, \texttt{python-dotenv} for environment loading, \texttt{rank-bm25} for lexical schema retrieval, and \texttt{pytest} for tests. \\
+  CERN runtime & CERN LXPLUS/Linux environment with an ATLAS TDAQ release sourced from CVMFS. The current deployment guide uses \texttt{tdaq-14-00-00}. \\
+  OKS access & Python \texttt{config} bindings are preferred for current configurations; the native \texttt{oks\_dump} command is used as a fallback and for historical configuration paths. \\
+  Development and deployment tools & Git, Python virtual environment, SSH with CERN authentication, and \texttt{tmux} for a detached development server process. \\
+  Configuration & Environment variables select the LLM API endpoint/model, OKS data file, schema directory, MCP transport, host, and port. API credentials are stored outside version control. \\
+\end{longtable}
+}
 
 The system can use bundled schema material during local development when CVMFS is unavailable. However, experiments that claim native TDAQ execution must be performed in a compatible TDAQ environment with the intended data file and release selected.
 
@@ -1302,5 +1290,26 @@ do not by themselves establish general model accuracy, production availability,
 or performance across all TDAQ partitions. Reproduction requires access to a
 compatible CERN environment, the selected TDAQ release, an approved OKS data
 file, and an authorized LLM endpoint.
+
+\section*{Appendix C: CLI Runtime Log Evidence}
+\addcontentsline{toc}{section}{Appendix C: CLI Runtime Log Evidence}
+The following figures show direct command-line execution of the OKS query
+translator. They document the CLI runtime path, including environment probing,
+schema discovery, query translation, validation, and execution. These logs are
+separate from the MCP-server screenshots presented in Chapter~5.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth,keepaspectratio]{figures/runtime/log1.png}
+  \caption{CLI startup and environment-probe log for the OKS query translator.}
+  \label{fig:appendix-cli-startup-log}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth,keepaspectratio]{figures/runtime/log2.png}
+  \caption{CLI translation and execution log showing a valid empty result for the selected configuration.}
+  \label{fig:appendix-cli-query-log}
+\end{figure}
 
 \end{document}
