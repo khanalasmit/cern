@@ -226,7 +226,28 @@ Nepal
 % ============================================================
 \chapter*{ABSTRACT}
 \addcontentsline{toc}{chapter}{ABSTRACT}
-[Content to be added...]
+The ATLAS Trigger and Data Acquisition (TDAQ) system uses the Object Kernel
+Support (OKS) framework to store a large, versioned graph of configuration
+objects. Although OKS provides precise and efficient access for expert users,
+its proprietary OksQuery language is difficult to formulate manually and is
+not known reliably by general-purpose language models. This project develops
+a read-only Natural Language to OksQuery translation module exposed through a
+Model Context Protocol (MCP) server.
+
+The implementation uses version-scoped schema retrieval, few-shot examples,
+structured intermediate representation, deterministic schema validation, a
+bounded repair loop, and read-only execution through the TDAQ Python
+interface or native \texttt{oks\_dump}. The MCP server runs on CERN LXPLUS and
+is reached from a workstation through an SSH local port forward. The server
+returns the generated query, target class, result count, filtered objects, and
+context diagnostics while leaving conversation memory to the calling agent.
+Runtime demonstrations show successful tool discovery, a valid empty result,
+and a query returning 16 \texttt{BaseApplication} identifiers. These
+demonstrations validate the integration path; a statistically powered accuracy
+benchmark remains future work.
+
+\textbf{Keywords:} OKS, OksQuery, ATLAS TDAQ, natural-language query,
+retrieval-augmented generation, Model Context Protocol, schema validation.
 \newpage
 
 % ============================================================
@@ -234,7 +255,13 @@ Nepal
 % ============================================================
 \chapter*{ACKNOWLEDGEMENTS}
 \addcontentsline{toc}{chapter}{ACKNOWLEDGEMENTS}
-[Content to be added...]
+We would like to express our sincere gratitude to our supervisor and the
+Department of Electronics and Computer Engineering, Pulchowk Campus, for
+their guidance and support throughout this project. We also acknowledge the
+ATLAS TDAQ and CERN computing environments that made it possible to study OKS
+configuration data and verify the implementation on LXPLUS. Finally, we thank
+our project members, friends, and families for their encouragement during the
+development and documentation of this work.
 \newpage
 
 % ============================================================
@@ -264,9 +291,38 @@ Nepal
 \addcontentsline{toc}{chapter}{ABBREVIATIONS}
 
 \begin{tabular}{ll}
+AI & Artificial Intelligence \\
+AIML & Artificial Intelligence and Machine Learning \\
 API & Application Programming Interface \\
+AST & Abstract Syntax Tree \\
+ATLAS & A Toroidal LHC ApparatuS \\
+BM25 & Best Matching 25 \\
+CERN & European Organization for Nuclear Research \\
+CLI & Command-Line Interface \\
+CVMFS & CernVM File System \\
+DAQ & Data Acquisition \\
+DFD & Data-Flow Diagram \\
+FR & Functional Requirement \\
+HTTP & Hypertext Transfer Protocol \\
+HTTPS & Hypertext Transfer Protocol Secure \\
+IEEE & Institute of Electrical and Electronics Engineers \\
+IOE & Institute of Engineering \\
+IR & Intermediate Representation \\
+JSON & JavaScript Object Notation \\
+LHC & Large Hadron Collider \\
 LLM & Large Language Model \\
+MCP & Model Context Protocol \\
+NFR & Non-Functional Requirement \\
+NLP & Natural Language Processing \\
 OKS & Object Kernel Support \\
+RAG & Retrieval-Augmented Generation \\
+SDK & Software Development Kit \\
+SQL & Structured Query Language \\
+SSH & Secure Shell \\
+TDAQ & Trigger and Data Acquisition \\
+TLS & Transport Layer Security \\
+TU & Tribhuvan University \\
+XML & Extensible Markup Language \\
 \end{tabular}
 \newpage
 
@@ -324,10 +380,37 @@ This project addresses these fundamental limitations by developing a retrieval-a
 The system is scoped to translating natural-language questions about the ATLAS DAQ configuration into validated OksQuery statements for read-only retrieval, processing one query at a time within a single, explicitly resolved configuration version (TDAQ release, Git revision, or run number), with schema retrieval performed dynamically per request using a version-scoped lexical pipeline (exact match, alias lookup, BM25) keyed by schema fingerprint, and the retrieval index regenerated from the OKS schema whenever the configuration changes. The module generates an intermediate AST representation rather than raw OksQuery strings, validated deterministically against the version-bound OKS schema before compilation, and is deployed as an MCP server hosted within CERN compute infrastructure and exposed to external LLM agents through SSH port tunneling, with conversational persistence and session state managed by the consuming LLM agent rather than the translation module. The system does not write, modify, or delete configuration data, does not provide operational recommendations or interpret query results beyond factual reporting, does not access live running partition memory or process telemetry data, does not handle user authentication (security relies on the CERN SSH tunnel and institutional network perimeter), and does not support non-English natural-language input or cross-version comparison queries.
 
 \section{Limitations}
-[Content to be added...]
+The present system is a read-only research prototype. Its limitations are as
+follows:
+\begin{enumerate}[label=(\roman*)]
+  \item Query generation is evaluated through selected demonstrations and
+  integration tests, not through a large, independently labelled benchmark
+  with confidence intervals.
+  \item The service depends on the availability of a compatible TDAQ release,
+  OKS data file, Python bindings, native tools, and an OpenAI-compatible LLM
+  endpoint. Results can change when the selected configuration version changes.
+  \item The server is stateless and expects the calling agent to resolve
+  follow-up questions into complete requests. It does not maintain user
+  sessions or conversation history.
+  \item The current deployment uses a loopback-bound server and SSH tunnelling
+  for private development access. Authentication, authorization, persistent
+  supervision, and public-service hardening are outside the prototype scope.
+  \item The implementation supports English natural-language requests and
+  read-only configuration queries; it does not access live process telemetry,
+  modify configuration, or compare multiple versions in one request.
+\end{enumerate}
 
 \section{Outline of the Report}
-[Content to be added...]
+Chapter 1 introduces the ATLAS TDAQ configuration problem, project objectives,
+scope, and limitations. Chapter 2 reviews OKS, ATLAS configuration management,
+retrieval-augmented generation, few-shot prompting, and related query
+translation research. Chapter 3 presents the methodology, architecture,
+modules, data flow, testing strategy, and deployment setup. Chapter 4 maps
+that design to the implemented Python package and MCP service, including the
+runtime interface and deployment challenges. Chapter 5 reports the verified
+integration results and discusses what the demonstrations do and do not prove.
+Chapter 6 concludes the report and recommends future evaluation and production
+hardening work.
 
 % ============================================================
 %  CHAPTER 2: LITERATURE REVIEW
@@ -534,7 +617,7 @@ The deployment and request flow are summarised in Figure~\ref{fig:system-archite
 \end{figure}
 \clearpage
 
-\section{System Design/Modules (UI module, backend logic, database, APIs, etc)}
+\section{System Design and Modules}
 The system is a layered, read-only translation and execution pipeline. It
 separates request handling, version resolution, schema retrieval, model
 interaction, deterministic validation, execution, and MCP service access so
@@ -678,7 +761,7 @@ Filtered structured results return through the tunnel for agent interpretation.
 % layout, allowing LaTeX to use the preceding page space effectively.
 \clearpage
 
-\section{Technology Stack (languages, frameworks, tools, etc)}
+\section{Technology Stack}
 The system uses the following technologies to support OKS integration,
 structured translation, and MCP service delivery:
 
@@ -708,7 +791,7 @@ structured translation, and MCP service delivery:
   service, pipeline, and MCP contract tests.
 \end{enumerate}
 
-\section{Development Methodology (agile/waterfall/iterative or suitable one)}
+\section{Development Methodology}
 The project used iterative prototyping with incremental refinement rather than
 a strict Agile or Waterfall process. Requirements were clarified through
 implementation and testing, and the increments were not separately deployed.
@@ -721,7 +804,7 @@ integration.
 $\rightarrow$ \textit{Integrate MCP} $\rightarrow$ \textit{Validate}
 \end{center}
 
-\section{Data Handling (input, storage, processing)}
+\section{Data Handling}
 The system handles natural-language questions and approved, version-scoped OKS
 data without introducing an application database.
 
@@ -773,7 +856,7 @@ returns diagnostics to a bounded repair prompt.
   \label{fig:dfd-level-2}
 \end{figure}
 
-\section{Testing and Validation (unit testing, integration testing, user testing)}
+\section{Testing and Validation}
 Testing covered components, the complete pipeline, the service boundary, and
 the runtime to prevent invalid queries from reaching OKS.
 
@@ -794,7 +877,7 @@ the runtime to prevent invalid queries from reaching OKS.
 The \texttt{pytest} suite contains component, pipeline, service,
 architecture-invariant, and MCP-server tests.
 
-\section{Deployment Setup (hosting, server, environment)}
+\section{Deployment Setup}
 The MCP server runs on CERN lxplus with the ATLAS TDAQ release and OKS files
 available through CVMFS. The workstation connects through an authenticated SSH
 tunnel to the loopback-bound MCP endpoint.
@@ -833,26 +916,169 @@ tunnel to the loopback-bound MCP endpoint.
 % ============================================================
 \chapter{IMPLEMENTATION DETAILS}
 
-\section{Requirements Specification(functional/non-functional requirements, constraints)}
-[Content to be added...]
+\section{Requirements Specification}
 
-\section{System Overview (Description of implemented system, mapping methodology to implementation)}
-[Content to be added...]
+The implementation requirements were derived from the need to allow an MCP-compatible agent to query the ATLAS TDAQ configuration without receiving the complete OKS configuration or obtaining direct access to the CERN environment. The system is intentionally limited to read-only retrieval of configuration objects.
 
-\section{Development Environment(programming languages, tools, libraries and frameworks used, hardware and software specifications)}
-[Content to be added...]
+\subsection{Functional Requirements}
+\begin{enumerate}[label=\textbf{FR\arabic*.}, leftmargin=2cm]
+  \item The system shall accept one complete natural-language question and an optional configuration-version selector.
+  \item The system shall identify the query intent, construct a version-bound OKS context, and retrieve only the schema classes, attributes, and relations relevant to the question.
+  \item The system shall use the retrieved schema slice and few-shot examples to translate the question into a structured intermediate representation and an OksQuery expression.
+  \item The system shall normalize and validate the generated query against the selected OKS schema before execution. Invalid candidates shall be supplied with diagnostics to a bounded repair loop.
+  \item The system shall execute only validated, read-only queries through the Python \texttt{config} interface or the native \texttt{oks\_dump} utility.
+  \item The system shall return a structured response containing the generated OksQuery, target class, result count, matching object identifiers and selected attributes, version/context metadata, and warnings.
+  \item The MCP interface shall expose \texttt{oks\_query} for translation and execution, \texttt{oks\_translate} for translation without execution, and \texttt{oks\_environment\_probe} for non-secret environment diagnostics.
+\end{enumerate}
 
-\section{System Implementation(data/input handling, pre-processing steps, algorithm implementation, modules design and integration etc)}
-[Content to be added...]
+\subsection{Non-functional Requirements and Constraints}
+\begin{enumerate}[label=\textbf{NFR\arabic*.}, leftmargin=2cm]
+  \item \textbf{Safety:} The MCP boundary shall not expose shell-command execution, arbitrary filesystem paths, raw unvalidated queries, or write operations.
+  \item \textbf{Context efficiency:} The full OKS configuration shall remain on the server. Only a small, query-relevant schema slice and filtered result records may cross the LLM boundary.
+  \item \textbf{Version consistency:} Schema retrieval, validation, compilation, and execution shall use the same resolved configuration context. Each response includes a schema fingerprint and context label for traceability.
+  \item \textbf{Bounded resources:} The service rejects empty or excessively long requests and caps returned records. The current default limits are 4,000 question characters, 160 version-selector characters, and 200 returned records.
+  \item \textbf{Statelessness:} The MCP server shall process each request independently. Conversation history and interpretation of follow-up questions remain the responsibility of the calling agent.
+  \item \textbf{Deployment security:} The CERN server shall bind to a loopback address and be reached from a workstation through an authenticated SSH local port forward rather than a public listener.
+\end{enumerate}
+
+The implementation requires Python 3.10 or later, an OpenAI-compatible LLM endpoint configured through environment variables, and a selected OKS data file. Full CERN execution additionally requires an accessible ATLAS TDAQ release and its CVMFS-provided OKS schema and runtime tools.
+
+\section{System Overview}
+
+The implemented system converts a natural-language question into a validated OksQuery expression and executes the expression against an approved OKS configuration. The design follows a schema-RAG approach: instead of placing the entire configuration in an LLM prompt, the server retrieves a small schema slice for the current version and uses it to constrain translation. The following figure shows the implementation and deployment boundaries.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth,height=0.82\textheight,keepaspectratio]{docs/system_architecture_clean.png}
+  \caption{Implemented private MCP architecture for natural-language OKS queries.}
+  \label{fig:implemented-system-architecture}
+\end{figure}
+
+A user submits a complete question through an MCP-compatible coding agent. For a workstation-based client, the request first reaches a local endpoint and then crosses an SSH local port forward to the loopback-only MCP server on CERN LXPLUS. The server validates the input and invokes the \texttt{OksPipeline}. The pipeline resolves the relevant context, retrieves schema information and few-shot examples, prompts the configured LLM, normalizes and validates the resulting intermediate representation, compiles a valid OksQuery expression, and executes it using the selected OKS configuration. Only filtered structured results return through the MCP server to the agent.
+
+This mapping preserves the project methodology in the deployed implementation. Schema retrieval and few-shot examples reduce unsupported query generation; deterministic validation and repair prevent invalid schema references from reaching execution; and the executor provides the backend filter that keeps the full configuration outside the LLM context window.
+
+\section{Development Environment}
+
+The project was implemented primarily in Python and integrated with the existing ATLAS TDAQ/OKS runtime. Table~\ref{tab:development-environment} summarizes the principal development environment. Exact processor and memory specifications are not fixed by the repository; they should be recorded with the Chapter~5 experiments if resource-use measurements are reported.
+
+\begin{table}[H]
+  \centering
+  \small
+  \caption{Development environment and principal tools.}
+  \label{tab:development-environment}
+  \begin{tabularx}{\textwidth}{@{}p{3.4cm}X@{}}
+    \toprule
+    \textbf{Item} & \textbf{Implementation environment} \\
+    \midrule
+    Programming language & Python 3.10 or later. \\
+    Translation and integration & Python package \texttt{oksquery\_translator}, containing the MCP server, service facade, pipeline, schema retrieval, validation, and execution modules. \\
+    External libraries & \texttt{openai} for an OpenAI-compatible LLM API, \texttt{mcp} for the Model Context Protocol server, \texttt{python-dotenv} for environment loading, \texttt{rank-bm25} for lexical schema retrieval, and \texttt{pytest} for tests. \\
+    CERN runtime & CERN LXPLUS/Linux environment with an ATLAS TDAQ release sourced from CVMFS. The current deployment guide uses \texttt{tdaq-14-00-00}. \\
+    OKS access & Python \texttt{config} bindings are preferred for current configurations; the native \texttt{oks\_dump} command is used as a fallback and for historical configuration paths. \\
+    Development and deployment tools & Git, Python virtual environment, SSH with CERN authentication, and \texttt{tmux} for a detached development server process. \\
+    Configuration & Environment variables select the LLM API endpoint/model, OKS data file, schema directory, MCP transport, host, and port. API credentials are stored outside version control. \\
+    \bottomrule
+  \end{tabularx}
+\end{table}
+
+The system can use bundled schema material during local development when CVMFS is unavailable. However, experiments that claim native TDAQ execution must be performed in a compatible TDAQ environment with the intended data file and release selected.
+
+\section{System Implementation}
+
+\subsection{MCP and Service Boundary}
+
+The entry point, \texttt{mcp\_server.py}, uses the FastMCP server implementation. It supports standard input/output transport for a local agent and Streamable HTTP for the CERN-hosted path. The server delegates each tool call to \texttt{OksQueryService} in \texttt{service.py}. This service is stateless and owns the server-side data-file and schema selection; it validates the question and optional version selector before a request reaches the translation pipeline. It also serializes pipeline access because version selection can temporarily affect TDAQ environment variables.
+
+The service normalizes results into a common response structure. In addition to query results, this structure includes the target class, generated query, number of translation attempts, selected version, schema fingerprint, context label, and warnings. A successful query returning no objects is explicitly reported as a valid empty result rather than a service failure. Result records are capped to protect the response boundary.
+
+\subsection{Translation, Validation, and Execution Flow}
+
+For every accepted request, the \texttt{OksPipeline} integrates the following stages:
+\begin{enumerate}[label=\arabic*., leftmargin=1cm]
+  \item \textbf{Intent and version handling:} The pipeline classifies the question, extracts any run or partition information, and resolves the requested configuration version when available. Questions outside the supported OKS-query scope end early with a structured message.
+  \item \textbf{Context creation and preprocessing:} \texttt{OksContextBuilder} constructs a version-bound context. \texttt{QueryPreprocessor} analyzes the natural-language input before retrieval.
+  \item \textbf{Schema retrieval:} \texttt{SchemaSearchIndex}, \texttt{OksSchemaProvider}, and \texttt{SchemaRetriever} select the relevant classes and schema elements. The index is partitioned by schema fingerprint so that context from one schema version is not reused for another.
+  \item \textbf{Prompt construction and translation:} \texttt{PromptBuilder} combines the retrieved schema slice, few-shot examples, and translation rules. \texttt{Translator} asks the configured LLM to produce a structured query representation.
+  \item \textbf{Deterministic safety checks:} The representation is normalized by \texttt{normalize\_ir}, checked by \texttt{ASTValidator} against the exact selected schema, and compiled by \texttt{OksCompiler} into an OksQuery S-expression. If validation fails, the diagnostic is passed to the bounded repair loop before compilation is attempted again.
+  \item \textbf{Read-only execution:} \texttt{Executor} runs the compiled query. For current configurations, it first attempts the Python \texttt{config.Configuration} interface; if required, it falls back to \texttt{oks\_dump}. The executor returns only matching objects and selected attributes, not the complete configuration.
+  \item \textbf{Response assembly:} The service returns a structured MCP response. The calling agent may explain the result to the user, but the server itself does not store conversation state.
+\end{enumerate}
+
+The separation between LLM-assisted translation and deterministic processing is deliberate. The LLM proposes a query representation, while normalization, schema validation, compilation, execution, input limits, and result filtering are implemented in deterministic Python and native OKS components. Consequently, a schema-valid query is required before execution, although semantic correctness must still be assessed by result-set evaluation in Chapter~5.
 
 \section{Interface and Visualization}
-[Content to be added...]
 
-\section{Deployment and Execution(system setup, execution steps, local/server/cloud setup)}
-[Content to be added...]
+The implemented user interface is tool-oriented rather than a graphical dashboard. An MCP-compatible client displays the three available operations: \texttt{oks\_query}, \texttt{oks\_translate}, and \texttt{oks\_environment\_probe}. The main query tool accepts a complete natural-language question and optionally a version selector. Its response exposes the generated OksQuery, target class, exact result count, filtered object records, version/context metadata, and any warnings. This format makes the translation and execution path inspectable by both users and developers.
 
-\section{Challenges and Solutions(technical challenges faced, solutions found)}
-[Content to be added...]
+The runtime evidence in Figures~\ref{fig:mcp-server-loopback}--\ref{fig:mcp-tools}
+shows the private connection and client-side interface. Sensitive usernames,
+hostnames, paths, and the second-factor code were removed from the derivative
+figures before inclusion.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.92\textwidth]{figures/runtime/lxplus_server_listener.png}
+  \caption{MCP service running on the LXPLUS loopback endpoint at port 8001.}
+  \label{fig:mcp-server-loopback}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.92\textwidth]{figures/runtime/ssh_tunnel_command.png}
+  \caption{Redacted workstation command establishing the SSH local port forward.}
+  \label{fig:ssh-tunnel}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.70\textwidth]{screenshots/mcp_tools.png}
+  \caption{MCP client showing the connected \texttt{oksquery} server and its three tools.}
+  \label{fig:mcp-tools}
+\end{figure}
+
+\section{Deployment and Execution}
+
+The documented deployment is a private development arrangement rather than a publicly exposed production service. The MCP process runs on CERN LXPLUS with the selected TDAQ environment sourced and the server bound to \texttt{127.0.0.1:8001}. Binding to loopback prevents the MCP server from accepting direct connections from the public network.
+
+The deployment sequence is as follows:
+\begin{enumerate}[label=\arabic*., leftmargin=1cm]
+  \item On LXPLUS, clone the project, create and activate the project virtual environment, install the package requirements, source the selected TDAQ setup script, and configure the LLM credentials through a local \texttt{.env} file.
+  \item Select an approved \texttt{OKS\_DATA\_FILE}, configure \texttt{MCP\_TRANSPORT} as \texttt{streamable-http}, set \texttt{MCP\_HOST} to \texttt{127.0.0.1}, and set \texttt{MCP\_PORT} to \texttt{8001}.
+  \item Start the server using \texttt{bash deploy/start\_mcp\_tmux.sh}. The \texttt{tmux} session keeps the process available during development and allows its logs to be inspected.
+  \item On the workstation, create an authenticated SSH local port forward from local port 18001 to the remote loopback endpoint: \texttt{ssh -N -L 18001:127.0.0.1:8001 <cern\_user>@<lxplus\_host>}.
+  \item Configure the MCP client to use the forwarded Streamable HTTP endpoint \texttt{http://127.0.0.1:18001/mcp}, then verify the three MCP tools and submit a complete test question.
+\end{enumerate}
+
+The SSH tunnel uses the user's existing CERN SSH authentication and keeps the service private to the workstation that opened the forward. If the MCP client runs directly on LXPLUS, the server can instead be configured through standard input/output and the SSH tunnel is unnecessary. A temporary public tunnel is not appropriate for the current implementation because the MCP HTTP boundary does not yet provide authentication or authorization.
+
+The present \texttt{tmux}-based process is suitable for development and demonstration but not a production supervisor. Shared or public deployment requires an approved service owner, restart policy, authentication and authorization, TLS/reverse-proxy or managed-tunnel policy, rate limiting, and privacy-conscious logging.
+
+\section{Challenges and Solutions}
+
+\subsection{Large and Evolving Configuration Context}
+
+The OKS schema and configuration contain substantially more information than can be sent safely and efficiently in a single LLM prompt. Supplying the full configuration would increase context cost and make relevant information difficult to locate. The implemented solution is schema-RAG: the pipeline retrieves only the schema slice relevant to the question and associates that slice with a schema fingerprint. This preserves the version boundary and reduces the context presented to the LLM.
+
+\subsection{Proprietary Query Syntax and LLM Hallucination}
+
+OksQuery uses a strict S-expression syntax and schema-dependent class, attribute, relationship, and comparator names. An LLM can produce plausible but invalid expressions. The system addresses this with few-shot examples, a structured intermediate representation, deterministic normalization, schema-bound validation, compilation, and a bounded repair loop driven by validation diagnostics. This prevents a syntactically or schema-invalid query from reaching the executor. It does not by itself prove that a valid query captures the intended meaning; result-set comparison is therefore required during evaluation.
+
+\subsection{Safe Access to Configuration Data}
+
+The underlying TDAQ environment includes powerful APIs, but this project must not expose modification operations or arbitrary server access through an LLM tool. The MCP service restricts requests to complete natural-language questions and approved version selectors, keeps data-file selection server-side, limits request and response sizes, and exposes only read-only tools. The executor returns matching objects rather than the complete configuration.
+
+\subsection{Version and Runtime Compatibility}
+
+A query is meaningful only relative to the schema and configuration version from which it was derived. Mixing a schema from one release with data from another can yield failures or misleading answers. The implementation builds a version-bound context per query, fingerprints the schema used for retrieval and validation, and records version metadata in the response. Historical access remains dependent on availability of the required TDAQ release, repository configuration, data-file path, and permitted version selector.
+
+\subsection{Private Connectivity Between Workstation and CERN}
+
+An external coding agent cannot directly reach a loopback-only service on LXPLUS. The system uses SSH local port forwarding to expose the remote loopback endpoint only as a local workstation endpoint. This retains CERN SSH authentication and avoids a public listener. The trade-off is that each user must keep an individual SSH tunnel active; a future shared deployment requires a separately approved authenticated service boundary.
+
+\subsection{Distinguishing Empty Results from Failures}
+
+A query can be valid and execute correctly while matching no objects in the selected configuration. Treating this condition as a failure would cause unnecessary retries and make debugging difficult. The service explicitly marks a zero-count successful result as a valid empty result and returns an explanatory warning, allowing the calling agent to decide whether the user wishes to broaden the request.
 
 
 % ============================================================
@@ -861,13 +1087,91 @@ tunnel to the loopback-bound MCP endpoint.
 \chapter{RESULTS AND DISCUSSION}
 
 \section{Results}
-[Content to be added...]
+\subsection{Verification of the Implementation}
+
+The implementation was verified at several levels. The repository test record
+after the report branch integration contains 199 passing tests and 9 skipped
+tests. The Python package also passed compilation and whitespace checks. A
+real MCP client initialized the server, discovered the three declared tools,
+and completed tool calls. In the CERN runtime, the selected TDAQ release was
+\texttt{tdaq-14-00-00}; the Streamable HTTP server listened on
+\texttt{127.0.0.1:8001}, and the workstation reached it through the forwarded
+endpoint \texttt{http://127.0.0.1:18001/mcp}.
+
+The end-to-end path was also exercised against an OKS data fixture. The
+verified runtime notes record a successful query returning two \texttt{Computer}
+objects through the native execution path. This confirms that the MCP
+transport, translation pipeline, validation boundary, and OKS executor can be
+connected in the intended environment.
+
+\subsection{Observed Query Demonstrations}
+
+Figure~\ref{fig:valid-empty-result} shows a valid query for an object that is
+not present in the selected data version. The generated expression is
+\texttt{(all (object-id "rc\_trigger\_1" =))}; the service reports result count
+zero and explicitly labels the outcome as a valid empty result. This is
+different from a transport or execution failure and prevents the agent from
+performing speculative retries.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.94\textwidth]{figures/runtime/query_valid_empty.png}
+  \caption{Valid empty result returned for an object absent from the selected configuration.}
+  \label{fig:valid-empty-result}
+\end{figure}
+
+Figure~\ref{fig:successful-query} shows a natural-language request for
+\texttt{BaseApplication} objects with \texttt{InitTimeout > 30}. The client
+displays the generated query \texttt{(all ("InitTimeout" "30" >))}, an exact
+result count of 16, and the returned object identifiers. The screenshot also
+reports that the returned objects have \texttt{InitTimeout = 60}. This is
+qualitative evidence that a schema-grounded query can be translated, executed,
+and returned through the MCP client with inspectable intermediate output.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.88\textwidth]{figures/runtime/query_success_16.png}
+  \caption{Successful BaseApplication query showing generated OksQuery, count, and identifiers.}
+  \label{fig:successful-query}
+\end{figure}
 
 \section{Discussion}
-[Content to be added...]
+The demonstrations establish the core integration objective: an external agent
+can submit natural language, the server can expose the generated OksQuery and
+validation outcome, and only filtered results return from the CERN-hosted
+configuration. The explicit empty-result status is particularly useful because
+it preserves the distinction between an unsuccessful request and a successful
+query with no matching object.
 
-\section{Comparative analysis(if applicable)}
-[Content to be added...]
+These results should not be interpreted as a measured translation-accuracy or
+latency benchmark. The screenshots cover representative cases rather than a
+statistically sampled evaluation set, and the report does not claim that every
+natural-language formulation is translated correctly. Semantic correctness
+still requires a labelled dataset, expected result sets, and repeated
+measurements across query difficulty and configuration versions.
+
+\section{Comparative Analysis}
+Table~\ref{tab:design-comparison} compares the proposed pipeline with an
+unconstrained direct-generation approach. This is a design comparison, not a
+claim of experimentally measured accuracy.
+
+\begin{table}[H]
+  \centering
+  \small
+  \caption{Qualitative comparison of direct generation and the implemented pipeline.}
+  \label{tab:design-comparison}
+  \begin{tabularx}{\textwidth}{@{}p{3.5cm}XX@{}}
+    \toprule
+    \textbf{Aspect} & \textbf{Direct raw generation} & \textbf{Implemented pipeline} \\
+    \midrule
+    Schema context & Depends on model memory or manually supplied context. & Retrieves a compact, version-scoped schema slice. \\
+    Query representation & Produces executable text directly. & Produces structured IR before compilation. \\
+    Safety boundary & Syntax and semantics are mostly implicit. & Normalization and deterministic schema validation precede execution. \\
+    Version handling & Easy to mix schema and data from different releases. & Context, retrieval, validation, and execution share version metadata. \\
+    Failure reporting & Invalid output may fail only at the backend. & Bounded repair and structured diagnostics are returned. \\
+    \bottomrule
+  \end{tabularx}
+\end{table}
 
 
 % ============================================================
@@ -876,10 +1180,40 @@ tunnel to the loopback-bound MCP endpoint.
 \chapter{CONCLUSIONS AND RECOMMENDATIONS}
 
 \section{Conclusions}
-[Content to be added...]
+This project implemented a read-only Natural Language to OksQuery translation
+module for the ATLAS OKS configuration environment. The final system combines
+schema-RAG retrieval, few-shot prompting, structured query generation,
+deterministic validation, bounded repair, and controlled execution behind an
+MCP service boundary. The service is stateless, limits request and result size,
+and keeps the full configuration on the CERN side of the deployment.
+
+The verified demonstrations show that the intended request path works through
+the private deployment: an MCP client discovers the service, submits a natural
+language question through an SSH-forwarded endpoint, receives an inspectable
+OksQuery, and obtains filtered OKS results. The system also distinguishes valid
+empty results from failures. These outcomes support the feasibility of the
+architecture, while the absence of a large labelled benchmark limits the
+strength of any claim about general translation accuracy.
 
 \section{Recommendations/Future Enhancements}
-[Content to be added...]
+Future work should proceed in the following order:
+\begin{enumerate}[label=(\roman*)]
+  \item Build and label a stratified evaluation dataset covering simple
+  attribute predicates, compound predicates, object identifiers, relationship
+  traversal, inherited attributes, and unsupported requests.
+  \item Measure exact execution accuracy, result-set equivalence, first-pass
+  validation rate, repair success rate, rejection precision, and end-to-end
+  latency across multiple configuration versions.
+  \item Add ablation experiments for direct prompting, few-shot prompting,
+  schema retrieval, structured IR, and validate/repair so that each component's
+  contribution is measured rather than inferred.
+  \item Add stronger service authentication and authorization before any shared
+  or public deployment. Replace the development \texttt{tmux} process with an
+  approved supervisor and define logging, rate-limit, and data-retention policy.
+  \item Improve result extraction and schema retrieval for relationship-heavy
+  queries, and add regression tests whenever the TDAQ release or OKS schema
+  changes.
+\end{enumerate}
 
 
 % ============================================================
@@ -939,6 +1273,24 @@ X.~Zhu, Y.~Xie, Y.~Liu, Y.~Li, and W.~Hu, ``Knowledge Graph-Guided Retrieval Aug
 % ============================================================
 \chapter*{APPENDICES}
 \addcontentsline{toc}{chapter}{APPENDICES}
-[Content to be added...]
+\section*{Appendix A: Demonstrated Runtime Configuration}
+\addcontentsline{toc}{section}{Appendix A: Demonstrated Runtime Configuration}
+The runtime demonstration used a CERN LXPLUS host with TDAQ release
+\texttt{tdaq-14-00-00}. The MCP server was configured for Streamable HTTP on
+\texttt{127.0.0.1:8001}; the workstation forward used local port 18001 and
+the client endpoint \texttt{http://127.0.0.1:18001/mcp}. The service exposed
+\texttt{oks\_query}, \texttt{oks\_translate}, and
+\texttt{oks\_environment\_probe}. Credentials and host-specific identifiers
+are intentionally omitted from this report.
+
+\section*{Appendix B: Evidence and Reproducibility Notes}
+\addcontentsline{toc}{section}{Appendix B: Evidence and Reproducibility Notes}
+The report figures are derived from runtime screenshots and were cropped or
+redacted before inclusion. The screenshots demonstrate service startup, private
+transport, tool discovery, a valid empty result, and a 16-object query. They
+do not by themselves establish general model accuracy, production availability,
+or performance across all TDAQ partitions. Reproduction requires access to a
+compatible CERN environment, the selected TDAQ release, an approved OKS data
+file, and an authorized LLM endpoint.
 
 \end{document}
