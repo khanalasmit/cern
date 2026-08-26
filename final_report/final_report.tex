@@ -23,6 +23,7 @@
 \usepackage{enumitem}
 \usepackage{amsmath}
 \usepackage{fancyhdr}
+\usepackage{listings}         % Line-breaking verbatim listings for appendix logs
 \usepackage{etoolbox}
 \usepackage{pgfgantt}
 \usepackage{amssymb}
@@ -30,6 +31,15 @@
 \usepackage{longtable}
 \usepackage{adjustbox}         % FIX: for table overflow
 \usepackage{microtype}
+
+\lstset{
+  basicstyle=\ttfamily\scriptsize,
+  breaklines=true,
+  breakatwhitespace=false,
+  frame=single,
+  columns=fullflexible,
+  keepspaces=true
+}
 
 \renewcommand{\cfttoctitlefont}{\hfill\fontsize{14}{16}\selectfont\bfseries}
 \renewcommand{\cftaftertoctitle}{\hfill}
@@ -254,27 +264,47 @@ retrieval-augmented generation, Model Context Protocol, schema validation.
 % ============================================================
 %  ACKNOWLEDGEMENTS
 % ============================================================
+% ============================================================
+%  ACKNOWLEDGEMENTS
+% ============================================================
 \chapter*{ACKNOWLEDGEMENTS}
 \addcontentsline{toc}{chapter}{ACKNOWLEDGEMENTS}
 The Department of Electronics and Computer Engineering, Pulchowk Campus,
-Institute of Engineering, is gratefully acknowledged for providing the
-opportunity, resources, and academic environment required to carry out this
-project. Sincere gratitude is extended to the project supervisor, Dr. Basanta
-Joshi, Assistant Professor, Department of Electronics and Computer
-Engineering, for his continuous guidance, valuable suggestions, and
-constructive feedback throughout the development of this project. His
-technical insights and encouragement helped refine the ideas presented and
-improve the overall quality of this work.
+Institute of Engineering, is gratefully acknowledged for providing us with the
+opportunity, resources, and academic environment necessary to carry out this
+project.
 
-The friends and faculty members of the department are also thanked for their
-valuable support and guidance during the course of this project. Their
-knowledge and suggestions contributed significantly to the learning
-experience and to the successful completion of this work.
+We would like to express our sincere gratitude to our project supervisor,
+\textbf{Dr. Basanta Joshi, Assistant Professor, Department of Electronics and
+Computer Engineering}, for his continuous guidance, valuable suggestions,
+constructive feedback, and encouragement throughout the development of this
+project. His technical insights and supervision were instrumental in refining
+our ideas and improving the overall quality of this work.
 
-Finally, gratitude is extended to everyone who directly or indirectly
-supported this work. Their encouragement and assistance have been valuable
-throughout this journey.
+We would also like to express our sincere appreciation to
+\textbf{Dr. Suyog Shrestha, Assistant Professor at Washington College and a
+physicist on the ATLAS Experiment at CERN's Large Hadron Collider}, for his
+valuable technical guidance, insightful suggestions, and continued support
+throughout this project. His expertise and assistance were particularly
+valuable in helping us understand the technical aspects of the project and in
+guiding its development.
 
+We gratefully acknowledge \textbf{CERN and the concerned officials} for
+providing us with access to the necessary computing resources, accounts, and
+infrastructure that supported the development, testing, and evaluation of this
+project.
+
+We are also thankful to the faculty members and friends of the Department of
+Electronics and Computer Engineering for their valuable suggestions,
+assistance, and encouragement throughout the project. Their support
+contributed significantly to our learning experience and to the successful
+completion of this work.
+
+Finally, we would like to express our gratitude to everyone who directly or
+indirectly supported us throughout this project. Their encouragement and
+assistance have been invaluable in bringing this work to completion.
+
+\vspace{0.6cm}
 \begin{flushright}
 Asmit Khanal (PUL08BCT017)\\
 Chandan Kumar Shah (PUL080BCT023)\\
@@ -393,7 +423,7 @@ This project addresses these fundamental limitations by developing a retrieval-a
 
 \section{Scope}
 
-The system is scoped to translating natural-language questions about the ATLAS DAQ configuration into validated OksQuery statements for read-only retrieval, processing one query at a time within a single, explicitly resolved configuration version (TDAQ release, Git revision, or run number), with schema retrieval performed dynamically per request using a version-scoped lexical pipeline (exact match, alias lookup, BM25) keyed by schema fingerprint, and the retrieval index regenerated from the OKS schema whenever the configuration changes. The module generates an intermediate AST representation rather than raw OksQuery strings, validated deterministically against the version-bound OKS schema before compilation, and is deployed as an MCP server hosted within CERN compute infrastructure and exposed to external LLM agents through SSH port tunneling, with conversational persistence and session state managed by the consuming LLM agent rather than the translation module. The system does not write, modify, or delete configuration data, does not provide operational recommendations or interpret query results beyond factual reporting, does not access live running partition memory or process telemetry data, does not handle user authentication (security relies on the CERN SSH tunnel and institutional network perimeter), and does not support non-English natural-language input or cross-version comparison queries.
+The system is scoped to translating natural-language questions about the ATLAS DAQ configuration into validated OksQuery statements for read-only retrieval, processing one query at a time within a single, explicitly resolved configuration version (TDAQ release, Git revision, or run number), with schema retrieval performed dynamically per request using a version-scoped lexical pipeline (exact match, alias lookup, BM25) keyed by schema fingerprint, and the retrieval index regenerated from the OKS schema whenever the configuration changes. The module generates an intermediate AST representation then  raw OksQuery strings are generated, validated deterministically against the version-bound OKS schema before compilation, and is deployed as an MCP server hosted within CERN compute infrastructure and exposed to external LLM agents through SSH port tunneling, with conversational persistence and session state managed by the consuming LLM agent rather than the translation module. The system does not write, modify, or delete configuration data, does not provide operational recommendations or interpret query results beyond factual reporting, does not access live running partition memory or process telemetry data, does not handle user authentication (security relies on the CERN SSH tunnel and institutional network perimeter), and does not support non-English natural-language input or cross-version comparison queries.
 
 \section{Limitations}
 The present system is a read-only research prototype. Its limitations are as
@@ -630,6 +660,24 @@ complete configuration or store the conversation.
   \includegraphics[width=\textwidth,height=0.82\textheight,keepaspectratio]{system_architecture.png}
   \caption{Deployment and processing architecture of the OKS MCP server.}
   \label{fig:system-architecture}
+\end{figure}
+
+\begin{figure}[p]
+  \centering
+  \includegraphics[width=\textwidth,height=0.82\textheight,keepaspectratio]{core_translation_architecture.png}
+  \caption{Core translation architecture: offline startup prepares the
+  version-scoped schema context and examples, while each online request is
+  translated, validated, executed, and reduced to a filtered result.}
+  \label{fig:core-translation-architecture}
+\end{figure}
+
+\begin{figure}[p]
+  \centering
+  \includegraphics[width=\textwidth,height=0.82\textheight,keepaspectratio]{deployment_architecture.png}
+  \caption{Deployment architecture: the client reaches the loopback-bound CERN
+  MCP service through an authenticated SSH tunnel, and only filtered read-only
+  results cross the deployment boundary.}
+  \label{fig:deployment-architecture}
 \end{figure}
 \clearpage
 
@@ -1309,27 +1357,153 @@ or performance across all TDAQ partitions. Reproduction requires access to a
 compatible CERN environment, the selected TDAQ release, an approved OKS data
 file, and an authorized LLM endpoint.
 
+\clearpage
 \section*{Appendix C: CLI Runtime Log Evidence}
 \addcontentsline{toc}{section}{Appendix C: CLI Runtime Log Evidence}
-The following figures show direct command-line execution of the OKS query
-translator. They document the CLI runtime path, including environment probing,
-schema discovery, query translation, validation, and execution. These logs are
-separate from the MCP-server screenshots presented in Chapter~5.
+The following evidence reproduces the complete command-line startup,
+environment-probe, and query-execution logs verbatim. The log lines are grouped
+by stage for readability while retaining their original content. They document
+environment discovery, schema retrieval, query translation, validation,
+execution, and interpretation. This evidence is separate from the MCP-server
+screenshots presented in Chapter~5.
 
-\begin{figure}[H]
-  \centering
-  \includegraphics[width=\textwidth,keepaspectratio]{figures/runtime/log1.png}
-  \caption{CLI startup and environment-probe log for the OKS query translator.}
-  \label{fig:appendix-cli-startup-log}
-\end{figure}
+\subsection*{C.1 CLI Invocation and Startup Banner}
+\begin{lstlisting}
+(venv) [khanal@lxplus9113 cern]$ python -m oksquery_translator.cli
+==================================================
+  OKS Query Translator - ATLAS DAQ Configuration
+==================================================
+  LLM model: mimo-v2.5-pro
+  LLM URL:   https://api.xiaomimimo.com/v1
+\end{lstlisting}
 
-\begin{figure}[H]
-  \centering
-  \includegraphics[width=\textwidth,keepaspectratio]{figures/runtime/log2.png}
-  \caption{CLI translation and execution log showing a valid empty result for the selected configuration.}
-  \label{fig:appendix-cli-query-log}
-\end{figure}
+\subsection*{C.2 Available CLI Commands}
+\begin{lstlisting}
+Commands:
+  Type a question to translate and execute.
+  'translate <question>' - translate only (no execution).
+  'version <v>'          - set temporal version.
+  'debug on' / 'debug off' - show/hide detailed pipeline and schema traces.
+  'probe'                - re-run environment probe.
+  'exit' / 'quit'        - exit.
+--------------------------------------------------
+\end{lstlisting}
 
+\subsection*{C.3 Pipeline Initialization}
+\begin{lstlisting}
+Initializing pipeline...
+\end{lstlisting}
+
+\subsection*{C.4 Environment Probe}
+\begin{lstlisting}
+--- Environment Probe (breif.md Step 1) ---
+[INFO oksquery_translator.schema_retrieval] Schema probe: data_file='daq/segments/setup.data.xml' schema_dir='/cvmfs/atlas.cern.ch/re
+True oks_dump='/cvmfs/atlas.cern.ch/repo/sw/tdaq/tdaq/tdaq-14-00-00/installed/x86_64-el9-gcc15-opt/bin/oks_dump'
+[INFO oksquery_translator.schema_retrieval] Schema class list cache miss; discovering classes
+[INFO oksquery_translator.schema_retrieval] Class discovery succeeded via config module: 198 classes
+[INFO oksquery_translator.schema_retrieval] Schema probe complete: 198 classes discovered
+  oks_dump:   /cvmfs/atlas.cern.ch/repo/sw/tdaq/tdaq/tdaq-14-00-00/installed/x86_64-el9-gcc15-opt/bin/oks_dump
+  oks_dump -f: OK
+  config mod:  available
+  schema dir:  /cvmfs/atlas.cern.ch/repo/sw/tdaq/tdaq/tdaq-14-00-00/installed/share/data/daq/schema
+  data file:   daq/segments/setup.data.xml
+  classes:     198 discovered from live schema
+  first 20:    Application, BaseApplication, Binary, BinaryFile, Cable, CircBuffer, CircDataOut, Component, Computer, ComputerBase, C
+, CustomLifetimeApplication, CustomLifetimeTemplateApplication, DBConnection, DFParameters, DataDrivenTriggerIn
+  few-shot:    183 examples loaded
+  Ready!
+\end{lstlisting}
+
+\subsection*{C.5 User Request}
+\begin{lstlisting}
+> Which applications are currently running on the computer pc01?
+Thinking...
+\end{lstlisting}
+
+\subsection*{C.6 Intent and Context Resolution}
+\begin{lstlisting}
+[INFO oksquery_translator.pipeline] === [PIPELINE START] Question: 'Which applications are currently running on the computer pc01?' ===
+[INFO oksquery_translator.pipeline] [LAYER 0 - Intent & Run Resolution] (4.459s) - Intent=OKS_CURRENT_QUERY, Run=None, Partition=all_hosts
+[INFO oksquery_translator.schema_retrieval] Schema class list cache miss; discovering classes
+[INFO oksquery_translator.schema_retrieval] Class discovery succeeded via config module: 198 classes
+[INFO oksquery_translator.context.builder] OksContext resolved: identifier='current', fingerprint='c12b3718a2450f75', classes=198, version_tag=None
+[INFO oksquery_translator.pipeline] [LAYER 1 - OksContext] (0.059s) - identifier='current', fingerprint='c12b3718a2450f75'
+\end{lstlisting}
+
+\subsection*{C.7 Query Preprocessing and Schema Retrieval}
+\begin{lstlisting}
+[INFO oksquery_translator.preprocessing] QueryPreprocessor: tokens=['applications', 'currently', 'running', 'computer', 'pc01'], class_hints=['Application', 'BaseApplication', 'RunControlApplication', 'Computer'], entities=['pc01'], retrieval_query='Application BaseApplication RunControlApplication Computer applications currently running pc01'
+[INFO oksquery_translator.pipeline] [LAYER 2 - Query Preprocessor] (0.000s) - retrieval_query='Application BaseApplication RunControlApplication Computer applications currently running pc01'
+[INFO oksquery_translator.schema_retrieval] Schema slice: question='Application BaseApplication RunControlApplication Computer applications currently running pc01' candidates=['BaseApplication', 'RunControlApplication', 'Application']
+\end{lstlisting}
+
+\clearpage
+\subsection*{C.8 Translation, Normalization, and Validation}
+\begin{lstlisting}
+[INFO oksquery_translator.translator] Translator: Calling LLM attempt 1/4 (model=mimo-v2.5-pro)...
+[INFO oksquery_translator.translator] Translator: LLM response received in 20.14s:
+{
+  "target_class": "Application",
+  "scope": "all",
+  "expression": {
+    "type": "relationship",
+    "name": "RunsOn",
+    "quantifier": "some",
+    "expression": {
+      "type": "object_id",
+      "operator": "=",
+      "object_id": "pc01"
+    }
+  },
+  "explanation": "Find all Application objects (including subclasses like RunControlApplication) that have a RunsOn relationship to the Computer with id pc01."
+}
+[INFO oksquery_translator.translator] Translator: AST Normalization successful: target_class='Application'
+[INFO oksquery_translator.schema_retrieval] Schema class list cache miss; discovering classes
+[INFO oksquery_translator.translator] Translator: Semantic Validation passed successfully.
+[INFO oksquery_translator.translator] Translator: Compilation complete (attempt 1) - target_class='Application', oks_query='(all ("RunsOn" some (object-id "pc01" =)))'
+[INFO oksquery_translator.pipeline] [LAYER 3 - Translation Complete] (20.399s, 1 attempt(s)) - target_class='Application', oks_query='(all ("RunsOn" some (object-id "pc01" =)))'
+\end{lstlisting}
+
+\subsection*{C.9 Execution and Interpretation}
+\begin{lstlisting}
+[INFO oksquery_translator.executor] Executor: Current configuration access:
+  data_file: daq/segments/setup.data.xml
+  TDAQ_DB_USER_REPOSITORY: unset (using TDAQ_DB_PATH/release)
+  mode: static/local current configuration
+[INFO oksquery_translator.executor] Executor: Executing via Python C++ config backend -> class='Application', query='(all ("RunsOn" some (object-id "pc01" =)))', data_file='daq/segments/setup.data.xml', version=None
+[INFO oksquery_translator.executor] Executor: Python C++ config backend returned 0 object(s) in 0.051s
+[INFO oksquery_translator.pipeline] [LAYER 4 - Execution Complete] (0.054s) - Returned 0 object(s)
+[INFO oksquery_translator.pipeline] [LAYER 5 - Interpretation Started] Generating natural-language summary for 0 object(s)...
+[INFO oksquery_translator.interpreter] Interpreter: Generating natural-language summary (model=mimo-v2.5-pro)...
+[INFO oksquery_translator.interpreter] Interpreter: Summary generated successfully in 13.63s.
+[INFO oksquery_translator.pipeline] [LAYER 5 - Interpretation Complete] (13.630s)
+[INFO oksquery_translator.pipeline] === [PIPELINE COMPLETE] Total time elapsed: 38.603s (Intent=4.46s, Context=0.06s, Translation=20.40s, Execution=0.05s, Interpretation=13.63s) ===
+\end{lstlisting}
+
+\clearpage
+\subsection*{C.10 Final CLI Output}
+\begin{lstlisting}
+==================================================
+Intent:       OKS_CURRENT_QUERY
+Target Class: Application
+OKS Query:    (all ("RunsOn" some (object-id "pc01" =)))
+Attempts:     1
+Results:      0 object(s) matched
+Version:      current
+--------------------------------------------------
+
+Configuration: Current / Default (HEAD)
+
+No applications are currently configured to run on the computer **pc01**. The query returned zero matching Application objects.
+
+This could mean:
+- No applications have been assigned to run on pc01 in the current configuration.
+- The computer name "pc01" may be incorrect or may not exist in the database.
+- Applications that were previously running on pc01 may have been moved to a different host.
+
+You may want to verify the exact computer name or check whether any applications reference pc01 at all.
+==================================================
+\end{lstlisting}
 \clearpage
 \section*{Appendix D: OksQuery Grammar and Usage Reference}
 \addcontentsline{toc}{section}{Appendix D: OksQuery Grammar and Usage Reference}

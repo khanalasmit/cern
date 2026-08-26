@@ -24,52 +24,52 @@
 \contentsline {chapter}{\numberline {3}METHODOLOGY}{9}{chapter.3}%
 \contentsline {section}{\numberline {3.1}Project approach}{9}{section.3.1}%
 \contentsline {section}{\numberline {3.2}System Architecture}{10}{section.3.2}%
-\contentsline {section}{\numberline {3.3}System Design and Modules}{12}{section.3.3}%
-\contentsline {subsection}{\numberline {3.3.1}Use-Case Diagram}{12}{subsection.3.3.1}%
-\contentsline {subsubsection}{Use-Case Descriptions}{13}{subsubsection*.8}%
-\contentsline {paragraph}{UC-01: Query OKS Data}{13}{paragraph*.9}%
-\contentsline {paragraph}{UC-02: Translate Without Execution}{13}{paragraph*.10}%
-\contentsline {paragraph}{UC-03: Probe OKS Environment}{13}{paragraph*.11}%
-\contentsline {paragraph}{Included use cases}{13}{paragraph*.12}%
-\contentsline {subsection}{\numberline {3.3.2}Context Diagram (DFD Level 0)}{14}{subsection.3.3.2}%
-\contentsline {subsection}{\numberline {3.3.3}Sequence Diagram}{15}{subsection.3.3.3}%
-\contentsline {section}{\numberline {3.4}Technology Stack}{16}{section.3.4}%
-\contentsline {section}{\numberline {3.5}Development Methodology}{17}{section.3.5}%
-\contentsline {section}{\numberline {3.6}Data Handling}{17}{section.3.6}%
-\contentsline {subsection}{\numberline {3.6.1}Input and Storage}{17}{subsection.3.6.1}%
-\contentsline {subsection}{\numberline {3.6.2}Processing and Context Management}{17}{subsection.3.6.2}%
-\contentsline {subsection}{\numberline {3.6.3}Level-1 Data Flow}{17}{subsection.3.6.3}%
-\contentsline {section}{\numberline {3.7}Testing and Validation}{18}{section.3.7}%
-\contentsline {section}{\numberline {3.8}Deployment Setup}{19}{section.3.8}%
-\contentsline {chapter}{\numberline {4}IMPLEMENTATION DETAILS}{20}{chapter.4}%
-\contentsline {section}{\numberline {4.1}Requirements Specification}{20}{section.4.1}%
-\contentsline {subsection}{\numberline {4.1.1}Functional Requirements}{20}{subsection.4.1.1}%
-\contentsline {subsection}{\numberline {4.1.2}Non-functional Requirements and Constraints}{21}{subsection.4.1.2}%
-\contentsline {section}{\numberline {4.2}System Overview}{21}{section.4.2}%
-\contentsline {section}{\numberline {4.3}Development Environment}{23}{section.4.3}%
-\contentsline {section}{\numberline {4.4}System Implementation}{24}{section.4.4}%
-\contentsline {subsection}{\numberline {4.4.1}MCP and Service Boundary}{24}{subsection.4.4.1}%
-\contentsline {subsection}{\numberline {4.4.2}Translation, Validation, and Execution Flow}{25}{subsection.4.4.2}%
-\contentsline {section}{\numberline {4.5}Interface and Visualization}{26}{section.4.5}%
-\contentsline {section}{\numberline {4.6}Deployment and Execution}{27}{section.4.6}%
-\contentsline {section}{\numberline {4.7}Challenges and Solutions}{28}{section.4.7}%
-\contentsline {subsection}{\numberline {4.7.1}Large and Evolving Configuration Context}{28}{subsection.4.7.1}%
-\contentsline {subsection}{\numberline {4.7.2}Proprietary Query Syntax and LLM Hallucination}{28}{subsection.4.7.2}%
-\contentsline {subsection}{\numberline {4.7.3}Safe Access to Configuration Data}{28}{subsection.4.7.3}%
-\contentsline {subsection}{\numberline {4.7.4}Version and Runtime Compatibility}{28}{subsection.4.7.4}%
-\contentsline {subsection}{\numberline {4.7.5}Private Connectivity Between Workstation and CERN}{29}{subsection.4.7.5}%
-\contentsline {subsection}{\numberline {4.7.6}Distinguishing Empty Results from Failures}{29}{subsection.4.7.6}%
-\contentsline {chapter}{\numberline {5}RESULTS AND DISCUSSION}{30}{chapter.5}%
-\contentsline {section}{\numberline {5.1}Results}{30}{section.5.1}%
-\contentsline {subsection}{\numberline {5.1.1}Verification of the Implementation}{30}{subsection.5.1.1}%
-\contentsline {subsection}{\numberline {5.1.2}Observed Query Demonstrations}{30}{subsection.5.1.2}%
-\contentsline {section}{\numberline {5.2}Discussion}{31}{section.5.2}%
-\contentsline {chapter}{\numberline {6}CONCLUSIONS AND RECOMMENDATIONS}{33}{chapter.6}%
-\contentsline {section}{\numberline {6.1}Conclusions}{33}{section.6.1}%
-\contentsline {section}{\numberline {6.2}Recommendations/Future Enhancements}{33}{section.6.2}%
-\contentsline {chapter}{REFERENCES}{34}{Item.65}%
-\contentsline {chapter}{APPENDICES}{36}{chapter*.24}%
-\contentsline {section}{Appendix A: Demonstrated Runtime Configuration}{36}{section*.25}%
-\contentsline {section}{Appendix B: Evidence and Reproducibility Notes}{36}{section*.25}%
-\contentsline {section}{Appendix C: CLI Runtime Log Evidence}{36}{section*.25}%
-\contentsline {section}{Appendix D: OksQuery Grammar and Usage Reference}{38}{figure.caption.27}%
+\contentsline {section}{\numberline {3.3}System Design and Modules}{14}{section.3.3}%
+\contentsline {subsection}{\numberline {3.3.1}Use-Case Diagram}{14}{subsection.3.3.1}%
+\contentsline {subsubsection}{Use-Case Descriptions}{15}{subsubsection*.10}%
+\contentsline {paragraph}{UC-01: Query OKS Data}{15}{paragraph*.11}%
+\contentsline {paragraph}{UC-02: Translate Without Execution}{15}{paragraph*.12}%
+\contentsline {paragraph}{UC-03: Probe OKS Environment}{15}{paragraph*.13}%
+\contentsline {paragraph}{Included use cases}{15}{paragraph*.14}%
+\contentsline {subsection}{\numberline {3.3.2}Context Diagram (DFD Level 0)}{16}{subsection.3.3.2}%
+\contentsline {subsection}{\numberline {3.3.3}Sequence Diagram}{17}{subsection.3.3.3}%
+\contentsline {section}{\numberline {3.4}Technology Stack}{18}{section.3.4}%
+\contentsline {section}{\numberline {3.5}Development Methodology}{19}{section.3.5}%
+\contentsline {section}{\numberline {3.6}Data Handling}{19}{section.3.6}%
+\contentsline {subsection}{\numberline {3.6.1}Input and Storage}{19}{subsection.3.6.1}%
+\contentsline {subsection}{\numberline {3.6.2}Processing and Context Management}{19}{subsection.3.6.2}%
+\contentsline {subsection}{\numberline {3.6.3}Level-1 Data Flow}{19}{subsection.3.6.3}%
+\contentsline {section}{\numberline {3.7}Testing and Validation}{20}{section.3.7}%
+\contentsline {section}{\numberline {3.8}Deployment Setup}{21}{section.3.8}%
+\contentsline {chapter}{\numberline {4}IMPLEMENTATION DETAILS}{22}{chapter.4}%
+\contentsline {section}{\numberline {4.1}Requirements Specification}{22}{section.4.1}%
+\contentsline {subsection}{\numberline {4.1.1}Functional Requirements}{22}{subsection.4.1.1}%
+\contentsline {subsection}{\numberline {4.1.2}Non-functional Requirements and Constraints}{23}{subsection.4.1.2}%
+\contentsline {section}{\numberline {4.2}System Overview}{23}{section.4.2}%
+\contentsline {section}{\numberline {4.3}Development Environment}{25}{section.4.3}%
+\contentsline {section}{\numberline {4.4}System Implementation}{26}{section.4.4}%
+\contentsline {subsection}{\numberline {4.4.1}MCP and Service Boundary}{26}{subsection.4.4.1}%
+\contentsline {subsection}{\numberline {4.4.2}Translation, Validation, and Execution Flow}{27}{subsection.4.4.2}%
+\contentsline {section}{\numberline {4.5}Interface and Visualization}{28}{section.4.5}%
+\contentsline {section}{\numberline {4.6}Deployment and Execution}{29}{section.4.6}%
+\contentsline {section}{\numberline {4.7}Challenges and Solutions}{30}{section.4.7}%
+\contentsline {subsection}{\numberline {4.7.1}Large and Evolving Configuration Context}{30}{subsection.4.7.1}%
+\contentsline {subsection}{\numberline {4.7.2}Proprietary Query Syntax and LLM Hallucination}{30}{subsection.4.7.2}%
+\contentsline {subsection}{\numberline {4.7.3}Safe Access to Configuration Data}{30}{subsection.4.7.3}%
+\contentsline {subsection}{\numberline {4.7.4}Version and Runtime Compatibility}{30}{subsection.4.7.4}%
+\contentsline {subsection}{\numberline {4.7.5}Private Connectivity Between Workstation and CERN}{31}{subsection.4.7.5}%
+\contentsline {subsection}{\numberline {4.7.6}Distinguishing Empty Results from Failures}{31}{subsection.4.7.6}%
+\contentsline {chapter}{\numberline {5}RESULTS AND DISCUSSION}{32}{chapter.5}%
+\contentsline {section}{\numberline {5.1}Results}{32}{section.5.1}%
+\contentsline {subsection}{\numberline {5.1.1}Verification of the Implementation}{32}{subsection.5.1.1}%
+\contentsline {subsection}{\numberline {5.1.2}Observed Query Demonstrations}{32}{subsection.5.1.2}%
+\contentsline {section}{\numberline {5.2}Discussion}{33}{section.5.2}%
+\contentsline {chapter}{\numberline {6}CONCLUSIONS AND RECOMMENDATIONS}{35}{chapter.6}%
+\contentsline {section}{\numberline {6.1}Conclusions}{35}{section.6.1}%
+\contentsline {section}{\numberline {6.2}Recommendations/Future Enhancements}{35}{section.6.2}%
+\contentsline {chapter}{REFERENCES}{36}{Item.65}%
+\contentsline {chapter}{APPENDICES}{38}{chapter*.26}%
+\contentsline {section}{Appendix A: Demonstrated Runtime Configuration}{38}{section*.27}%
+\contentsline {section}{Appendix B: Evidence and Reproducibility Notes}{38}{section*.27}%
+\contentsline {section}{Appendix C: CLI Runtime Log Evidence}{39}{section*.27}%
+\contentsline {section}{Appendix D: OksQuery Grammar and Usage Reference}{43}{lstnumber.-10.20}%

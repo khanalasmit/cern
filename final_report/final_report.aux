@@ -57,81 +57,85 @@
 \@writefile{lof}{\contentsline {figure}{\numberline {3.1}{\ignorespaces Deployment and processing architecture of the OKS MCP server.}}{11}{figure.caption.7}\protected@file@percent }
 \providecommand*\caption@xref[2]{\@setref\relax\@undefined{#1}}
 \newlabel{fig:system-architecture}{{3.1}{11}{Deployment and processing architecture of the OKS MCP server}{figure.caption.7}{}}
-\@writefile{toc}{\contentsline {section}{\numberline {3.3}System Design and Modules}{12}{section.3.3}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {3.3.1}Use-Case Diagram}{12}{subsection.3.3.1}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsubsection}{Use-Case Descriptions}{13}{subsubsection*.8}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{UC-01: Query OKS Data}{13}{paragraph*.9}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{UC-02: Translate Without Execution}{13}{paragraph*.10}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{UC-03: Probe OKS Environment}{13}{paragraph*.11}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{Included use cases}{13}{paragraph*.12}\protected@file@percent }
-\@writefile{lof}{\contentsline {figure}{\numberline {3.2}{\ignorespaces Use-case diagram of the OKS MCP Server.}}{14}{figure.caption.13}\protected@file@percent }
-\newlabel{fig:use-case-diagram}{{3.2}{14}{Use-case diagram of the OKS MCP Server}{figure.caption.13}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {3.3.2}Context Diagram (DFD Level 0)}{14}{subsection.3.3.2}\protected@file@percent }
-\@writefile{lof}{\contentsline {figure}{\numberline {3.3}{\ignorespaces Level-0 context data-flow diagram of the OKS MCP Server.}}{15}{figure.caption.14}\protected@file@percent }
-\newlabel{fig:dfd-level-0}{{3.3}{15}{Level-0 context data-flow diagram of the OKS MCP Server}{figure.caption.14}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {3.3.3}Sequence Diagram}{15}{subsection.3.3.3}\protected@file@percent }
-\@writefile{lof}{\contentsline {figure}{\numberline {3.4}{\ignorespaces Concise sequence of operations for an MCP query request.}}{16}{figure.caption.15}\protected@file@percent }
-\newlabel{fig:sequence-diagram}{{3.4}{16}{Concise sequence of operations for an MCP query request}{figure.caption.15}{}}
-\@writefile{toc}{\contentsline {section}{\numberline {3.4}Technology Stack}{16}{section.3.4}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {3.5}Development Methodology}{17}{section.3.5}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {3.6}Data Handling}{17}{section.3.6}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {3.6.1}Input and Storage}{17}{subsection.3.6.1}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {3.6.2}Processing and Context Management}{17}{subsection.3.6.2}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {3.6.3}Level-1 Data Flow}{17}{subsection.3.6.3}\protected@file@percent }
-\@writefile{lof}{\contentsline {figure}{\numberline {3.5}{\ignorespaces Level-1 data-flow diagram for OKS MCP request processing.}}{18}{figure.caption.16}\protected@file@percent }
-\newlabel{fig:dfd-level-1}{{3.5}{18}{Level-1 data-flow diagram for OKS MCP request processing}{figure.caption.16}{}}
-\@writefile{toc}{\contentsline {section}{\numberline {3.7}Testing and Validation}{18}{section.3.7}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {3.8}Deployment Setup}{19}{section.3.8}\protected@file@percent }
-\@writefile{toc}{\contentsline {chapter}{\numberline {4}IMPLEMENTATION DETAILS}{20}{chapter.4}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {3.2}{\ignorespaces Core translation architecture: offline startup prepares the version-scoped schema context and examples, while each online request is translated, validated, executed, and reduced to a filtered result.}}{12}{figure.caption.8}\protected@file@percent }
+\newlabel{fig:core-translation-architecture}{{3.2}{12}{Core translation architecture: offline startup prepares the version-scoped schema context and examples, while each online request is translated, validated, executed, and reduced to a filtered result}{figure.caption.8}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {3.3}{\ignorespaces Deployment architecture: the client reaches the loopback-bound CERN MCP service through an authenticated SSH tunnel, and only filtered read-only results cross the deployment boundary.}}{13}{figure.caption.9}\protected@file@percent }
+\newlabel{fig:deployment-architecture}{{3.3}{13}{Deployment architecture: the client reaches the loopback-bound CERN MCP service through an authenticated SSH tunnel, and only filtered read-only results cross the deployment boundary}{figure.caption.9}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {3.3}System Design and Modules}{14}{section.3.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.3.1}Use-Case Diagram}{14}{subsection.3.3.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{Use-Case Descriptions}{15}{subsubsection*.10}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{UC-01: Query OKS Data}{15}{paragraph*.11}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{UC-02: Translate Without Execution}{15}{paragraph*.12}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{UC-03: Probe OKS Environment}{15}{paragraph*.13}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Included use cases}{15}{paragraph*.14}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {3.4}{\ignorespaces Use-case diagram of the OKS MCP Server.}}{16}{figure.caption.15}\protected@file@percent }
+\newlabel{fig:use-case-diagram}{{3.4}{16}{Use-case diagram of the OKS MCP Server}{figure.caption.15}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.3.2}Context Diagram (DFD Level 0)}{16}{subsection.3.3.2}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {3.5}{\ignorespaces Level-0 context data-flow diagram of the OKS MCP Server.}}{17}{figure.caption.16}\protected@file@percent }
+\newlabel{fig:dfd-level-0}{{3.5}{17}{Level-0 context data-flow diagram of the OKS MCP Server}{figure.caption.16}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.3.3}Sequence Diagram}{17}{subsection.3.3.3}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {3.6}{\ignorespaces Concise sequence of operations for an MCP query request.}}{18}{figure.caption.17}\protected@file@percent }
+\newlabel{fig:sequence-diagram}{{3.6}{18}{Concise sequence of operations for an MCP query request}{figure.caption.17}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {3.4}Technology Stack}{18}{section.3.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {3.5}Development Methodology}{19}{section.3.5}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {3.6}Data Handling}{19}{section.3.6}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.6.1}Input and Storage}{19}{subsection.3.6.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.6.2}Processing and Context Management}{19}{subsection.3.6.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.6.3}Level-1 Data Flow}{19}{subsection.3.6.3}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {3.7}{\ignorespaces Level-1 data-flow diagram for OKS MCP request processing.}}{20}{figure.caption.18}\protected@file@percent }
+\newlabel{fig:dfd-level-1}{{3.7}{20}{Level-1 data-flow diagram for OKS MCP request processing}{figure.caption.18}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {3.7}Testing and Validation}{20}{section.3.7}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {3.8}Deployment Setup}{21}{section.3.8}\protected@file@percent }
+\@writefile{toc}{\contentsline {chapter}{\numberline {4}IMPLEMENTATION DETAILS}{22}{chapter.4}\protected@file@percent }
 \@writefile{lof}{\addvspace {10\p@ }}
 \@writefile{lot}{\addvspace {10\p@ }}
-\@writefile{toc}{\contentsline {section}{\numberline {4.1}Requirements Specification}{20}{section.4.1}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {4.1.1}Functional Requirements}{20}{subsection.4.1.1}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {4.1.2}Non-functional Requirements and Constraints}{21}{subsection.4.1.2}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {4.2}System Overview}{21}{section.4.2}\protected@file@percent }
-\@writefile{lof}{\contentsline {figure}{\numberline {4.1}{\ignorespaces Implemented private MCP architecture for natural-language OKS queries.}}{22}{figure.caption.17}\protected@file@percent }
-\newlabel{fig:implemented-system-architecture}{{4.1}{22}{Implemented private MCP architecture for natural-language OKS queries}{figure.caption.17}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {4.1}Requirements Specification}{22}{section.4.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.1.1}Functional Requirements}{22}{subsection.4.1.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.1.2}Non-functional Requirements and Constraints}{23}{subsection.4.1.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {4.2}System Overview}{23}{section.4.2}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {4.1}{\ignorespaces Implemented private MCP architecture for natural-language OKS queries.}}{24}{figure.caption.19}\protected@file@percent }
+\newlabel{fig:implemented-system-architecture}{{4.1}{24}{Implemented private MCP architecture for natural-language OKS queries}{figure.caption.19}{}}
 \gdef \LT@i {\LT@entry 
     {1}{102.73918pt}\LT@entry 
     {1}{314.0937pt}}
-\@writefile{toc}{\contentsline {section}{\numberline {4.3}Development Environment}{23}{section.4.3}\protected@file@percent }
-\@writefile{lot}{\contentsline {table}{\numberline {4.1}{\ignorespaces Development environment and principal tools.}}{23}{table.4.1}\protected@file@percent }
-\newlabel{tab:development-environment}{{4.1}{23}{Development environment and principal tools}{table.4.1}{}}
-\@writefile{toc}{\contentsline {section}{\numberline {4.4}System Implementation}{24}{section.4.4}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {4.4.1}MCP and Service Boundary}{24}{subsection.4.4.1}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {4.4.2}Translation, Validation, and Execution Flow}{25}{subsection.4.4.2}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {4.5}Interface and Visualization}{26}{section.4.5}\protected@file@percent }
-\@writefile{lof}{\contentsline {figure}{\numberline {4.2}{\ignorespaces MCP service running on the LXPLUS loopback endpoint at port 8001.}}{26}{figure.caption.18}\protected@file@percent }
-\newlabel{fig:mcp-server-loopback}{{4.2}{26}{MCP service running on the LXPLUS loopback endpoint at port 8001}{figure.caption.18}{}}
-\@writefile{lof}{\contentsline {figure}{\numberline {4.3}{\ignorespaces Redacted workstation command establishing the SSH local port forward.}}{26}{figure.caption.19}\protected@file@percent }
-\newlabel{fig:ssh-tunnel}{{4.3}{26}{Redacted workstation command establishing the SSH local port forward}{figure.caption.19}{}}
-\@writefile{lof}{\contentsline {figure}{\numberline {4.4}{\ignorespaces MCP client showing the connected \texttt  {oksquery} server and its three tools.}}{26}{figure.caption.20}\protected@file@percent }
-\newlabel{fig:mcp-tools}{{4.4}{26}{MCP client showing the connected \texttt {oksquery} server and its three tools}{figure.caption.20}{}}
-\@writefile{toc}{\contentsline {section}{\numberline {4.6}Deployment and Execution}{27}{section.4.6}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {4.7}Challenges and Solutions}{28}{section.4.7}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {4.7.1}Large and Evolving Configuration Context}{28}{subsection.4.7.1}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {4.7.2}Proprietary Query Syntax and LLM Hallucination}{28}{subsection.4.7.2}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {4.7.3}Safe Access to Configuration Data}{28}{subsection.4.7.3}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {4.7.4}Version and Runtime Compatibility}{28}{subsection.4.7.4}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {4.7.5}Private Connectivity Between Workstation and CERN}{29}{subsection.4.7.5}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {4.7.6}Distinguishing Empty Results from Failures}{29}{subsection.4.7.6}\protected@file@percent }
-\@writefile{toc}{\contentsline {chapter}{\numberline {5}RESULTS AND DISCUSSION}{30}{chapter.5}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {4.3}Development Environment}{25}{section.4.3}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {4.1}{\ignorespaces Development environment and principal tools.}}{25}{table.4.1}\protected@file@percent }
+\newlabel{tab:development-environment}{{4.1}{25}{Development environment and principal tools}{table.4.1}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {4.4}System Implementation}{26}{section.4.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.4.1}MCP and Service Boundary}{26}{subsection.4.4.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.4.2}Translation, Validation, and Execution Flow}{27}{subsection.4.4.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {4.5}Interface and Visualization}{28}{section.4.5}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {4.2}{\ignorespaces MCP service running on the LXPLUS loopback endpoint at port 8001.}}{28}{figure.caption.20}\protected@file@percent }
+\newlabel{fig:mcp-server-loopback}{{4.2}{28}{MCP service running on the LXPLUS loopback endpoint at port 8001}{figure.caption.20}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {4.3}{\ignorespaces Redacted workstation command establishing the SSH local port forward.}}{28}{figure.caption.21}\protected@file@percent }
+\newlabel{fig:ssh-tunnel}{{4.3}{28}{Redacted workstation command establishing the SSH local port forward}{figure.caption.21}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {4.4}{\ignorespaces MCP client showing the connected \texttt  {oksquery} server and its three tools.}}{28}{figure.caption.22}\protected@file@percent }
+\newlabel{fig:mcp-tools}{{4.4}{28}{MCP client showing the connected \texttt {oksquery} server and its three tools}{figure.caption.22}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {4.6}Deployment and Execution}{29}{section.4.6}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {4.7}Challenges and Solutions}{30}{section.4.7}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.7.1}Large and Evolving Configuration Context}{30}{subsection.4.7.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.7.2}Proprietary Query Syntax and LLM Hallucination}{30}{subsection.4.7.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.7.3}Safe Access to Configuration Data}{30}{subsection.4.7.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.7.4}Version and Runtime Compatibility}{30}{subsection.4.7.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.7.5}Private Connectivity Between Workstation and CERN}{31}{subsection.4.7.5}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.7.6}Distinguishing Empty Results from Failures}{31}{subsection.4.7.6}\protected@file@percent }
+\@writefile{toc}{\contentsline {chapter}{\numberline {5}RESULTS AND DISCUSSION}{32}{chapter.5}\protected@file@percent }
 \@writefile{lof}{\addvspace {10\p@ }}
 \@writefile{lot}{\addvspace {10\p@ }}
-\@writefile{toc}{\contentsline {section}{\numberline {5.1}Results}{30}{section.5.1}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {5.1.1}Verification of the Implementation}{30}{subsection.5.1.1}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {5.1.2}Observed Query Demonstrations}{30}{subsection.5.1.2}\protected@file@percent }
-\@writefile{lof}{\contentsline {figure}{\numberline {5.1}{\ignorespaces Valid empty result returned for an object absent from the selected configuration.}}{30}{figure.caption.21}\protected@file@percent }
-\newlabel{fig:valid-empty-result}{{5.1}{30}{Valid empty result returned for an object absent from the selected configuration}{figure.caption.21}{}}
-\@writefile{lof}{\contentsline {figure}{\numberline {5.2}{\ignorespaces Successful BaseApplication query showing generated OksQuery, count, and identifiers.}}{31}{figure.caption.22}\protected@file@percent }
-\newlabel{fig:successful-query}{{5.2}{31}{Successful BaseApplication query showing generated OksQuery, count, and identifiers}{figure.caption.22}{}}
-\@writefile{toc}{\contentsline {section}{\numberline {5.2}Discussion}{31}{section.5.2}\protected@file@percent }
-\@writefile{toc}{\contentsline {chapter}{\numberline {6}CONCLUSIONS AND RECOMMENDATIONS}{33}{chapter.6}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {5.1}Results}{32}{section.5.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.1.1}Verification of the Implementation}{32}{subsection.5.1.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.1.2}Observed Query Demonstrations}{32}{subsection.5.1.2}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {5.1}{\ignorespaces Valid empty result returned for an object absent from the selected configuration.}}{32}{figure.caption.23}\protected@file@percent }
+\newlabel{fig:valid-empty-result}{{5.1}{32}{Valid empty result returned for an object absent from the selected configuration}{figure.caption.23}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {5.2}{\ignorespaces Successful BaseApplication query showing generated OksQuery, count, and identifiers.}}{33}{figure.caption.24}\protected@file@percent }
+\newlabel{fig:successful-query}{{5.2}{33}{Successful BaseApplication query showing generated OksQuery, count, and identifiers}{figure.caption.24}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {5.2}Discussion}{33}{section.5.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {chapter}{\numberline {6}CONCLUSIONS AND RECOMMENDATIONS}{35}{chapter.6}\protected@file@percent }
 \@writefile{lof}{\addvspace {10\p@ }}
 \@writefile{lot}{\addvspace {10\p@ }}
-\@writefile{toc}{\contentsline {section}{\numberline {6.1}Conclusions}{33}{section.6.1}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {6.2}Recommendations/Future Enhancements}{33}{section.6.2}\protected@file@percent }
-\@writefile{toc}{\contentsline {chapter}{REFERENCES}{34}{Item.65}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {6.1}Conclusions}{35}{section.6.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {6.2}Recommendations/Future Enhancements}{35}{section.6.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {chapter}{REFERENCES}{36}{Item.65}\protected@file@percent }
 \bibcite{oks_paper}{1}
 \bibcite{alexandrov2007}{2}
 \bibcite{soloviev_vcs}{3}
@@ -140,15 +144,11 @@
 \bibcite{gpt3}{6}
 \bibcite{text2sql_survey}{7}
 \bibcite{zhu2025}{8}
-\@writefile{toc}{\contentsline {chapter}{APPENDICES}{36}{chapter*.24}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{Appendix A: Demonstrated Runtime Configuration}{36}{section*.25}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{Appendix B: Evidence and Reproducibility Notes}{36}{section*.25}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{Appendix C: CLI Runtime Log Evidence}{36}{section*.25}\protected@file@percent }
-\@writefile{lof}{\contentsline {figure}{\numberline {6.1}{\ignorespaces CLI startup and environment-probe log for the OKS query translator.}}{37}{figure.caption.26}\protected@file@percent }
-\newlabel{fig:appendix-cli-startup-log}{{6.1}{37}{CLI startup and environment-probe log for the OKS query translator}{figure.caption.26}{}}
-\@writefile{lof}{\contentsline {figure}{\numberline {6.2}{\ignorespaces CLI translation and execution log showing a valid empty result for the selected configuration.}}{37}{figure.caption.27}\protected@file@percent }
-\newlabel{fig:appendix-cli-query-log}{{6.2}{37}{CLI translation and execution log showing a valid empty result for the selected configuration}{figure.caption.27}{}}
-\@writefile{toc}{\contentsline {section}{Appendix D: OksQuery Grammar and Usage Reference}{38}{figure.caption.27}\protected@file@percent }
-\@writefile{lot}{\contentsline {table}{\numberline {6.1}{\ignorespaces OksQuery comparison operators.}}{39}{table.caption.28}\protected@file@percent }
-\newlabel{tab:oksquery-comparators}{{6.1}{39}{OksQuery comparison operators}{table.caption.28}{}}
-\gdef \@abspage@last{52}
+\@writefile{toc}{\contentsline {chapter}{APPENDICES}{38}{chapter*.26}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{Appendix A: Demonstrated Runtime Configuration}{38}{section*.27}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{Appendix B: Evidence and Reproducibility Notes}{38}{section*.27}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{Appendix C: CLI Runtime Log Evidence}{39}{section*.27}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{Appendix D: OksQuery Grammar and Usage Reference}{43}{lstnumber.-10.20}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {6.1}{\ignorespaces OksQuery comparison operators.}}{44}{table.caption.28}\protected@file@percent }
+\newlabel{tab:oksquery-comparators}{{6.1}{44}{OksQuery comparison operators}{table.caption.28}{}}
+\gdef \@abspage@last{57}
