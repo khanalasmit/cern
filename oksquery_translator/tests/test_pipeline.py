@@ -152,6 +152,42 @@ class TestPipelineIntentIntegration:
         assert kwargs["data_file"] == "muons/partitions/part_TGC_FillTest.data.xml"
         assert kwargs["repository"] == "ssh://git@gitlab.cern.ch:7999/atlas-tdaq-oks/p1/tdaq-11-02-01.git"
 
+    @pytest.mark.parametrize("version,config_name", [
+        (None, None),
+        ("", ""),
+        ("   ", "\t"),
+    ])
+    def test_historical_run_without_recorded_configuration_stops_early(
+        self, mock_pipeline, version, config_name
+    ):
+        """A metadata-less run must not fall back to a Git tag or query OKS."""
+        mock_pipeline.run_resolver.validate_run_number = MagicMock(return_value=True)
+        mock_pipeline.run_resolver.get_run_info = MagicMock(return_value={
+            "version": version,
+            "config_name": config_name,
+        })
+        mock_pipeline.run_resolver.resolve_version = MagicMock()
+        mock_pipeline.context_builder.build = MagicMock()
+
+        res = mock_pipeline.answer("What was InitTimeout in run 380689?")
+
+        expected = (
+            "I can’t answer this from the recorded historical configuration. "
+            "Run 380689 has no saved configuration version or configuration file name, "
+            "so its exact OKS snapshot cannot be retrieved. Please provide a Git commit/tag "
+            "and configuration file path, or use a run with recorded configuration metadata."
+        )
+        assert res["status"] == "error"
+        assert res["answer"] == expected
+        assert res["message"] == expected
+        assert res["version"] is None
+        assert res["version_used"] is None
+        mock_pipeline.run_resolver.resolve_version.assert_not_called()
+        mock_pipeline.context_builder.build.assert_not_called()
+        mock_pipeline.translator.translate.assert_not_called()
+        mock_pipeline.executor.execute.assert_not_called()
+        mock_pipeline.interpreter.interpret.assert_not_called()
+
 
     def test_legacy_run_stops_before_translation_or_execution(self, mock_pipeline):
         """Unsupported archive revisions must never fall through to HEAD."""
