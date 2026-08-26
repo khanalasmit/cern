@@ -316,15 +316,40 @@ class OksPipeline:
                         "oks_context_label": "",
                     }
 
-                effective_version = self.run_resolver.resolve_version(extracted_run, partition)
                 run_info = self.run_resolver.get_run_info(extracted_run)
                 if run_info:
                     partition = run_info.get("partition") or partition
+                    config_version = run_info.get("version")
+                    config_name = run_info.get("config_name")
+                    if not (config_version and str(config_version).strip()) and not (
+                        config_name and str(config_name).strip()
+                    ):
+                        msg = (
+                            "I can’t answer this from the recorded historical configuration. "
+                            f"Run {extracted_run} has no saved configuration version or "
+                            "configuration file name, so its exact OKS snapshot cannot be "
+                            "retrieved. Please provide a Git commit/tag and configuration "
+                            "file path, or use a run with recorded configuration metadata."
+                        )
+                        logger.warning(
+                            "Historical run %s has no CONFIGVERSION or CONFIGNAME; "
+                            "halting before configuration resolution.",
+                            extracted_run,
+                        )
+                        return {
+                            "status": "error", "answer": msg, "oks_query": "", "target_class": "",
+                            "result_count": 0, "results": [], "attempts": 0, "message": msg,
+                            "intent": intent_info.intent.value, "run_number": extracted_run,
+                            "partition": partition, "version": None, "version_used": None,
+                            "schema_fingerprint": "", "oks_context_label": "",
+                        }
                     request_data_file = run_info.get("config_name") or request_data_file
                     request_release = run_info.get("release") or None
                     # Some RNDB integrations provide the exact Git URL.  Keep
                     # it intact; it is more authoritative than a family guess.
                     request_repository = run_info.get("repository") or None
+
+                effective_version = self.run_resolver.resolve_version(extracted_run, partition)
 
                 if effective_version is None:
                     archive_revision = (run_info or {}).get("version", "unknown")
