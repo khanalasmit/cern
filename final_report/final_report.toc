@@ -5,7 +5,7 @@
 \contentsline {chapter}{ACKNOWLEDGEMENTS}{v}{chapter*.5}%
 \contentsline {chapter}{LIST OF FIGURES}{ix}{chapter*.5}%
 \contentsline {chapter}{LIST OF TABLES}{ix}{chapter*.5}%
-\contentsline {chapter}{ABBREVIATIONS}{xi}{chapter*.6}%
+\contentsline {chapter}{ABBREVIATIONS}{x}{chapter*.6}%
 \contentsline {chapter}{\numberline {1}INTRODUCTION}{1}{chapter.1}%
 \contentsline {section}{\numberline {1.1}Background}{1}{section.1.1}%
 \contentsline {section}{\numberline {1.2}Problem Statement}{2}{section.1.2}%
