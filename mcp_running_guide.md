@@ -209,7 +209,7 @@ Run these checks after sourcing the release and setting the data file:
 
 ~~~bash
 export OKS_REPO_ROOT="$PWD"
-export OKS_QUERY_PYTHON="$PWD/oksquery_translator/mcp-venv-313/bin/python"
+export OKS_QUERY_PYTHON="$PWD/oksquery_translator/venv/bin/python"
 export OKS_DATA_FILE=daq/segments/setup.data.xml
 
 echo "python: $OKS_QUERY_PYTHON"
@@ -243,8 +243,8 @@ tunnel:
 
 ~~~bash
 export OKS_REPO_ROOT="$PWD"
-export OKS_QUERY_PYTHON="$PWD/oksquery_translator/mcp-venv-313/bin/python"
-export TDAQ_SETUP_SCRIPT=/cvmfs/atlas.cern.ch/repo/sw/tdaq/tdaq-14-00-00/installed/setup.sh
+export OKS_QUERY_PYTHON="$PWD/oksquery_translator/venv/bin/python"
+export TDAQ_SETUP_SCRIPT=/cvmfs/atlas.cern.ch/repo/sw/tdaq/tdaq/tdaq-14-00-00/installed/setup.sh
 export OKS_DATA_FILE=daq/segments/setup.data.xml
 export MCP_TRANSPORT=streamable-http
 export MCP_HOST=127.0.0.1

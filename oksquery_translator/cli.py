@@ -24,21 +24,20 @@ if REPO_ROOT not in sys.path:
 
 def _load_env():
     """Load .env file for LLM configuration."""
+    candidate_paths = (
+        os.path.join(REPO_ROOT, ".env"),
+        os.path.join(REPO_ROOT, "translator_module", ".env"),
+        os.path.join(MODULE_DIR, ".env"),
+    )
     try:
         from dotenv import load_dotenv
-        for env_path in (
-            os.path.join(MODULE_DIR, ".env"),
-            os.path.join(REPO_ROOT, ".env"),
-        ):
+        for env_path in candidate_paths:
             if os.path.isfile(env_path):
                 load_dotenv(env_path, override=True)
                 return
     except ImportError:
         # Manual fallback
-        for env_path in (
-            os.path.join(MODULE_DIR, ".env"),
-            os.path.join(REPO_ROOT, ".env"),
-        ):
+        for env_path in candidate_paths:
             if not os.path.isfile(env_path):
                 continue
             try:

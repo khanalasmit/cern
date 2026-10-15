@@ -129,7 +129,6 @@ class TestHistoricalConfig(unittest.TestCase):
             self.assertNotEqual(passed_data_file, "daq/segments/setup.data.xml")
 
     @patch.dict(os.environ, {"TDAQ_DB_REPOSITORY": "/actual/config/repository"}, clear=True)
-    def test_5_tdaq_db_path_not_forced(self):
     @patch("subprocess.run")
     def test_5_tdaq_db_path_not_forced(self, mock_run):
         """Test 5: TDAQ_DB_PATH is not forced to installed/share/data for historical queries."""
@@ -167,7 +166,6 @@ class TestHistoricalConfig(unittest.TestCase):
             self.assertIsNone(captured_db_path)
 
     @patch.dict(os.environ, {"TDAQ_DB_REPOSITORY": "/actual/config/repository", "TDAQ_DB_USER_REPOSITORY": "/some/local/repo"}, clear=True)
-    def test_6_user_repository_removed_for_historical(self):
     @patch("subprocess.run")
     def test_6_user_repository_removed_for_historical(self, mock_run):
         """Test 6: TDAQ_DB_USER_REPOSITORY is removed during historical resolution."""
@@ -234,7 +232,7 @@ class TestHistoricalConfig(unittest.TestCase):
         """Test 8: Release mismatch between active TDAQ_RELEASE and run release logs a warning."""
         self.executor._oks_dump_path = "/usr/bin/oks_dump"
         with patch.object(self.executor, "_execute_config") as mock_exec_config, \
-        with patch.object(self.executor, "_execute_oks_dump") as mock_exec, \
+             patch.object(self.executor, "_execute_oks_dump") as mock_exec, \
              patch("oksquery_translator.executor.logger.warning") as mock_warn:
             mock_exec_config.return_value = ExecutionResult(success=True, count=1)
             
@@ -290,8 +288,8 @@ class TestHistoricalConfig(unittest.TestCase):
                 captured["repository"] = _kwargs.get("repository")
                 return ExecutionResult(success=True)
 
-            with patch.object(self.executor, "_execute_config", side_effect=execute):
-            with patch.object(Executor, "_validate_historical_configuration", return_value=None), \
+            with patch.object(self.executor, "_execute_config", side_effect=execute), \
+                 patch.object(Executor, "_validate_historical_configuration", return_value=None), \
                  patch.object(self.executor, "_execute_oks_dump", side_effect=execute_dump):
                 self.executor._oks_dump_path = "/fake/oks_dump"
                 result = self.executor.execute(

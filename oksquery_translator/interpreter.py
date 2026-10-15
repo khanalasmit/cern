@@ -13,6 +13,8 @@ from typing import Dict, List, Optional
 
 from openai import OpenAI, APIStatusError, APIConnectionError
 
+from .llm_utils import extract_chat_completion_content
+
 logger = logging.getLogger("oksquery_translator.interpreter")
 
 
@@ -101,7 +103,7 @@ class Interpreter:
                 ],
                 temperature=0.2,
             )
-            answer = response.choices[0].message.content.strip()
+            answer = extract_chat_completion_content(response).strip()
             elapsed = time.perf_counter() - t_start
             logger.info(f"Interpreter: Summary generated successfully in {elapsed:.2f}s.")
             return answer

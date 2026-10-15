@@ -36,6 +36,7 @@ from .context import OksContext, OksContextBuilder
 from .prompt_builder import PromptBuilder
 from .schema import OksSchemaProvider
 from .schema_retrieval import SchemaRetriever
+from .llm_utils import extract_chat_completion_content
 
 logger = logging.getLogger("oksquery_translator.translator")
 
@@ -282,7 +283,8 @@ class Translator:
                 messages=messages,
                 temperature=0.0,
             )
-            return {"content": response.choices[0].message.content or ""}
+            content = extract_chat_completion_content(response)
+            return {"content": content}
         except APIStatusError as e:
             code = e.status_code
             if code == 404:
