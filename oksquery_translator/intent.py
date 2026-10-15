@@ -21,6 +21,8 @@ from typing import Optional, Tuple
 
 from openai import OpenAI, APIStatusError, APIConnectionError
 
+from .llm_compat import extract_message_content
+
 
 class Intent(str, Enum):
     OKS_CURRENT_QUERY = "OKS_CURRENT_QUERY"
@@ -437,7 +439,7 @@ class IntentClassifier:
                 ],
                 temperature=0.0,
             )
-            raw_content = response.choices[0].message.content.strip()
+            raw_content = extract_message_content(response).strip()
             return self._parse_llm_json(raw_content)
         except Exception:
             # Fallback heuristic when LLM fails or is unavailable

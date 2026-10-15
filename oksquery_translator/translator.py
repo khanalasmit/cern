@@ -33,6 +33,7 @@ from .oks_ast import (
     normalize_ir,
 )
 from .context import OksContext, OksContextBuilder
+from .llm_compat import extract_message_content
 from .prompt_builder import PromptBuilder
 from .schema import OksSchemaProvider
 from .schema_retrieval import SchemaRetriever
@@ -282,7 +283,7 @@ class Translator:
                 messages=messages,
                 temperature=0.0,
             )
-            return {"content": response.choices[0].message.content or ""}
+            return {"content": extract_message_content(response) or ""}
         except APIStatusError as e:
             code = e.status_code
             if code == 404:
